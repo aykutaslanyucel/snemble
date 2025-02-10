@@ -42,22 +42,26 @@ interface Props {
 
 const statusConfig = {
   available: {
-    color: "bg-status-available hover:bg-status-available/90",
+    color: "bg-[#F2FCE2]/90 hover:bg-[#F2FCE2]",
+    iconColor: "text-green-600",
     icon: CheckCircle,
     label: "Available",
   },
   busy: {
-    color: "bg-status-busy hover:bg-status-busy/90",
+    color: "bg-[#FEC6A1]/90 hover:bg-[#FEC6A1]",
+    iconColor: "text-orange-600",
     icon: Clock,
     label: "Busy",
   },
   critical: {
-    color: "bg-status-critical hover:bg-status-critical/90",
+    color: "bg-red-100/90 hover:bg-red-100",
+    iconColor: "text-red-600",
     icon: XCircle,
     label: "Do Not Disturb",
   },
   vacation: {
-    color: "bg-status-vacation hover:bg-status-vacation/90",
+    color: "bg-purple-100/90 hover:bg-purple-100",
+    iconColor: "text-purple-600",
     icon: Coffee,
     label: "Away",
   },
@@ -82,11 +86,8 @@ export default function TeamMemberCard({ member, onUpdate, onDelete }: Props) {
 
   return (
     <Card className={cn(
-      "team-member-card overflow-hidden border-2 transition-colors",
-      member.status === "available" && "border-green-200",
-      member.status === "busy" && "border-yellow-200",
-      member.status === "critical" && "border-red-200",
-      member.status === "vacation" && "border-purple-200",
+      "team-member-card overflow-hidden border-none shadow-lg",
+      currentStatus.color,
     )}>
       <motion.div
         initial={false}
@@ -175,12 +176,11 @@ export default function TeamMemberCard({ member, onUpdate, onDelete }: Props) {
                     pressed={member.status === status}
                     onPressedChange={() => handleStatusChange(status)}
                     className={cn(
-                      "flex items-center gap-1 data-[state=on]:text-white",
-                      member.status === status && config.color
+                      "w-10 h-10 p-0 rounded-full data-[state=on]:bg-white/80",
+                      member.status === status ? config.iconColor : "text-gray-400"
                     )}
                   >
-                    <Icon className="h-4 w-4" />
-                    <span className="text-sm">{config.label}</span>
+                    <Icon className="h-5 w-5" />
                   </Toggle>
                 );
               })}
@@ -188,8 +188,8 @@ export default function TeamMemberCard({ member, onUpdate, onDelete }: Props) {
           </div>
 
           <div className="flex items-center justify-between mt-4">
-            <Badge variant="outline" className={currentStatus.color}>
-              <currentStatus.icon className="h-3 w-3 mr-1" />
+            <Badge variant="outline" className="bg-white/50">
+              <currentStatus.icon className={cn("h-3 w-3 mr-1", currentStatus.iconColor)} />
               {currentStatus.label}
             </Badge>
             <span className="text-xs text-muted-foreground">
