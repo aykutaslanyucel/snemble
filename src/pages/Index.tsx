@@ -11,10 +11,20 @@ import {
   SortAsc,
   UserPlus,
   Settings,
+  MessageSquarePlus,
 } from "lucide-react";
 import TeamMemberCard from "@/components/TeamMemberCard";
 import { TeamHeader } from "@/components/TeamHeader";
 import { useToast } from "@/components/ui/use-toast";
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from "@/components/ui/sheet";
+import { Textarea } from "@/components/ui/textarea";
+import { Badge } from "@/components/ui/badge";
 
 const initialMembers = [
   {
@@ -25,12 +35,35 @@ const initialMembers = [
     projects: ["Project Alpha", "Project Beta"],
     lastUpdated: new Date(),
   },
-  // Add more initial members here
+  {
+    id: "2",
+    name: "Sarah Smith",
+    position: "UX Designer",
+    status: "busy",
+    projects: ["Project Gamma"],
+    lastUpdated: new Date(),
+  },
+  {
+    id: "3",
+    name: "Mike Brown",
+    position: "Product Manager",
+    status: "vacation",
+    projects: ["Project Delta", "Project Epsilon"],
+    lastUpdated: new Date(),
+  },
 ];
+
+interface Announcement {
+  id: string;
+  message: string;
+  timestamp: Date;
+}
 
 export default function Index() {
   const [members, setMembers] = useState(initialMembers);
   const [searchQuery, setSearchQuery] = useState("");
+  const [announcements, setAnnouncements] = useState<Announcement[]>([]);
+  const [newAnnouncement, setNewAnnouncement] = useState("");
   const { toast } = useToast();
 
   const handleAddMember = () => {
@@ -68,6 +101,23 @@ export default function Index() {
     });
   };
 
+  const handleAddAnnouncement = () => {
+    if (!newAnnouncement.trim()) return;
+    
+    const announcement: Announcement = {
+      id: Date.now().toString(),
+      message: newAnnouncement,
+      timestamp: new Date(),
+    };
+    
+    setAnnouncements([announcement, ...announcements]);
+    setNewAnnouncement("");
+    toast({
+      title: "Announcement posted",
+      description: "Your announcement has been posted to the team.",
+    });
+  };
+
   const filteredMembers = members.filter((member) =>
     Object.values(member).some(
       (value) =>
@@ -92,6 +142,44 @@ export default function Index() {
             />
           </div>
           <div className="flex gap-2">
+            <Sheet>
+              <SheetTrigger asChild>
+                <Button variant="outline">
+                  <MessageSquarePlus className="h-4 w-4 mr-2" />
+                  Announcement
+                </Button>
+              </SheetTrigger>
+              <SheetContent>
+                <SheetHeader>
+                  <SheetTitle>Team Announcements</SheetTitle>
+                </SheetHeader>
+                <div className="mt-4 space-y-4">
+                  <div className="space-y-2">
+                    <Textarea
+                      placeholder="Write your announcement here..."
+                      value={newAnnouncement}
+                      onChange={(e) => setNewAnnouncement(e.target.value)}
+                      className="min-h-[100px]"
+                    />
+                    <Button onClick={handleAddAnnouncement} className="w-full">
+                      Post Announcement
+                    </Button>
+                  </div>
+                  <div className="space-y-4">
+                    {announcements.map((announcement) => (
+                      <Card key={announcement.id} className="p-4">
+                        <p className="text-sm mb-2">{announcement.message}</p>
+                        <div className="flex justify-between items-center">
+                          <Badge variant="secondary">
+                            {announcement.timestamp.toLocaleDateString()}
+                          </Badge>
+                        </div>
+                      </Card>
+                    ))}
+                  </div>
+                </div>
+              </SheetContent>
+            </Sheet>
             <Button variant="outline" onClick={handleAddMember}>
               <UserPlus className="h-4 w-4 mr-2" />
               Add Member
