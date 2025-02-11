@@ -46,7 +46,7 @@ const initialMembers = [
     id: "3",
     name: "Mike Brown",
     position: "Product Manager",
-    status: "vacation",
+    status: "away",
     projects: ["Project Delta", "Project Epsilon"],
     lastUpdated: new Date(),
   },

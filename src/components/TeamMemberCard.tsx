@@ -37,7 +37,7 @@ interface TeamMember {
   id: string;
   name: string;
   position: string;
-  status: string;
+  status: 'available' | 'someAvailability' | 'busy' | 'seriouslyBusy' | 'away';
   projects: string[];
   lastUpdated: Date;
 }
@@ -79,7 +79,7 @@ const statusConfig = {
     icon: Coffee,
     label: "Away",
   },
-};
+} as const;
 
 export default function TeamMemberCard({ member, onUpdate, onDelete }: Props) {
   const [isEditing, setIsEditing] = useState(false);
@@ -94,7 +94,7 @@ export default function TeamMemberCard({ member, onUpdate, onDelete }: Props) {
     setIsEditing(false);
   };
 
-  const handleStatusChange = (newStatus: string) => {
+  const handleStatusChange = (newStatus: keyof typeof statusConfig) => {
     onUpdate(member.id, "status", newStatus);
   };
 
@@ -114,7 +114,8 @@ export default function TeamMemberCard({ member, onUpdate, onDelete }: Props) {
     );
   };
 
-  const currentStatus = statusConfig[member.status as keyof typeof statusConfig];
+  // Ensure we have a valid status or default to 'available'
+  const currentStatus = statusConfig[member.status] || statusConfig.available;
 
   return (
     <Card className={cn(
