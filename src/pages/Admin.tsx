@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { motion } from "framer-motion";
 import { useAuth } from "@/contexts/AuthContext";
@@ -23,6 +22,7 @@ import {
 } from "@/components/ui/select";
 import { UserPlus, Users } from "lucide-react";
 import { getFirestore, collection, getDocs, doc, setDoc, updateDoc } from "firebase/firestore";
+import { useTheme } from "@/contexts/ThemeContext";
 
 interface User {
   id: string;
@@ -37,8 +37,8 @@ export default function Admin() {
   const { user, isAdmin } = useAuth();
   const { toast } = useToast();
   const db = getFirestore();
+  const { theme, setTheme } = useTheme();
 
-  // Fetch users on component mount
   const fetchUsers = async () => {
     try {
       const usersSnapshot = await getDocs(collection(db, "users"));
@@ -88,7 +88,6 @@ export default function Admin() {
 
     setLoading(true);
     try {
-      // Generate a unique ID for the new user
       const userId = Math.random().toString(36).substr(2, 9);
       await setDoc(doc(db, "users", userId), {
         email: newUserEmail,
@@ -128,11 +127,23 @@ export default function Admin() {
     <div className="container mx-auto py-8 space-y-8">
       <div className="flex justify-between items-center">
         <h1 className="text-3xl font-bold">Admin Dashboard</h1>
-        <div className="flex items-center gap-2">
-          <Users className="h-6 w-6" />
-          <span className="text-muted-foreground">
-            Total Users: {users.length}
-          </span>
+        <div className="flex items-center gap-4">
+          <Select value={theme} onValueChange={(value) => setTheme(value as "light" | "dark" | "system")}>
+            <SelectTrigger className="w-32">
+              <SelectValue placeholder="Choose theme" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="light">Light</SelectItem>
+              <SelectItem value="dark">Dark</SelectItem>
+              <SelectItem value="system">System</SelectItem>
+            </SelectContent>
+          </Select>
+          <div className="flex items-center gap-2">
+            <Users className="h-6 w-6" />
+            <span className="text-muted-foreground">
+              Total Users: {users.length}
+            </span>
+          </div>
         </div>
       </div>
 

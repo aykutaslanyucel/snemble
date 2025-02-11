@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
@@ -6,8 +7,6 @@ import { Card } from "@/components/ui/card";
 import {
   Search,
   Plus,
-  LogOut,
-  SortAsc,
   UserPlus,
   Settings,
   MessageSquarePlus,
@@ -24,6 +23,7 @@ import {
 } from "@/components/ui/sheet";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
+import WorkloadSummary from "@/components/WorkloadSummary";
 
 type TeamMemberStatus = 'available' | 'someAvailability' | 'busy' | 'seriouslyBusy' | 'away';
 
@@ -240,6 +240,8 @@ export default function Index() {
             ))}
           </AnimatePresence>
         </motion.div>
+
+        <WorkloadSummary members={members} />
       </div>
     </div>
   );

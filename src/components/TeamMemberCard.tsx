@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { motion } from "framer-motion";
 import { format, formatDistanceToNow } from "date-fns";
@@ -91,6 +90,8 @@ export default function TeamMemberCard({ member, onUpdate, onDelete }: Props) {
   const [newProject, setNewProject] = useState("");
   const [isProjectDialogOpen, setIsProjectDialogOpen] = useState(false);
 
+  const statusSound = new Audio("/status-change.mp3");
+
   const handleSave = () => {
     onUpdate(member.id, "name", editedName);
     onUpdate(member.id, "position", editedPosition);
@@ -98,6 +99,7 @@ export default function TeamMemberCard({ member, onUpdate, onDelete }: Props) {
   };
 
   const handleStatusChange = (newStatus: TeamMemberStatus) => {
+    statusSound.play().catch(() => {});
     onUpdate(member.id, "status", newStatus);
   };
 
@@ -121,7 +123,6 @@ export default function TeamMemberCard({ member, onUpdate, onDelete }: Props) {
     return formatDistanceToNow(date, { addSuffix: true });
   };
 
-  // Ensure we have a valid status or default to 'available'
   const currentStatus = statusConfig[member.status] || statusConfig.available;
 
   return (
@@ -131,8 +132,11 @@ export default function TeamMemberCard({ member, onUpdate, onDelete }: Props) {
     )}>
       <motion.div
         initial={false}
-        animate={{ opacity: 1 }}
-        transition={{ duration: 0.2 }}
+        animate={{ 
+          opacity: 1,
+          scale: 1,
+          transition: { type: "spring", stiffness: 300, damping: 30 }
+        }}
         className="p-6"
       >
         <div className="flex justify-between items-start mb-4">
@@ -243,17 +247,22 @@ export default function TeamMemberCard({ member, onUpdate, onDelete }: Props) {
                 const config = statusConfig[status];
                 const Icon = config.icon;
                 return (
-                  <Toggle
+                  <motion.div
                     key={status}
-                    pressed={member.status === status}
-                    onPressedChange={() => handleStatusChange(status)}
-                    className={cn(
-                      "w-10 h-10 p-0 rounded-full data-[state=on]:bg-white/80",
-                      member.status === status ? config.iconColor : "text-gray-400"
-                    )}
+                    whileHover={{ scale: 1.1 }}
+                    whileTap={{ scale: 0.95 }}
                   >
-                    <Icon className="h-5 w-5" />
-                  </Toggle>
+                    <Toggle
+                      pressed={member.status === status}
+                      onPressedChange={() => handleStatusChange(status)}
+                      className={cn(
+                        "w-10 h-10 p-0 rounded-full data-[state=on]:bg-white/80",
+                        member.status === status ? config.iconColor : "text-gray-400"
+                      )}
+                    >
+                      <Icon className="h-5 w-5" />
+                    </Toggle>
+                  </motion.div>
                 );
               })}
             </div>
@@ -261,8 +270,14 @@ export default function TeamMemberCard({ member, onUpdate, onDelete }: Props) {
 
           <div className="flex items-center justify-between mt-4">
             <Badge variant="outline" className="bg-white/50">
-              <currentStatus.icon className={cn("h-3 w-3 mr-1", currentStatus.iconColor)} />
-              {currentStatus.label}
+              <motion.div
+                initial={{ scale: 0.8, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                className="flex items-center"
+              >
+                <currentStatus.icon className={cn("h-3 w-3 mr-1", currentStatus.iconColor)} />
+                {currentStatus.label}
+              </motion.div>
             </Badge>
             <span className="text-xs text-muted-foreground">
               {getTimeAgo(member.lastUpdated)}
