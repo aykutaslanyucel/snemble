@@ -11,6 +11,7 @@ import {
   User,
   Clock,
   Coffee,
+  Plus,
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -24,6 +25,13 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Toggle } from "@/components/ui/toggle";
 import { cn } from "@/lib/utils";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 
 interface TeamMember {
   id: string;
@@ -42,26 +50,32 @@ interface Props {
 
 const statusConfig = {
   available: {
-    color: "bg-[#F2FCE2]/90 hover:bg-[#F2FCE2]",
-    iconColor: "text-green-600",
+    color: "bg-[#D6E4FF]/90 hover:bg-[#D6E4FF]",
+    iconColor: "text-blue-600",
     icon: CheckCircle,
     label: "Available",
   },
+  someAvailability: {
+    color: "bg-[#C8EAD7]/90 hover:bg-[#C8EAD7]",
+    iconColor: "text-green-600",
+    icon: User,
+    label: "Some Availability",
+  },
   busy: {
-    color: "bg-[#FEC6A1]/90 hover:bg-[#FEC6A1]",
+    color: "bg-[#FFD8A8]/90 hover:bg-[#FFD8A8]",
     iconColor: "text-orange-600",
     icon: Clock,
     label: "Busy",
   },
-  critical: {
-    color: "bg-red-100/90 hover:bg-red-100",
+  seriouslyBusy: {
+    color: "bg-[#FFA3A3]/90 hover:bg-[#FFA3A3]",
     iconColor: "text-red-600",
     icon: XCircle,
-    label: "Do Not Disturb",
+    label: "Seriously Busy",
   },
-  vacation: {
-    color: "bg-purple-100/90 hover:bg-purple-100",
-    iconColor: "text-purple-600",
+  away: {
+    color: "bg-[#C4C4C4]/90 hover:bg-[#C4C4C4]",
+    iconColor: "text-gray-600",
     icon: Coffee,
     label: "Away",
   },
@@ -71,6 +85,8 @@ export default function TeamMemberCard({ member, onUpdate, onDelete }: Props) {
   const [isEditing, setIsEditing] = useState(false);
   const [editedName, setEditedName] = useState(member.name);
   const [editedPosition, setEditedPosition] = useState(member.position);
+  const [newProject, setNewProject] = useState("");
+  const [isProjectDialogOpen, setIsProjectDialogOpen] = useState(false);
 
   const handleSave = () => {
     onUpdate(member.id, "name", editedName);
@@ -82,11 +98,27 @@ export default function TeamMemberCard({ member, onUpdate, onDelete }: Props) {
     onUpdate(member.id, "status", newStatus);
   };
 
+  const handleAddProject = () => {
+    if (newProject.trim()) {
+      onUpdate(member.id, "projects", [...member.projects, newProject.trim()]);
+      setNewProject("");
+      setIsProjectDialogOpen(false);
+    }
+  };
+
+  const handleRemoveProject = (projectToRemove: string) => {
+    onUpdate(
+      member.id,
+      "projects",
+      member.projects.filter((project) => project !== projectToRemove)
+    );
+  };
+
   const currentStatus = statusConfig[member.status as keyof typeof statusConfig];
 
   return (
     <Card className={cn(
-      "team-member-card overflow-hidden border-none shadow-lg",
+      "team-member-card overflow-hidden border-none shadow-lg transition-all duration-300",
       currentStatus.color,
     )}>
       <motion.div
@@ -153,16 +185,47 @@ export default function TeamMemberCard({ member, onUpdate, onDelete }: Props) {
 
         <div className="space-y-4">
           <div>
-            <label className="text-sm font-medium mb-1 block">Projects</label>
-            {member.projects.map((project, index) => (
-              <Badge
-                key={index}
-                variant="secondary"
-                className="mr-1 mb-1"
-              >
-                {project}
-              </Badge>
-            ))}
+            <div className="flex items-center justify-between mb-2">
+              <label className="text-sm font-medium">Projects</label>
+              <Dialog open={isProjectDialogOpen} onOpenChange={setIsProjectDialogOpen}>
+                <DialogTrigger asChild>
+                  <Button variant="outline" size="sm">
+                    <Plus className="h-4 w-4 mr-1" />
+                    Add Project
+                  </Button>
+                </DialogTrigger>
+                <DialogContent>
+                  <DialogHeader>
+                    <DialogTitle>Add New Project</DialogTitle>
+                  </DialogHeader>
+                  <div className="flex gap-2">
+                    <Input
+                      placeholder="Project name"
+                      value={newProject}
+                      onChange={(e) => setNewProject(e.target.value)}
+                    />
+                    <Button onClick={handleAddProject}>Add</Button>
+                  </div>
+                </DialogContent>
+              </Dialog>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              {member.projects.map((project, index) => (
+                <Badge
+                  key={index}
+                  variant="secondary"
+                  className="group relative"
+                >
+                  {project}
+                  <button
+                    onClick={() => handleRemoveProject(project)}
+                    className="ml-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                  >
+                    ×
+                  </button>
+                </Badge>
+              ))}
+            </div>
           </div>
 
           <div className="space-y-2">

@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
@@ -126,8 +125,25 @@ export default function Index() {
     )
   );
 
+  const latestAnnouncement = announcements[0];
+
   return (
     <div className="min-h-screen bg-gradient-to-b from-background to-secondary/20">
+      {latestAnnouncement && (
+        <div className="bg-primary/10 backdrop-blur-sm border-b">
+          <div className="container py-2 px-4">
+            <div className="flex items-center justify-between">
+              <p className="text-sm">
+                {latestAnnouncement.message}
+              </p>
+              <span className="text-xs text-muted-foreground">
+                {latestAnnouncement.timestamp.toLocaleDateString()}
+              </span>
+            </div>
+          </div>
+        </div>
+      )}
+      
       <div className="container py-8 space-y-8">
         <TeamHeader />
         
