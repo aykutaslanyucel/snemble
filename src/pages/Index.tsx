@@ -25,7 +25,18 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 
-const initialMembers = [
+type TeamMemberStatus = 'available' | 'someAvailability' | 'busy' | 'seriouslyBusy' | 'away';
+
+interface TeamMember {
+  id: string;
+  name: string;
+  position: string;
+  status: TeamMemberStatus;
+  projects: string[];
+  lastUpdated: Date;
+}
+
+const initialMembers: TeamMember[] = [
   {
     id: "1",
     name: "Alex Johnson",
@@ -59,14 +70,14 @@ interface Announcement {
 }
 
 export default function Index() {
-  const [members, setMembers] = useState(initialMembers);
+  const [members, setMembers] = useState<TeamMember[]>(initialMembers);
   const [searchQuery, setSearchQuery] = useState("");
   const [announcements, setAnnouncements] = useState<Announcement[]>([]);
   const [newAnnouncement, setNewAnnouncement] = useState("");
   const { toast } = useToast();
 
   const handleAddMember = () => {
-    const newMember = {
+    const newMember: TeamMember = {
       id: Date.now().toString(),
       name: "New Member",
       position: "Position",

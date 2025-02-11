@@ -33,11 +33,13 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 
+type TeamMemberStatus = 'available' | 'someAvailability' | 'busy' | 'seriouslyBusy' | 'away';
+
 interface TeamMember {
   id: string;
   name: string;
   position: string;
-  status: 'available' | 'someAvailability' | 'busy' | 'seriouslyBusy' | 'away';
+  status: TeamMemberStatus;
   projects: string[];
   lastUpdated: Date;
 }
@@ -94,7 +96,7 @@ export default function TeamMemberCard({ member, onUpdate, onDelete }: Props) {
     setIsEditing(false);
   };
 
-  const handleStatusChange = (newStatus: keyof typeof statusConfig) => {
+  const handleStatusChange = (newStatus: TeamMemberStatus) => {
     onUpdate(member.id, "status", newStatus);
   };
 
