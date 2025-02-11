@@ -1,6 +1,7 @@
 
 import { useState } from "react";
 import { motion } from "framer-motion";
+import { format, formatDistanceToNow } from "date-fns";
 import { Card } from "@/components/ui/card";
 import {
   MoreVertical,
@@ -114,6 +115,10 @@ export default function TeamMemberCard({ member, onUpdate, onDelete }: Props) {
       "projects",
       member.projects.filter((project) => project !== projectToRemove)
     );
+  };
+
+  const getTimeAgo = (date: Date) => {
+    return formatDistanceToNow(date, { addSuffix: true });
   };
 
   // Ensure we have a valid status or default to 'available'
@@ -234,7 +239,8 @@ export default function TeamMemberCard({ member, onUpdate, onDelete }: Props) {
           <div className="space-y-2">
             <label className="text-sm font-medium block">Status</label>
             <div className="flex flex-wrap gap-2">
-              {Object.entries(statusConfig).map(([status, config]) => {
+              {(Object.keys(statusConfig) as TeamMemberStatus[]).map((status) => {
+                const config = statusConfig[status];
                 const Icon = config.icon;
                 return (
                   <Toggle
@@ -259,7 +265,7 @@ export default function TeamMemberCard({ member, onUpdate, onDelete }: Props) {
               {currentStatus.label}
             </Badge>
             <span className="text-xs text-muted-foreground">
-              Updated {member.lastUpdated.toLocaleDateString()}
+              {getTimeAgo(member.lastUpdated)}
             </span>
           </div>
         </div>
