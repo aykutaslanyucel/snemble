@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/components/ui/use-toast";
@@ -21,7 +21,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { UserPlus, Users } from "lucide-react";
-import { getFirestore, collection, getDocs, doc, setDoc, updateDoc } from "firebase/firestore";
+import { getFirestore, collection, getDocs, doc, setDoc, updateDoc, query, where } from "firebase/firestore";
 import { useTheme } from "@/contexts/ThemeContext";
 
 interface User {
@@ -38,6 +38,51 @@ export default function Admin() {
   const { toast } = useToast();
   const db = getFirestore();
   const { theme, setTheme } = useTheme();
+
+  useEffect(() => {
+    fetchUsers();
+    setupInitialAdmin();
+  }, []);
+
+  const setupInitialAdmin = async () => {
+    try {
+      const usersRef = collection(db, "users");
+      const q = query(usersRef, where("email", "==", "aykut.yucel@snellman.com"));
+      const querySnapshot = await getDocs(q);
+      
+      if (querySnapshot.empty) {
+        // If user doesn't exist, create it
+        const userId = Math.random().toString(36).substr(2, 9);
+        await setDoc(doc(db, "users", userId), {
+          email: "aykut.yucel@snellman.com",
+          role: "admin",
+        });
+        toast({
+          title: "Success",
+          description: "Admin user created successfully",
+        });
+      } else {
+        // If user exists, ensure they're an admin
+        const userDoc = querySnapshot.docs[0];
+        if (userDoc.data().role !== "admin") {
+          await updateDoc(doc(db, "users", userDoc.id), {
+            role: "admin"
+          });
+          toast({
+            title: "Success",
+            description: "User role updated to admin successfully",
+          });
+        }
+      }
+      fetchUsers(); // Refresh the users list
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to setup admin user",
+        variant: "destructive",
+      });
+    }
+  };
 
   const fetchUsers = async () => {
     try {
