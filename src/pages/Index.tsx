@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
@@ -10,10 +9,13 @@ import {
   UserPlus,
   Settings,
   MessageSquarePlus,
+  Shield,
 } from "lucide-react";
+import { Link } from "react-router-dom";
 import TeamMemberCard from "@/components/TeamMemberCard";
 import { TeamHeader } from "@/components/TeamHeader";
 import { useToast } from "@/components/ui/use-toast";
+import { useAuth } from "@/contexts/AuthContext";
 import {
   Sheet,
   SheetContent,
@@ -75,6 +77,7 @@ export default function Index() {
   const [announcements, setAnnouncements] = useState<Announcement[]>([]);
   const [newAnnouncement, setNewAnnouncement] = useState("");
   const { toast } = useToast();
+  const { isAdmin } = useAuth();
 
   const handleAddMember = () => {
     const newMember: TeamMember = {
@@ -156,7 +159,17 @@ export default function Index() {
       )}
       
       <div className="container py-8 space-y-8">
-        <TeamHeader />
+        <div className="flex items-center justify-between">
+          <TeamHeader />
+          {isAdmin && (
+            <Link to="/admin">
+              <Button variant="outline" className="gap-2">
+                <Shield className="h-4 w-4" />
+                Admin Dashboard
+              </Button>
+            </Link>
+          )}
+        </div>
         
         <div className="flex items-center justify-between gap-4 flex-wrap">
           <div className="relative flex-1 min-w-[300px]">
