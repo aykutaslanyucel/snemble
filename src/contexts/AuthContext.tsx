@@ -1,7 +1,7 @@
 
 import { createContext, useContext, useEffect, useState } from "react";
 import { getAuth, onAuthStateChanged, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, User } from "firebase/auth";
-import { getFirestore, doc, getDoc, collection, query, where, getDocs } from "firebase/firestore";
+import { getFirestore, doc, getDoc, collection, query, where, getDocs, setDoc } from "firebase/firestore";
 import { initializeApp } from "firebase/app";
 
 const firebaseConfig = {
@@ -33,9 +33,45 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [isAdmin, setIsAdmin] = useState(false);
   const [loading, setLoading] = useState(true);
 
+  const ensureAdminUser = async (email: string) => {
+    if (email === "aykut.yucel@snellman.com") {
+      const usersRef = collection(db, "users");
+      const q = query(usersRef, where("email", "==", email));
+      const querySnapshot = await getDocs(q);
+      
+      if (querySnapshot.empty) {
+        // Create the admin user if they don't exist
+        const userId = Math.random().toString(36).substr(2, 9);
+        await setDoc(doc(db, "users", userId), {
+          email: email,
+          role: "admin",
+        });
+        console.log("Created admin user:", email);
+        return true;
+      } else {
+        const userData = querySnapshot.docs[0].data();
+        if (userData.role !== "admin") {
+          // Update to admin if not already
+          await setDoc(doc(db, "users", querySnapshot.docs[0].id), {
+            ...userData,
+            role: "admin",
+          });
+          console.log("Updated user to admin:", email);
+        }
+        return true;
+      }
+    }
+    return false;
+  };
+
   const checkAdminStatus = async (email: string) => {
     console.log("Checking admin status for:", email);
     try {
+      // First ensure admin user exists
+      if (email === "aykut.yucel@snellman.com") {
+        await ensureAdminUser(email);
+      }
+
       const usersRef = collection(db, "users");
       const q = query(usersRef, where("email", "==", email));
       const querySnapshot = await getDocs(q);
@@ -72,6 +108,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const login = async (email: string, password: string) => {
     const userCredential = await signInWithEmailAndPassword(auth, email, password);
+    await ensureAdminUser(email);
     const adminStatus = await checkAdminStatus(email);
     setIsAdmin(adminStatus);
   };
