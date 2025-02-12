@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
@@ -175,7 +176,7 @@ export default function Index() {
         </div>
       )}
       
-      <div className="container py-8 space-y-8">
+      <div className="container py-12 space-y-12">
         <div className="flex items-center justify-between">
           <TeamHeader />
           <div className="flex items-center gap-2">
@@ -194,64 +195,66 @@ export default function Index() {
           </div>
         </div>
         
-        <div className="flex items-center justify-between gap-4 flex-wrap">
-          <div className="relative flex-1 min-w-[300px]">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
-            <Input
-              placeholder="Search team members..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-10"
-            />
-          </div>
-          <div className="flex gap-2">
-            <Sheet>
-              <SheetTrigger asChild>
-                <Button variant="outline">
-                  <MessageSquarePlus className="h-4 w-4 mr-2" />
-                  Announcement
-                </Button>
-              </SheetTrigger>
-              <SheetContent>
-                <SheetHeader>
-                  <SheetTitle>Team Announcements</SheetTitle>
-                </SheetHeader>
-                <div className="mt-4 space-y-4">
-                  <div className="space-y-2">
-                    <Textarea
-                      placeholder="Write your announcement here..."
-                      value={newAnnouncement}
-                      onChange={(e) => setNewAnnouncement(e.target.value)}
-                      className="min-h-[100px]"
-                    />
-                    <Button onClick={handleAddAnnouncement} className="w-full">
-                      Post Announcement
-                    </Button>
+        <Card className="p-6 bg-white/5 backdrop-blur-lg border-white/10">
+          <div className="flex items-center justify-between gap-4 flex-wrap">
+            <div className="relative flex-1 min-w-[300px]">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
+              <Input
+                placeholder="Search team members..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-10"
+              />
+            </div>
+            <div className="flex gap-2">
+              <Sheet>
+                <SheetTrigger asChild>
+                  <Button variant="outline" className="bg-white/5">
+                    <MessageSquarePlus className="h-4 w-4 mr-2" />
+                    Announcement
+                  </Button>
+                </SheetTrigger>
+                <SheetContent>
+                  <SheetHeader>
+                    <SheetTitle>Team Announcements</SheetTitle>
+                  </SheetHeader>
+                  <div className="mt-4 space-y-4">
+                    <div className="space-y-2">
+                      <Textarea
+                        placeholder="Write your announcement here..."
+                        value={newAnnouncement}
+                        onChange={(e) => setNewAnnouncement(e.target.value)}
+                        className="min-h-[100px]"
+                      />
+                      <Button onClick={handleAddAnnouncement} className="w-full">
+                        Post Announcement
+                      </Button>
+                    </div>
+                    <div className="space-y-4">
+                      {announcements.map((announcement) => (
+                        <Card key={announcement.id} className="p-4">
+                          <p className="text-sm mb-2">{announcement.message}</p>
+                          <div className="flex justify-between items-center">
+                            <Badge variant="secondary">
+                              {announcement.timestamp.toLocaleDateString()}
+                            </Badge>
+                          </div>
+                        </Card>
+                      ))}
+                    </div>
                   </div>
-                  <div className="space-y-4">
-                    {announcements.map((announcement) => (
-                      <Card key={announcement.id} className="p-4">
-                        <p className="text-sm mb-2">{announcement.message}</p>
-                        <div className="flex justify-between items-center">
-                          <Badge variant="secondary">
-                            {announcement.timestamp.toLocaleDateString()}
-                          </Badge>
-                        </div>
-                      </Card>
-                    ))}
-                  </div>
-                </div>
-              </SheetContent>
-            </Sheet>
-            <Button variant="outline" onClick={handleAddMember}>
-              <UserPlus className="h-4 w-4 mr-2" />
-              Add Member
-            </Button>
-            <Button variant="outline">
-              <Settings className="h-4 w-4" />
-            </Button>
+                </SheetContent>
+              </Sheet>
+              <Button variant="outline" onClick={handleAddMember} className="bg-white/5">
+                <UserPlus className="h-4 w-4 mr-2" />
+                Add Member
+              </Button>
+              <Button variant="outline" className="bg-white/5">
+                <Settings className="h-4 w-4" />
+              </Button>
+            </div>
           </div>
-        </div>
+        </Card>
 
         <motion.div 
           layout
