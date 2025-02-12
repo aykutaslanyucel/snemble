@@ -10,6 +10,7 @@ import {
   Settings,
   MessageSquarePlus,
   Shield,
+  LogOut,
 } from "lucide-react";
 import { Link } from "react-router-dom";
 import TeamMemberCard from "@/components/TeamMemberCard";
@@ -77,7 +78,7 @@ export default function Index() {
   const [announcements, setAnnouncements] = useState<Announcement[]>([]);
   const [newAnnouncement, setNewAnnouncement] = useState("");
   const { toast } = useToast();
-  const { isAdmin } = useAuth();
+  const { isAdmin, logout } = useAuth();
 
   const handleAddMember = () => {
     const newMember: TeamMember = {
@@ -131,6 +132,22 @@ export default function Index() {
     });
   };
 
+  const handleLogout = async () => {
+    try {
+      await logout();
+      toast({
+        title: "Logged out successfully",
+        description: "You have been logged out of your account.",
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to log out. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
+
   const filteredMembers = members.filter((member) =>
     Object.values(member).some(
       (value) =>
@@ -161,14 +178,20 @@ export default function Index() {
       <div className="container py-8 space-y-8">
         <div className="flex items-center justify-between">
           <TeamHeader />
-          {isAdmin && (
-            <Link to="/admin">
-              <Button variant="outline" className="gap-2">
-                <Shield className="h-4 w-4" />
-                Admin Dashboard
-              </Button>
-            </Link>
-          )}
+          <div className="flex items-center gap-2">
+            {isAdmin && (
+              <Link to="/admin">
+                <Button variant="outline" className="gap-2">
+                  <Shield className="h-4 w-4" />
+                  Admin Dashboard
+                </Button>
+              </Link>
+            )}
+            <Button variant="outline" onClick={handleLogout} className="gap-2">
+              <LogOut className="h-4 w-4" />
+              Logout
+            </Button>
+          </div>
         </div>
         
         <div className="flex items-center justify-between gap-4 flex-wrap">
