@@ -1,7 +1,7 @@
 
 import { createContext, useContext, useEffect, useState } from "react";
 import { getAuth, onAuthStateChanged, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, User } from "firebase/auth";
-import { getFirestore, doc, getDoc } from "firebase/firestore";
+import { getFirestore, doc, getDoc, collection, query, where, getDocs } from "firebase/firestore";
 import { initializeApp } from "firebase/app";
 
 const firebaseConfig = {
@@ -33,13 +33,36 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [isAdmin, setIsAdmin] = useState(false);
   const [loading, setLoading] = useState(true);
 
+  const checkAdminStatus = async (email: string) => {
+    console.log("Checking admin status for:", email);
+    try {
+      const usersRef = collection(db, "users");
+      const q = query(usersRef, where("email", "==", email));
+      const querySnapshot = await getDocs(q);
+      
+      console.log("User document exists:", !querySnapshot.empty);
+      
+      if (!querySnapshot.empty) {
+        const userData = querySnapshot.docs[0].data();
+        console.log("User role:", userData.role);
+        return userData.role === "admin";
+      }
+      return false;
+    } catch (error) {
+      console.error("Error checking admin status:", error);
+      return false;
+    }
+  };
+
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
       setUser(user);
       if (user) {
-        // Check if user is admin
-        const userDoc = await getDoc(doc(db, "users", user.uid));
-        setIsAdmin(userDoc.data()?.role === "admin");
+        const adminStatus = await checkAdminStatus(user.email!);
+        console.log("Setting admin status to:", adminStatus);
+        setIsAdmin(adminStatus);
+      } else {
+        setIsAdmin(false);
       }
       setLoading(false);
     });
@@ -48,7 +71,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const login = async (email: string, password: string) => {
-    await signInWithEmailAndPassword(auth, email, password);
+    const userCredential = await signInWithEmailAndPassword(auth, email, password);
+    const adminStatus = await checkAdminStatus(email);
+    setIsAdmin(adminStatus);
   };
 
   const signup = async (email: string, password: string) => {
