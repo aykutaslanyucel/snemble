@@ -1,4 +1,3 @@
-
 import { Card } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
@@ -18,6 +17,7 @@ interface TeamMember {
 
 interface Props {
   members: TeamMember[];
+  showOnlyCapacity?: boolean;
 }
 
 const statusColors = {
@@ -36,7 +36,7 @@ const statusLabels = {
   away: "Away",
 };
 
-export default function WorkloadSummary({ members }: Props) {
+export default function WorkloadSummary({ members, showOnlyCapacity = false }: Props) {
   const workloadData = Object.entries(statusLabels).map(([status, label]) => ({
     status: label,
     count: members.filter(m => m.status === status).length,
@@ -58,6 +58,34 @@ export default function WorkloadSummary({ members }: Props) {
   }, 0);
 
   const capacityPercentage = totalCapacity ? (usedCapacity / totalCapacity) * 100 : 0;
+
+  const getCapacityGradient = (percentage: number) => {
+    if (percentage <= 25) return "linear-gradient(to right, #8B5CF6, #D946EF)"; // Vivid purple to magenta
+    if (percentage <= 50) return "linear-gradient(to right, #D946EF, #F97316)"; // Magenta to bright orange
+    if (percentage <= 75) return "linear-gradient(to right, #F97316, #EF4444)"; // Bright orange to red
+    return "linear-gradient(to right, #EF4444, #DC2626)"; // Red to dark red
+  };
+
+  if (showOnlyCapacity) {
+    return (
+      <Card className="w-72 p-4 bg-white border-white/10">
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="text-lg font-semibold text-gray-800">Team Capacity</h3>
+          <Thermometer className="h-5 w-5 text-fuchsia-400" />
+        </div>
+        <Progress 
+          value={capacityPercentage} 
+          className="h-2 bg-gray-100"
+          style={{
+            background: getCapacityGradient(capacityPercentage),
+          }}
+        />
+        <p className="text-sm text-gray-600 mt-2">
+          {capacityPercentage.toFixed(0)}% capacity utilized
+        </p>
+      </Card>
+    );
+  }
 
   // Get unique projects and members participating
   const projectsWithMembers = members.reduce((acc, member) => {

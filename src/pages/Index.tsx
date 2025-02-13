@@ -148,21 +148,24 @@ export default function Index() {
       {latestAnnouncement && <AnnouncementBanner announcement={latestAnnouncement} />}
       
       <div className="container py-12 space-y-12">
-        <div className="flex items-center justify-between">
+        <div className="flex items-start justify-between">
           <TeamHeader />
-          <div className="flex items-center gap-2">
-            {isAdmin && (
-              <Link to="/admin">
-                <Button variant="outline" className="gap-2">
-                  <Shield className="h-4 w-4" />
-                  Admin Dashboard
-                </Button>
-              </Link>
-            )}
-            <Button variant="outline" onClick={handleLogout} className="gap-2">
-              <LogOut className="h-4 w-4" />
-              Logout
-            </Button>
+          <div className="space-y-4">
+            <div className="flex items-center gap-2">
+              {isAdmin && (
+                <Link to="/admin">
+                  <Button variant="outline" className="gap-2">
+                    <Shield className="h-4 w-4" />
+                    Admin Dashboard
+                  </Button>
+                </Link>
+              )}
+              <Button variant="outline" onClick={handleLogout} className="gap-2">
+                <LogOut className="h-4 w-4" />
+                Logout
+              </Button>
+            </div>
+            <WorkloadSummary members={members} showOnlyCapacity />
           </div>
         </div>
         
@@ -188,7 +191,7 @@ export default function Index() {
           onDelete={handleDeleteMember}
         />
 
-        <WorkloadSummary members={members} />
+        <WorkloadSummary members={members} showOnlyCapacity={false} />
       </div>
     </div>
   );
