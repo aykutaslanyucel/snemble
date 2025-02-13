@@ -1,6 +1,5 @@
 
 import { Card } from "@/components/ui/card";
-import { BarChart, Bar, XAxis, YAxis, ResponsiveContainer, Tooltip } from "recharts";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
 import { Thermometer, Users, ListTodo } from "lucide-react";
@@ -17,38 +16,48 @@ interface TeamMember {
   lastUpdated: Date;
 }
 
-interface WorkloadData {
-  status: string;
-  count: number;
-}
-
 interface Props {
   members: TeamMember[];
 }
 
+const statusColors = {
+  available: "from-[#D6E4FF] to-[#ADC8FF]",
+  someAvailability: "from-[#C8EAD7] to-[#9DDBB6]",
+  busy: "from-[#FFD8A8] to-[#FFB870]",
+  seriouslyBusy: "from-[#FFA3A3] to-[#FF7070]",
+  away: "from-[#C4C4C4] to-[#9A9A9A]",
+};
+
+const statusLabels = {
+  available: "Available",
+  someAvailability: "Some Availability",
+  busy: "Busy",
+  seriouslyBusy: "Seriously Busy",
+  away: "Away",
+};
+
 export default function WorkloadSummary({ members }: Props) {
-  const workloadData = [
-    { status: "Available", count: members.filter(m => m.status === "available").length },
-    { status: "Some Availability", count: members.filter(m => m.status === "someAvailability").length },
-    { status: "Busy", count: members.filter(m => m.status === "busy").length },
-    { status: "Seriously Busy", count: members.filter(m => m.status === "seriouslyBusy").length },
-    { status: "Away", count: members.filter(m => m.status === "away").length },
-  ];
+  const workloadData = Object.entries(statusLabels).map(([status, label]) => ({
+    status: label,
+    count: members.filter(m => m.status === status).length,
+    color: statusColors[status as TeamMemberStatus],
+  }));
 
   const availableMembers = members.filter(m => m.status === "available");
-  const totalCapacity = members.length * 100;
+  const totalCapacity = members.filter(m => m.status !== "away").length * 100;
   const usedCapacity = members.reduce((acc, member) => {
+    if (member.status === "away") return acc;
     const statusWeights = {
       available: 0,
       someAvailability: 25,
       busy: 50,
       seriouslyBusy: 75,
-      away: 100,
+      away: 0,
     };
     return acc + statusWeights[member.status];
   }, 0);
 
-  const capacityPercentage = (usedCapacity / totalCapacity) * 100;
+  const capacityPercentage = totalCapacity ? (usedCapacity / totalCapacity) * 100 : 0;
 
   // Get unique projects and members participating
   const projectsWithMembers = members.reduce((acc, member) => {
@@ -62,33 +71,54 @@ export default function WorkloadSummary({ members }: Props) {
   }, {} as Record<string, Set<string>>);
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-8">
-      <Card className="p-6 col-span-2">
-        <h3 className="text-lg font-semibold mb-4">Team Workload Distribution</h3>
-        <div className="h-[300px] w-full">
-          <ResponsiveContainer width="100%" height="100%">
-            <BarChart data={workloadData}>
-              <XAxis dataKey="status" />
-              <YAxis />
-              <Tooltip />
-              <Bar dataKey="count" fill="#8884d8" />
-            </BarChart>
-          </ResponsiveContainer>
-        </div>
-      </Card>
-
-      <div className="space-y-6">
-        <Card className="p-6">
+    <div className="container mx-auto">
+      <div className="flex justify-end mb-8">
+        <Card className="w-72 p-6 bg-gradient-to-br from-violet-500/20 to-fuchsia-500/20 backdrop-blur-lg border-white/10">
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-lg font-semibold">Team Capacity</h3>
-            <Thermometer className="h-5 w-5 text-muted-foreground" />
+            <Thermometer className="h-5 w-5 text-fuchsia-400" />
           </div>
-          <Progress value={capacityPercentage} className="h-2" />
+          <Progress 
+            value={capacityPercentage} 
+            className="h-2 bg-white/10"
+            style={{
+              background: `linear-gradient(to right, #D6E4FF, #FFD8A8 ${capacityPercentage}%, transparent ${capacityPercentage}%)`,
+            }}
+          />
           <p className="text-sm text-muted-foreground mt-2">
             {capacityPercentage.toFixed(0)}% capacity utilized
           </p>
         </Card>
+      </div>
 
+      <div className="grid grid-cols-5 gap-4 mb-8">
+        {workloadData.map((data) => (
+          <motion.div
+            key={data.status}
+            className={`aspect-square rounded-full bg-gradient-to-br ${data.color} flex items-center justify-center p-6 relative overflow-hidden group`}
+            whileHover={{ scale: 1.05 }}
+            transition={{ type: "spring", stiffness: 300, damping: 30 }}
+          >
+            <div className="text-center">
+              <span className="text-4xl font-bold">{data.count}</span>
+              <p className="text-sm mt-2 opacity-80">{data.status}</p>
+            </div>
+            <motion.div
+              className="absolute inset-0 bg-white/5"
+              animate={{
+                opacity: [0.1, 0.2, 0.1],
+              }}
+              transition={{
+                duration: 2,
+                repeat: Infinity,
+                ease: "easeInOut",
+              }}
+            />
+          </motion.div>
+        ))}
+      </div>
+
+      <div className="grid grid-cols-2 gap-6">
         <Card className="p-6">
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-lg font-semibold">Available Team Members</h3>
