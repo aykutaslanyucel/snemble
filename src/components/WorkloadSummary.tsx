@@ -37,6 +37,14 @@ const statusLabels = {
   away: "Away",
 };
 
+const statusWeights = {
+  available: 0,
+  someAvailability: 33.33,
+  busy: 66.67,
+  seriouslyBusy: 100,
+  away: 0,
+};
+
 export default function WorkloadSummary({ members, showOnlyCapacity = false }: Props) {
   const workloadData = Object.entries(statusLabels).map(([status, label]) => ({
     status: label,
@@ -44,21 +52,13 @@ export default function WorkloadSummary({ members, showOnlyCapacity = false }: P
     color: statusColors[status as TeamMemberStatus],
   }));
 
-  const availableMembers = members.filter(m => m.status === "available");
   const activeMembers = members.filter(m => m.status !== "away");
-  const totalCapacity = activeMembers.length * 100;
   const usedCapacity = activeMembers.reduce((acc, member) => {
-    const statusWeights = {
-      available: 0,
-      someAvailability: 25,
-      busy: 50,
-      seriouslyBusy: 75,
-      away: 0,
-    };
     return acc + statusWeights[member.status];
   }, 0);
 
-  const capacityPercentage = totalCapacity ? (usedCapacity / totalCapacity) * 100 : 0;
+  const maxPossibleCapacity = activeMembers.length * 100;
+  const capacityPercentage = maxPossibleCapacity ? Math.min((usedCapacity / maxPossibleCapacity) * 100, 100) : 0;
 
   const getCapacityGradient = (percentage: number) => {
     if (percentage <= 25) return "linear-gradient(to right, #8B5CF6, #D946EF)"; // Vivid purple to magenta
