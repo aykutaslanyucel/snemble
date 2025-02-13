@@ -39,8 +39,8 @@ const statusLabels = {
 
 const statusWeights = {
   available: 0,
-  someAvailability: 33.33,
-  busy: 66.67,
+  someAvailability: 25,
+  busy: 50,
   seriouslyBusy: 100,
   away: 0,
 };
