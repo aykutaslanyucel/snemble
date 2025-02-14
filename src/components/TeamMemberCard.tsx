@@ -139,7 +139,7 @@ export default function TeamMemberCard({ member, onUpdate, onDelete }: Props) {
   const currentStatus = statusConfig[member.status] || statusConfig.available;
 
   const premiumCustomization = member.customization || {};
-  const isPremium = member.role === 'premium';
+  const isPremium = member.role?.toLowerCase() === 'premium';
 
   return (
     <Card className={cn(
