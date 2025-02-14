@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { motion } from "framer-motion";
 import { format, formatDistanceToNow } from "date-fns";
@@ -15,7 +16,6 @@ import {
   Crown,
   Palette,
   Brush,
-  Hat,
   Settings,
 } from "lucide-react";
 import {
