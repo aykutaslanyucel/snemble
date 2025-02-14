@@ -4,6 +4,9 @@ import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
 import { Thermometer, Users, ListTodo } from "lucide-react";
 import { motion } from "framer-motion";
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
+import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
+import { format, subMonths, subYears, startOfWeek } from "date-fns";
 
 type TeamMemberStatus = 'available' | 'someAvailability' | 'busy' | 'seriouslyBusy' | 'away';
 
@@ -45,35 +48,62 @@ const statusWeights = {
   away: 0,
 };
 
+// Mock historical data - in real app, this would come from your backend
+const generateMockHistoricalData = (period: 'month' | 'year') => {
+  const data = [];
+  const intervals = period === 'month' ? 4 : 12;
+  const dateFunc = period === 'month' ? subMonths : subYears;
+  
+  for (let i = intervals - 1; i >= 0; i--) {
+    const date = dateFunc(new Date(), i);
+    data.push({
+      date: format(startOfWeek(date), 'MMM d'),
+      capacity: Math.floor(Math.random() * 40) + 60, // Random capacity between 60-100%
+    });
+  }
+  return data;
+};
+
 const DonutChart = ({ percentage, color, label, count }: { percentage: number; color: string; label: string; count: number }) => (
-  <div className="relative w-24 h-24">
+  <div className="relative w-16 h-16">
     <svg className="w-full h-full" viewBox="0 0 36 36">
-      <path
-        d="M18 2.0845
-          a 15.9155 15.9155 0 0 1 0 31.831
-          a 15.9155 15.9155 0 0 1 0 -31.831"
+      <defs>
+        <linearGradient id={`gradient-${label}`} x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" style={{ stopColor: color, stopOpacity: 1 }} />
+          <stop offset="100%" style={{ stopColor: color, stopOpacity: 0.8 }} />
+        </linearGradient>
+      </defs>
+      <circle
+        cx="18"
+        cy="18"
+        r="15.91549430918954"
         fill="none"
-        stroke="#eee"
-        strokeWidth="2"
+        stroke="#f3f4f6"
+        strokeWidth="3"
       />
-      <path
-        d="M18 2.0845
-          a 15.9155 15.9155 0 0 1 0 31.831
-          a 15.9155 15.9155 0 0 1 0 -31.831"
+      <circle
+        cx="18"
+        cy="18"
+        r="15.91549430918954"
         fill="none"
-        stroke={color}
-        strokeWidth="2"
-        strokeDasharray={`${percentage}, 100`}
+        stroke={`url(#gradient-${label})`}
+        strokeWidth="3"
+        strokeDasharray={`${percentage} 100`}
+        transform="rotate(-90 18 18)"
+        strokeLinecap="round"
       />
     </svg>
     <div className="absolute inset-0 flex flex-col items-center justify-center text-center">
-      <span className="text-xl font-semibold">{count}</span>
-      <span className="text-xs text-gray-600 mt-1">{label}</span>
+      <span className="text-sm font-semibold">{count}</span>
+      <span className="text-[10px] text-gray-600">{label}</span>
     </div>
   </div>
 );
 
 export default function WorkloadSummary({ members, showOnlyCapacity = false }: Props) {
+  const [timeRange, setTimeRange] = React.useState<'month' | 'year'>('month');
+  const historicalData = React.useMemo(() => generateMockHistoricalData(timeRange), [timeRange]);
+
   const workloadData = Object.entries(statusLabels).map(([status, label]) => {
     const count = members.filter(m => m.status === status).length;
     const totalMembers = members.length;
@@ -125,22 +155,65 @@ export default function WorkloadSummary({ members, showOnlyCapacity = false }: P
   }
 
   return (
-    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
-      {workloadData.map((data) => (
-        <motion.div
-          key={data.status}
-          className="flex flex-col items-center p-4 bg-white rounded-lg shadow-sm"
-          whileHover={{ scale: 1.02 }}
-          transition={{ type: "spring", stiffness: 300, damping: 30 }}
-        >
-          <DonutChart
-            percentage={data.percentage}
-            color={data.color}
-            label={data.status}
-            count={data.count}
-          />
-        </motion.div>
-      ))}
+    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <Card className="p-6 bg-white">
+        <h3 className="text-lg font-semibold text-gray-800 mb-4">Team Status</h3>
+        <div className="grid grid-cols-5 gap-2">
+          {workloadData.map((data) => (
+            <motion.div
+              key={data.status}
+              className="flex flex-col items-center"
+              whileHover={{ scale: 1.05 }}
+              transition={{ type: "spring", stiffness: 300, damping: 30 }}
+            >
+              <DonutChart
+                percentage={data.percentage}
+                color={data.color}
+                label={data.status}
+                count={data.count}
+              />
+            </motion.div>
+          ))}
+        </div>
+      </Card>
+
+      <Card className="p-6 bg-white">
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="text-lg font-semibold text-gray-800">Historical Capacity</h3>
+          <ToggleGroup type="single" value={timeRange} onValueChange={(value) => value && setTimeRange(value as 'month' | 'year')}>
+            <ToggleGroupItem value="month" aria-label="Month view">Month</ToggleGroupItem>
+            <ToggleGroupItem value="year" aria-label="Year view">Year</ToggleGroupItem>
+          </ToggleGroup>
+        </div>
+        <div className="h-[200px]">
+          <ResponsiveContainer width="100%" height="100%">
+            <LineChart data={historicalData}>
+              <XAxis 
+                dataKey="date" 
+                stroke="#888888"
+                fontSize={12}
+                tickLine={false}
+                axisLine={false}
+              />
+              <YAxis
+                stroke="#888888"
+                fontSize={12}
+                tickLine={false}
+                axisLine={false}
+                tickFormatter={(value) => `${value}%`}
+              />
+              <Tooltip />
+              <Line
+                type="monotone"
+                dataKey="capacity"
+                stroke="#E5DEFF"
+                strokeWidth={2}
+                dot={{ fill: "#E5DEFF", strokeWidth: 2 }}
+              />
+            </LineChart>
+          </ResponsiveContainer>
+        </div>
+      </Card>
     </div>
   );
 }
