@@ -34,7 +34,7 @@ export default function Admin() {
   const [users, setUsers] = useState<User[]>([]);
   const [newUserEmail, setNewUserEmail] = useState("");
   const [loading, setLoading] = useState(false);
-  const { user, isAdmin } = useAuth();
+  const { user, isAdmin, signup } = useAuth();
   const { toast } = useToast();
   const db = getFirestore();
   const { theme, setTheme } = useTheme();
@@ -42,6 +42,31 @@ export default function Admin() {
   useEffect(() => {
     fetchUsers();
     setupInitialAdmin();
+    
+    // Create Klara's account
+    const createKlaraAccount = async () => {
+      try {
+        await signup("klara.hasselberg@snellman.com", "test123");
+        console.log("Created account for Klara");
+        toast({
+          title: "Success",
+          description: "Created account for Klara",
+        });
+      } catch (error) {
+        console.error("Error creating Klara's account:", error);
+        if (error instanceof Error && error.message.includes("already")) {
+          console.log("Klara's account already exists");
+        } else {
+          toast({
+            title: "Error",
+            description: "Failed to create Klara's account",
+            variant: "destructive",
+          });
+        }
+      }
+    };
+    
+    createKlaraAccount();
   }, []);
 
   const setupInitialAdmin = async () => {

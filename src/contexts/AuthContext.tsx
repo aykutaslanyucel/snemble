@@ -3,6 +3,7 @@ import { createContext, useContext, useEffect, useState } from "react";
 import { getAuth, onAuthStateChanged, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, User } from "firebase/auth";
 import { getFirestore, doc, getDoc, collection, query, where, getDocs, setDoc } from "firebase/firestore";
 import { initializeApp } from "firebase/app";
+import { toast } from "sonner";
 
 const firebaseConfig = {
   apiKey: "AIzaSyApcg3_eIT5Dj_Z97238VTjFWj8-CqVJT0",
@@ -107,14 +108,38 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const login = async (email: string, password: string) => {
-    const userCredential = await signInWithEmailAndPassword(auth, email, password);
-    await ensureAdminUser(email);
-    const adminStatus = await checkAdminStatus(email);
-    setIsAdmin(adminStatus);
+    try {
+      const userCredential = await signInWithEmailAndPassword(auth, email, password);
+      await ensureAdminUser(email);
+      const adminStatus = await checkAdminStatus(email);
+      setIsAdmin(adminStatus);
+      toast.success("Logged in successfully!");
+    } catch (error) {
+      console.error("Login error:", error);
+      toast.error("Failed to log in. Please check your credentials.");
+      throw error;
+    }
   };
 
   const signup = async (email: string, password: string) => {
-    await createUserWithEmailAndPassword(auth, email, password);
+    try {
+      // Create the user in Firebase Auth
+      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+      
+      // Create the user document in Firestore
+      const userId = userCredential.user.uid;
+      await setDoc(doc(db, "users", userId), {
+        email: email,
+        role: "user", // Default role
+        createdAt: new Date().toISOString()
+      });
+      
+      toast.success("Account created successfully!");
+    } catch (error) {
+      console.error("Signup error:", error);
+      toast.error("Failed to create account. Please try again.");
+      throw error;
+    }
   };
 
   const logout = () => signOut(auth);
