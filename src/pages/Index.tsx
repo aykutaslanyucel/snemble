@@ -66,6 +66,19 @@ export default function Index() {
   const { toast } = useToast();
   const { isAdmin, logout } = useAuth();
 
+  // Calculate active projects and available team members
+  const activeProjects = useMemo(() => {
+    const projectSet = new Set<string>();
+    members.forEach(member => {
+      member.projects.forEach(project => projectSet.add(project));
+    });
+    return Array.from(projectSet);
+  }, [members]);
+
+  const availableMembers = useMemo(() => {
+    return members.filter(member => member.status === 'available');
+  }, [members]);
+
   const handleAddMember = () => {
     const newMember: TeamMember = {
       id: Date.now().toString(),
@@ -86,7 +99,13 @@ export default function Index() {
     setMembers(
       members.map((member) =>
         member.id === id
-          ? { ...member, [field]: value, lastUpdated: new Date() }
+          ? { 
+              ...member, 
+              [field]: field === 'projects' && typeof value === 'string' 
+                ? value.split(';').map(p => p.trim()).filter(p => p.length > 0)
+                : value,
+              lastUpdated: new Date() 
+            }
           : member
       )
     );
@@ -148,7 +167,7 @@ export default function Index() {
     <div className="min-h-screen bg-gradient-to-b from-background to-secondary/20">
       {latestAnnouncement && <AnnouncementBanner announcement={latestAnnouncement} />}
       
-      <div className="container py-12 space-y-12">
+      <div className="container py-12 space-y-8">
         <div className="flex items-start justify-between">
           <TeamHeader />
           <div className="space-y-4">
@@ -170,7 +189,7 @@ export default function Index() {
           </div>
         </div>
         
-        <Card className="p-6 bg-white/5 backdrop-blur-lg border-white/10">
+        <Card className="p-6">
           <div className="flex items-center justify-between gap-4 flex-wrap">
             <SearchBar 
               searchQuery={searchQuery}
@@ -185,6 +204,34 @@ export default function Index() {
             />
           </div>
         </Card>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <Card className="p-6">
+            <h2 className="text-xl font-semibold mb-4">Active Projects ({activeProjects.length})</h2>
+            <div className="space-y-2">
+              {activeProjects.map((project, index) => (
+                <div key={index} className="p-3 bg-secondary/50 rounded-lg">
+                  {project}
+                </div>
+              ))}
+            </div>
+          </Card>
+
+          <Card className="p-6">
+            <h2 className="text-xl font-semibold mb-4">Available Team Members ({availableMembers.length})</h2>
+            <div className="space-y-2">
+              {availableMembers.map((member) => (
+                <div key={member.id} className="p-3 bg-secondary/50 rounded-lg flex justify-between items-center">
+                  <div>
+                    <div className="font-medium">{member.name}</div>
+                    <div className="text-sm text-muted-foreground">{member.position}</div>
+                  </div>
+                  <Badge variant="secondary">Available</Badge>
+                </div>
+              ))}
+            </div>
+          </Card>
+        </div>
 
         <TeamMembers
           members={filteredMembers}
