@@ -1,4 +1,3 @@
-
 import { useState, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -101,14 +100,21 @@ export default function Index() {
         member.id === id
           ? { 
               ...member, 
-              [field]: field === 'projects' && typeof value === 'string' 
-                ? value.split(';').map(p => p.trim()).filter(p => p.length > 0)
+              [field]: field === 'projects' 
+                ? value.split(/[;,]/).map((p: string) => p.trim()).filter((p: string) => p.length > 0)
                 : value,
               lastUpdated: new Date() 
             }
           : member
       )
     );
+    
+    if (field === 'projects') {
+      toast({
+        title: "Projects updated",
+        description: "Team member's projects have been updated successfully.",
+      });
+    }
   };
 
   const handleDeleteMember = (id: string) => {
@@ -213,46 +219,56 @@ export default function Index() {
 
         <WorkloadSummary members={members} showOnlyCapacity={false} />
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-8">
-          <Card className="p-6 bg-card/30 backdrop-blur-sm border border-white/10 shadow-xl">
-            <h2 className="text-xl font-semibold mb-4 flex items-center gap-2">
-              <div className="h-2 w-2 rounded-full bg-green-400" />
-              Active Projects
-              <span className="text-sm font-normal text-muted-foreground">
+        <div className="grid grid-cols-1 xl:grid-cols-2 gap-8 mt-12">
+          <Card className="p-8 bg-gradient-to-br from-[#E5DEFF]/5 to-[#D3E4FD]/5 backdrop-blur-md border border-white/10 shadow-2xl rounded-2xl">
+            <h2 className="text-2xl font-semibold mb-6 flex items-center gap-3">
+              <div className="h-3 w-3 rounded-full bg-[#E5DEFF] animate-pulse" />
+              <span className="bg-clip-text text-transparent bg-gradient-to-r from-[#E5DEFF] to-[#D3E4FD]">
+                Active Projects
+              </span>
+              <span className="text-base font-normal text-muted-foreground ml-2">
                 ({activeProjects.length})
               </span>
             </h2>
-            <div className="space-y-2 max-h-[300px] overflow-y-auto fancy-scroll">
+            <div className="space-y-3 max-h-[350px] overflow-y-auto fancy-scroll pr-2">
               {activeProjects.map((project, index) => (
                 <div 
                   key={index} 
-                  className="p-4 bg-white/5 backdrop-blur-sm rounded-lg border border-white/10 transition-all hover:bg-white/10"
+                  className="p-5 bg-white/5 backdrop-blur-sm rounded-xl border border-white/10 transition-all duration-300 hover:bg-white/10 hover:scale-[1.02] hover:shadow-lg group"
                 >
-                  {project}
+                  <p className="font-medium text-base group-hover:text-[#E5DEFF] transition-colors">
+                    {project}
+                  </p>
                 </div>
               ))}
             </div>
           </Card>
 
-          <Card className="p-6 bg-card/30 backdrop-blur-sm border border-white/10 shadow-xl">
-            <h2 className="text-xl font-semibold mb-4 flex items-center gap-2">
-              <div className="h-2 w-2 rounded-full bg-green-400" />
-              Available Team Members
-              <span className="text-sm font-normal text-muted-foreground">
+          <Card className="p-8 bg-gradient-to-br from-[#D3E4FD]/5 to-[#E5DEFF]/5 backdrop-blur-md border border-white/10 shadow-2xl rounded-2xl">
+            <h2 className="text-2xl font-semibold mb-6 flex items-center gap-3">
+              <div className="h-3 w-3 rounded-full bg-[#D3E4FD] animate-pulse" />
+              <span className="bg-clip-text text-transparent bg-gradient-to-r from-[#D3E4FD] to-[#E5DEFF]">
+                Available Team Members
+              </span>
+              <span className="text-base font-normal text-muted-foreground ml-2">
                 ({availableMembers.length})
               </span>
             </h2>
-            <div className="space-y-2 max-h-[300px] overflow-y-auto fancy-scroll">
+            <div className="space-y-3 max-h-[350px] overflow-y-auto fancy-scroll pr-2">
               {availableMembers.map((member) => (
                 <div 
                   key={member.id} 
-                  className="p-4 bg-white/5 backdrop-blur-sm rounded-lg border border-white/10 flex justify-between items-center transition-all hover:bg-white/10"
+                  className="p-5 bg-white/5 backdrop-blur-sm rounded-xl border border-white/10 flex justify-between items-center transition-all duration-300 hover:bg-white/10 hover:scale-[1.02] hover:shadow-lg group"
                 >
                   <div>
-                    <div className="font-medium">{member.name}</div>
-                    <div className="text-sm text-muted-foreground">{member.position}</div>
+                    <div className="font-medium text-base group-hover:text-[#D3E4FD] transition-colors">
+                      {member.name}
+                    </div>
+                    <div className="text-sm text-muted-foreground">
+                      {member.position}
+                    </div>
                   </div>
-                  <Badge className="bg-green-500/10 text-green-500 hover:bg-green-500/20">
+                  <Badge className="bg-[#D3E4FD]/10 text-[#D3E4FD] border-[#D3E4FD]/20 hover:bg-[#D3E4FD]/20 transition-colors">
                     Available
                   </Badge>
                 </div>

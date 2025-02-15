@@ -156,10 +156,12 @@ export default function WorkloadSummary({ members, showOnlyCapacity = false }: P
   }
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-      <Card className="p-6 bg-white">
-        <h3 className="text-lg font-semibold text-gray-800 mb-4">Team Status</h3>
-        <div className="grid grid-cols-5 gap-2">
+    <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+      <Card className="p-8 bg-gradient-to-br from-[#F2FCE2]/5 to-[#E5DEFF]/5 backdrop-blur-md border border-white/10 shadow-2xl rounded-2xl">
+        <h3 className="text-2xl font-semibold text-gray-800 mb-6 bg-clip-text text-transparent bg-gradient-to-r from-[#F2FCE2] to-[#E5DEFF]">
+          Team Status
+        </h3>
+        <div className="grid grid-cols-5 gap-4">
           {workloadData.map((data) => (
             <motion.div
               key={data.status}
@@ -178,15 +180,26 @@ export default function WorkloadSummary({ members, showOnlyCapacity = false }: P
         </div>
       </Card>
 
-      <Card className="p-6 bg-white">
-        <div className="flex items-center justify-between mb-4">
-          <h3 className="text-lg font-semibold text-gray-800">Historical Capacity</h3>
-          <ToggleGroup type="single" value={timeRange} onValueChange={(value) => value && setTimeRange(value as 'month' | 'year')}>
-            <ToggleGroupItem value="month" aria-label="Month view">Month</ToggleGroupItem>
-            <ToggleGroupItem value="year" aria-label="Year view">Year</ToggleGroupItem>
+      <Card className="p-8 bg-gradient-to-br from-[#E5DEFF]/5 to-[#F2FCE2]/5 backdrop-blur-md border border-white/10 shadow-2xl rounded-2xl">
+        <div className="flex items-center justify-between mb-6">
+          <h3 className="text-2xl font-semibold text-gray-800 bg-clip-text text-transparent bg-gradient-to-r from-[#E5DEFF] to-[#F2FCE2]">
+            Historical Capacity
+          </h3>
+          <ToggleGroup 
+            type="single" 
+            value={timeRange} 
+            onValueChange={(value) => value && setTimeRange(value as 'month' | 'year')}
+            className="bg-white/5 backdrop-blur-sm rounded-xl border border-white/10 p-1"
+          >
+            <ToggleGroupItem value="month" aria-label="Month view" className="data-[state=on]:bg-white/10">
+              Month
+            </ToggleGroupItem>
+            <ToggleGroupItem value="year" aria-label="Year view" className="data-[state=on]:bg-white/10">
+              Year
+            </ToggleGroupItem>
           </ToggleGroup>
         </div>
-        <div className="h-[200px]">
+        <div className="h-[250px]">
           <ResponsiveContainer width="100%" height="100%">
             <LineChart data={historicalData}>
               <XAxis 
@@ -203,7 +216,14 @@ export default function WorkloadSummary({ members, showOnlyCapacity = false }: P
                 axisLine={false}
                 tickFormatter={(value) => `${value}%`}
               />
-              <Tooltip />
+              <Tooltip 
+                contentStyle={{
+                  background: 'rgba(255, 255, 255, 0.05)',
+                  backdropFilter: 'blur(10px)',
+                  border: '1px solid rgba(255, 255, 255, 0.1)',
+                  borderRadius: '12px'
+                }}
+              />
               <Line
                 type="monotone"
                 dataKey="capacity"
