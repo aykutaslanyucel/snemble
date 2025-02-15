@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/components/ui/use-toast";
@@ -20,30 +21,69 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { UserPlus, Users } from "lucide-react";
-import { getFirestore, collection, getDocs, doc, setDoc, updateDoc, query, where } from "firebase/firestore";
+import { UserPlus, Users, LogOut, ArrowUpDown, Trash2, Lock } from "lucide-react";
+import { getFirestore, collection, getDocs, doc, setDoc, updateDoc, query, where, deleteDoc } from "firebase/firestore";
 import { useTheme } from "@/contexts/ThemeContext";
 
 interface User {
   id: string;
   email: string;
   role: string;
+  seniority: "Other" | "Junior Associate" | "Senior Associate" | "Partners";
+  lastUpdated: Date;
 }
+
+type SortField = "lastUpdated" | "seniority" | "name";
+type SortOrder = "asc" | "desc";
 
 export default function Admin() {
   const [users, setUsers] = useState<User[]>([]);
   const [newUserEmail, setNewUserEmail] = useState("");
+  const [newUserPassword, setNewUserPassword] = useState("");
   const [loading, setLoading] = useState(false);
+  const [sortField, setSortField] = useState<SortField>("lastUpdated");
+  const [sortOrder, setSortOrder] = useState<SortOrder>("desc");
   const { user, isAdmin, signup } = useAuth();
   const { toast } = useToast();
   const db = getFirestore();
   const { theme, setTheme } = useTheme();
+  const navigate = useNavigate();
+
+  const handleSort = (field: SortField) => {
+    if (sortField === field) {
+      setSortOrder(sortOrder === "asc" ? "desc" : "asc");
+    } else {
+      setSortField(field);
+      setSortOrder("asc");
+    }
+  };
+
+  const sortedUsers = [...users].sort((a, b) => {
+    let comparison = 0;
+    switch (sortField) {
+      case "lastUpdated":
+        comparison = new Date(a.lastUpdated).getTime() - new Date(b.lastUpdated).getTime();
+        break;
+      case "seniority":
+        const seniorityOrder = {
+          "Other": 0,
+          "Junior Associate": 1,
+          "Senior Associate": 2,
+          "Partners": 3,
+        };
+        comparison = seniorityOrder[a.seniority] - seniorityOrder[b.seniority];
+        break;
+      case "name":
+        comparison = a.email.localeCompare(b.email);
+        break;
+    }
+    return sortOrder === "asc" ? comparison : -comparison;
+  });
 
   useEffect(() => {
     fetchUsers();
     setupInitialAdmin();
     
-    // Create Klara's account
     const createKlaraAccount = async () => {
       try {
         const usersRef = collection(db, "users");
@@ -84,7 +124,6 @@ export default function Admin() {
       const querySnapshot = await getDocs(q);
       
       if (querySnapshot.empty) {
-        // If user doesn't exist, create it
         const userId = Math.random().toString(36).substr(2, 9);
         await setDoc(doc(db, "users", userId), {
           email: "aykut.yucel@snellman.com",
@@ -95,7 +134,6 @@ export default function Admin() {
           description: "Admin user created successfully",
         });
       } else {
-        // If user exists, ensure they're an admin
         const userDoc = querySnapshot.docs[0];
         if (userDoc.data().role !== "admin") {
           await updateDoc(doc(db, "users", userDoc.id), {
@@ -134,10 +172,11 @@ export default function Admin() {
     }
   };
 
-  const handleRoleChange = async (userId: string, newRole: string) => {
+  const handleRoleChange = async (userId: string, newRole: string, newSeniority?: string) => {
     try {
       await updateDoc(doc(db, "users", userId), {
-        role: newRole
+        role: newRole,
+        seniority: newSeniority
       });
       toast({
         title: "Success",
@@ -148,6 +187,23 @@ export default function Admin() {
       toast({
         title: "Error",
         description: "Failed to update user role",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleDeleteUser = async (userId: string) => {
+    try {
+      await deleteDoc(doc(db, "users", userId));
+      toast({
+        title: "Success",
+        description: "User deleted successfully",
+      });
+      fetchUsers(); // Refresh the users list
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to delete user",
         variant: "destructive",
       });
     }
@@ -164,26 +220,23 @@ export default function Admin() {
       return;
     }
 
-    setLoading(true);
-    try {
-      const userId = Math.random().toString(36).substr(2, 9);
-      await setDoc(doc(db, "users", userId), {
-        email: newUserEmail,
-        role: "user",
-      });
-      
+    if (!newUserPassword || newUserPassword.length < 6) {
       toast({
-        title: "Success",
-        description: "User added successfully",
-      });
-      setNewUserEmail("");
-      fetchUsers(); // Refresh the users list
-    } catch (error) {
-      toast({
-        title: "Error",
-        description: "Failed to add user",
+        title: "Invalid password",
+        description: "Password must be at least 6 characters long",
         variant: "destructive",
       });
+      return;
+    }
+
+    setLoading(true);
+    try {
+      await signup(newUserEmail, newUserPassword);
+      setNewUserEmail("");
+      setNewUserPassword("");
+      fetchUsers(); // Refresh the users list
+    } catch (error) {
+      console.error("Error adding user:", error);
     }
     setLoading(false);
   };
@@ -222,6 +275,10 @@ export default function Admin() {
               Total Users: {users.length}
             </span>
           </div>
+          <Button variant="outline" onClick={() => navigate("/")} className="gap-2">
+            <LogOut className="h-4 w-4" />
+            Exit Dashboard
+          </Button>
         </div>
       </div>
 
@@ -233,6 +290,13 @@ export default function Admin() {
             placeholder="email@snellman.com"
             value={newUserEmail}
             onChange={(e) => setNewUserEmail(e.target.value)}
+            className="flex-1"
+          />
+          <Input
+            type="password"
+            placeholder="Password"
+            value={newUserPassword}
+            onChange={(e) => setNewUserPassword(e.target.value)}
             className="flex-1"
           />
           <Button type="submit" disabled={loading}>
@@ -247,13 +311,21 @@ export default function Admin() {
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>Email</TableHead>
+              <TableHead onClick={() => handleSort("name")} className="cursor-pointer">
+                Email <ArrowUpDown className="h-4 w-4 inline-block ml-2" />
+              </TableHead>
               <TableHead>Role</TableHead>
+              <TableHead onClick={() => handleSort("seniority")} className="cursor-pointer">
+                Seniority <ArrowUpDown className="h-4 w-4 inline-block ml-2" />
+              </TableHead>
+              <TableHead onClick={() => handleSort("lastUpdated")} className="cursor-pointer">
+                Last Updated <ArrowUpDown className="h-4 w-4 inline-block ml-2" />
+              </TableHead>
               <TableHead>Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
-            {users.map((user) => (
+            {sortedUsers.map((user) => (
               <TableRow key={user.id}>
                 <TableCell>{user.email}</TableCell>
                 <TableCell>
@@ -272,9 +344,32 @@ export default function Admin() {
                   </Select>
                 </TableCell>
                 <TableCell>
-                  <Button variant="outline" size="sm">
-                    View Details
-                  </Button>
+                  <Select
+                    value={user.seniority}
+                    onValueChange={(value) => handleRoleChange(user.id, user.role, value)}
+                  >
+                    <SelectTrigger className="w-40">
+                      <SelectValue placeholder="Select seniority" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="Other">Other</SelectItem>
+                      <SelectItem value="Junior Associate">Junior Associate</SelectItem>
+                      <SelectItem value="Senior Associate">Senior Associate</SelectItem>
+                      <SelectItem value="Partners">Partners</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </TableCell>
+                <TableCell>{new Date(user.lastUpdated).toLocaleDateString()}</TableCell>
+                <TableCell>
+                  <div className="flex gap-2">
+                    <Button 
+                      variant="destructive" 
+                      size="sm"
+                      onClick={() => handleDeleteUser(user.id)}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
                 </TableCell>
               </TableRow>
             ))}

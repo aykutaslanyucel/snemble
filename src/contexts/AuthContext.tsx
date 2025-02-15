@@ -133,11 +133,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       await setDoc(doc(db, "users", userCredential.user.uid), {
         email: email,
         role: role,
-        createdAt: new Date().toISOString()
+        seniority: role === "admin" ? "Partners" : "Other", // Default seniority
+        createdAt: new Date().toISOString(),
+        lastUpdated: new Date().toISOString()
       });
       
       toast.success("Account created successfully!");
-      return userCredential;
     } catch (error: any) {
       console.error("Signup error:", error);
       if (error.code === "auth/email-already-in-use") {
