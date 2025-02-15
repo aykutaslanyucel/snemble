@@ -22,7 +22,7 @@ interface AuthContextType {
   user: User | null;
   isAdmin: boolean;
   login: (email: string, password: string) => Promise<void>;
-  signup: (email: string, password: string) => Promise<void>;
+  signup: (email: string, password: string, role?: string) => Promise<void>;
   logout: () => Promise<void>;
   loading: boolean;
 }
@@ -41,18 +41,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const querySnapshot = await getDocs(q);
       
       if (querySnapshot.empty) {
-        // Create the admin user if they don't exist
-        const userId = Math.random().toString(36).substr(2, 9);
-        await setDoc(doc(db, "users", userId), {
-          email: email,
-          role: "admin",
-        });
+        await signup(email, "admin123", "admin"); // Create admin with default password
         console.log("Created admin user:", email);
         return true;
       } else {
         const userData = querySnapshot.docs[0].data();
         if (userData.role !== "admin") {
-          // Update to admin if not already
           await setDoc(doc(db, "users", querySnapshot.docs[0].id), {
             ...userData,
             role: "admin",
@@ -68,7 +62,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const checkAdminStatus = async (email: string) => {
     console.log("Checking admin status for:", email);
     try {
-      // First ensure admin user exists
       if (email === "aykut.yucel@snellman.com") {
         await ensureAdminUser(email);
       }
@@ -121,23 +114,37 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-  const signup = async (email: string, password: string) => {
+  const signup = async (email: string, password: string, role: string = "user") => {
     try {
+      // First check if the user already exists in Firestore
+      const usersRef = collection(db, "users");
+      const q = query(usersRef, where("email", "==", email));
+      const querySnapshot = await getDocs(q);
+      
+      if (!querySnapshot.empty) {
+        console.log("User document already exists for:", email);
+        throw new Error("User already exists");
+      }
+
       // Create the user in Firebase Auth
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
       
-      // Create the user document in Firestore
-      const userId = userCredential.user.uid;
-      await setDoc(doc(db, "users", userId), {
+      // Create the user document in Firestore using the auth UID
+      await setDoc(doc(db, "users", userCredential.user.uid), {
         email: email,
-        role: "user", // Default role
+        role: role,
         createdAt: new Date().toISOString()
       });
       
       toast.success("Account created successfully!");
-    } catch (error) {
+      return userCredential;
+    } catch (error: any) {
       console.error("Signup error:", error);
-      toast.error("Failed to create account. Please try again.");
+      if (error.code === "auth/email-already-in-use") {
+        toast.error("This email is already registered. Please try logging in instead.");
+      } else {
+        toast.error("Failed to create account. Please try again.");
+      }
       throw error;
     }
   };

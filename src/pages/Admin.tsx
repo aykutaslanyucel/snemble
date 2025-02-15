@@ -46,12 +46,20 @@ export default function Admin() {
     // Create Klara's account
     const createKlaraAccount = async () => {
       try {
-        await signup("klara.hasselberg@snellman.com", "test123");
-        console.log("Created account for Klara");
-        toast({
-          title: "Success",
-          description: "Created account for Klara",
-        });
+        const usersRef = collection(db, "users");
+        const q = query(usersRef, where("email", "==", "klara.hasselberg@snellman.com"));
+        const querySnapshot = await getDocs(q);
+        
+        if (querySnapshot.empty) {
+          await signup("klara.hasselberg@snellman.com", "test123");
+          console.log("Created account for Klara");
+          toast({
+            title: "Success",
+            description: "Created account for Klara",
+          });
+        } else {
+          console.log("Klara's account already exists");
+        }
       } catch (error) {
         console.error("Error creating Klara's account:", error);
         if (error instanceof Error && error.message.includes("already")) {
