@@ -205,34 +205,6 @@ export default function Index() {
           </div>
         </Card>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <Card className="p-6">
-            <h2 className="text-xl font-semibold mb-4">Active Projects ({activeProjects.length})</h2>
-            <div className="space-y-2">
-              {activeProjects.map((project, index) => (
-                <div key={index} className="p-3 bg-secondary/50 rounded-lg">
-                  {project}
-                </div>
-              ))}
-            </div>
-          </Card>
-
-          <Card className="p-6">
-            <h2 className="text-xl font-semibold mb-4">Available Team Members ({availableMembers.length})</h2>
-            <div className="space-y-2">
-              {availableMembers.map((member) => (
-                <div key={member.id} className="p-3 bg-secondary/50 rounded-lg flex justify-between items-center">
-                  <div>
-                    <div className="font-medium">{member.name}</div>
-                    <div className="text-sm text-muted-foreground">{member.position}</div>
-                  </div>
-                  <Badge variant="secondary">Available</Badge>
-                </div>
-              ))}
-            </div>
-          </Card>
-        </div>
-
         <TeamMembers
           members={filteredMembers}
           onUpdate={handleUpdateMember}
@@ -240,6 +212,54 @@ export default function Index() {
         />
 
         <WorkloadSummary members={members} showOnlyCapacity={false} />
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-8">
+          <Card className="p-6 bg-card/30 backdrop-blur-sm border border-white/10 shadow-xl">
+            <h2 className="text-xl font-semibold mb-4 flex items-center gap-2">
+              <div className="h-2 w-2 rounded-full bg-green-400" />
+              Active Projects
+              <span className="text-sm font-normal text-muted-foreground">
+                ({activeProjects.length})
+              </span>
+            </h2>
+            <div className="space-y-2 max-h-[300px] overflow-y-auto fancy-scroll">
+              {activeProjects.map((project, index) => (
+                <div 
+                  key={index} 
+                  className="p-4 bg-white/5 backdrop-blur-sm rounded-lg border border-white/10 transition-all hover:bg-white/10"
+                >
+                  {project}
+                </div>
+              ))}
+            </div>
+          </Card>
+
+          <Card className="p-6 bg-card/30 backdrop-blur-sm border border-white/10 shadow-xl">
+            <h2 className="text-xl font-semibold mb-4 flex items-center gap-2">
+              <div className="h-2 w-2 rounded-full bg-green-400" />
+              Available Team Members
+              <span className="text-sm font-normal text-muted-foreground">
+                ({availableMembers.length})
+              </span>
+            </h2>
+            <div className="space-y-2 max-h-[300px] overflow-y-auto fancy-scroll">
+              {availableMembers.map((member) => (
+                <div 
+                  key={member.id} 
+                  className="p-4 bg-white/5 backdrop-blur-sm rounded-lg border border-white/10 flex justify-between items-center transition-all hover:bg-white/10"
+                >
+                  <div>
+                    <div className="font-medium">{member.name}</div>
+                    <div className="text-sm text-muted-foreground">{member.position}</div>
+                  </div>
+                  <Badge className="bg-green-500/10 text-green-500 hover:bg-green-500/20">
+                    Available
+                  </Badge>
+                </div>
+              ))}
+            </div>
+          </Card>
+        </div>
       </div>
     </div>
   );
