@@ -119,20 +119,7 @@ export default function TeamMemberCard({ member, onUpdate, onDelete }: Props) {
 
   const handleAddProject = () => {
     if (newProject.trim()) {
-      const updatedProjects = [...member.projects];
-      
-      const projectsToAdd = newProject
-        .split(/[;,]/)
-        .map(p => p.trim())
-        .filter(p => p.length > 0);
-      
-      projectsToAdd.forEach(project => {
-        if (!updatedProjects.includes(project)) {
-          updatedProjects.push(project);
-        }
-      });
-      
-      onUpdate(member.id, "projects", updatedProjects);
+      onUpdate(member.id, "projects", newProject);
       setNewProject("");
       setIsProjectDialogOpen(false);
     }

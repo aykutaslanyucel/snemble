@@ -1,3 +1,4 @@
+
 import { useState, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -113,7 +114,9 @@ export default function Index() {
           ? { 
               ...member, 
               [field]: field === 'projects' 
-                ? value.split(/[;,]/).map((p: string) => p.trim()).filter((p: string) => p.length > 0)
+                ? (typeof value === 'string' 
+                  ? value.split(/[;,]/).map((p: string) => p.trim()).filter((p: string) => p.length > 0)
+                  : value)
                 : value,
               lastUpdated: new Date() 
             }
