@@ -73,6 +73,19 @@ export default function Index() {
     return Array.from(projectSet);
   }, [members]);
 
+  const projectsWithMembers = useMemo(() => {
+    const projectMap = new Map<string, TeamMember[]>();
+    
+    activeProjects.forEach(project => {
+      const assignedMembers = members.filter(member => 
+        member.projects.includes(project)
+      );
+      projectMap.set(project, assignedMembers);
+    });
+    
+    return projectMap;
+  }, [activeProjects, members]);
+
   const availableMembers = useMemo(() => {
     return members.filter(member => member.status === 'available');
   }, [members]);
@@ -228,17 +241,36 @@ export default function Index() {
               </span>
             </h2>
             <div className="grid grid-cols-3 gap-2 max-h-[220px] overflow-y-auto pr-1 custom-scrollbar">
-              {activeProjects.map((project, index) => (
-                <div 
-                  key={index} 
-                  className="p-2.5 bg-white/5 rounded-lg border border-white/10 flex items-center transition-all hover:bg-white/10 hover:shadow-md group"
-                >
-                  <Folder className="w-3.5 h-3.5 text-[#E5DEFF] mr-2 flex-shrink-0" />
-                  <p className="font-medium text-xs truncate group-hover:text-[#E5DEFF]">
-                    {project}
-                  </p>
-                </div>
-              ))}
+              {activeProjects.map((project, index) => {
+                const assignedMembers = projectsWithMembers.get(project) || [];
+                return (
+                  <div 
+                    key={index} 
+                    className="p-2.5 bg-white/5 rounded-lg border border-white/10 flex flex-col transition-all hover:bg-white/10 hover:shadow-md group"
+                  >
+                    <div className="flex items-center">
+                      <Folder className="w-3.5 h-3.5 text-[#E5DEFF] mr-2 flex-shrink-0" />
+                      <p className="font-medium text-xs truncate group-hover:text-[#E5DEFF]">
+                        {project}
+                      </p>
+                    </div>
+                    {assignedMembers.length > 0 && (
+                      <div className="mt-1.5 pl-5">
+                        {assignedMembers.slice(0, 3).map((member, idx) => (
+                          <div key={idx} className="text-[10px] text-muted-foreground truncate">
+                            {member.name}
+                          </div>
+                        ))}
+                        {assignedMembers.length > 3 && (
+                          <div className="text-[10px] text-muted-foreground">
+                            +{assignedMembers.length - 3} more
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
             </div>
           </Card>
 

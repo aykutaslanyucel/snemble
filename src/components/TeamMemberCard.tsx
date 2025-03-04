@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { motion } from "framer-motion";
 import { format, formatDistanceToNow } from "date-fns";
@@ -36,6 +35,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Toggle } from "@/components/ui/toggle";
+import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
 
 type TeamMemberStatus = 'available' | 'someAvailability' | 'busy' | 'seriouslyBusy' | 'away';
@@ -100,6 +100,7 @@ export default function TeamMemberCard({ member, onUpdate, onDelete }: Props) {
   const [editedName, setEditedName] = useState(member.name);
   const [editedPosition, setEditedPosition] = useState(member.position);
   const [newProject, setNewProject] = useState("");
+  const [editingProjects, setEditingProjects] = useState("");
   const [isProjectDialogOpen, setIsProjectDialogOpen] = useState(false);
   const [isCustomizationOpen, setIsCustomizationOpen] = useState(false);
 
@@ -118,7 +119,20 @@ export default function TeamMemberCard({ member, onUpdate, onDelete }: Props) {
 
   const handleAddProject = () => {
     if (newProject.trim()) {
-      onUpdate(member.id, "projects", [...member.projects, newProject.trim()]);
+      const updatedProjects = [...member.projects];
+      
+      const projectsToAdd = newProject
+        .split(/[;,]/)
+        .map(p => p.trim())
+        .filter(p => p.length > 0);
+      
+      projectsToAdd.forEach(project => {
+        if (!updatedProjects.includes(project)) {
+          updatedProjects.push(project);
+        }
+      });
+      
+      onUpdate(member.id, "projects", updatedProjects);
       setNewProject("");
       setIsProjectDialogOpen(false);
     }
@@ -134,6 +148,11 @@ export default function TeamMemberCard({ member, onUpdate, onDelete }: Props) {
 
   const getTimeAgo = (date: Date) => {
     return formatDistanceToNow(date, { addSuffix: true });
+  };
+
+  const openProjectDialog = () => {
+    setNewProject(member.projects.join('; '));
+    setIsProjectDialogOpen(true);
   };
 
   const currentStatus = statusConfig[member.status] || statusConfig.available;
@@ -300,22 +319,31 @@ export default function TeamMemberCard({ member, onUpdate, onDelete }: Props) {
               <label className="text-sm font-medium">Projects</label>
               <Dialog open={isProjectDialogOpen} onOpenChange={setIsProjectDialogOpen}>
                 <DialogTrigger asChild>
-                  <Button variant="outline" size="sm">
+                  <Button variant="outline" size="sm" onClick={openProjectDialog}>
                     <Plus className="h-4 w-4 mr-1" />
                     Add Project
                   </Button>
                 </DialogTrigger>
                 <DialogContent>
                   <DialogHeader>
-                    <DialogTitle>Add New Project</DialogTitle>
+                    <DialogTitle>Manage Projects</DialogTitle>
                   </DialogHeader>
-                  <div className="flex gap-2">
-                    <Input
-                      placeholder="Project name"
+                  <div className="space-y-4">
+                    <div className="text-sm text-muted-foreground">
+                      Add or edit projects, separated by semicolons (;)
+                    </div>
+                    <Textarea
+                      placeholder="Project names (separate with semicolons)"
                       value={newProject}
                       onChange={(e) => setNewProject(e.target.value)}
+                      className="min-h-[100px]"
                     />
-                    <Button onClick={handleAddProject}>Add</Button>
+                    <div className="flex justify-end gap-2">
+                      <Button variant="outline" onClick={() => setIsProjectDialogOpen(false)}>
+                        Cancel
+                      </Button>
+                      <Button onClick={handleAddProject}>Save Projects</Button>
+                    </div>
                   </div>
                 </DialogContent>
               </Dialog>
