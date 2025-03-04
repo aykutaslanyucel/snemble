@@ -1,3 +1,4 @@
+
 import { useState, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -219,24 +220,22 @@ export default function Index() {
 
         <WorkloadSummary members={members} showOnlyCapacity={false} />
 
-        <div className="grid grid-cols-1 xl:grid-cols-2 gap-8 mt-12">
-          <Card className="p-8 bg-gradient-to-br from-[#E5DEFF]/5 to-[#D3E4FD]/5 backdrop-blur-md border border-white/10 shadow-2xl rounded-2xl">
-            <h2 className="text-2xl font-semibold mb-6 flex items-center gap-3">
-              <div className="h-3 w-3 rounded-full bg-[#E5DEFF] animate-pulse" />
-              <span className="bg-clip-text text-transparent bg-gradient-to-r from-[#E5DEFF] to-[#D3E4FD]">
-                Active Projects
-              </span>
-              <span className="text-base font-normal text-muted-foreground ml-2">
+        <div className="grid grid-cols-1 xl:grid-cols-2 gap-8 mt-8">
+          <Card className="p-6 bg-white/10 backdrop-blur-md border border-white/10 shadow-xl rounded-xl">
+            <h2 className="text-xl font-semibold mb-4 flex items-center gap-2">
+              <div className="h-2.5 w-2.5 rounded-full bg-[#E5DEFF]" />
+              <span className="text-gray-800">Active Projects</span>
+              <span className="text-sm font-normal text-muted-foreground ml-1">
                 ({activeProjects.length})
               </span>
             </h2>
-            <div className="space-y-3 max-h-[350px] overflow-y-auto fancy-scroll pr-2">
+            <div className="grid grid-cols-2 gap-2 max-h-[280px] overflow-y-auto pr-1 custom-scrollbar">
               {activeProjects.map((project, index) => (
                 <div 
                   key={index} 
-                  className="p-5 bg-white/5 backdrop-blur-sm rounded-xl border border-white/10 transition-all duration-300 hover:bg-white/10 hover:scale-[1.02] hover:shadow-lg group"
+                  className="p-3 bg-white/5 rounded-lg border border-white/10 transition-all hover:bg-white/10 hover:shadow-md group"
                 >
-                  <p className="font-medium text-base group-hover:text-[#E5DEFF] transition-colors">
+                  <p className="font-medium text-sm truncate group-hover:text-[#E5DEFF]">
                     {project}
                   </p>
                 </div>
@@ -244,31 +243,34 @@ export default function Index() {
             </div>
           </Card>
 
-          <Card className="p-8 bg-gradient-to-br from-[#D3E4FD]/5 to-[#E5DEFF]/5 backdrop-blur-md border border-white/10 shadow-2xl rounded-2xl">
-            <h2 className="text-2xl font-semibold mb-6 flex items-center gap-3">
-              <div className="h-3 w-3 rounded-full bg-[#D3E4FD] animate-pulse" />
-              <span className="bg-clip-text text-transparent bg-gradient-to-r from-[#D3E4FD] to-[#E5DEFF]">
-                Available Team Members
-              </span>
-              <span className="text-base font-normal text-muted-foreground ml-2">
+          <Card className="p-6 bg-white/10 backdrop-blur-md border border-white/10 shadow-xl rounded-xl">
+            <h2 className="text-xl font-semibold mb-4 flex items-center gap-2">
+              <div className="h-2.5 w-2.5 rounded-full bg-[#D3E4FD]" />
+              <span className="text-gray-800">Available Team Members</span>
+              <span className="text-sm font-normal text-muted-foreground ml-1">
                 ({availableMembers.length})
               </span>
             </h2>
-            <div className="space-y-3 max-h-[350px] overflow-y-auto fancy-scroll pr-2">
+            <div className="grid gap-2 max-h-[280px] overflow-y-auto pr-1 custom-scrollbar">
               {availableMembers.map((member) => (
                 <div 
                   key={member.id} 
-                  className="p-5 bg-white/5 backdrop-blur-sm rounded-xl border border-white/10 flex justify-between items-center transition-all duration-300 hover:bg-white/10 hover:scale-[1.02] hover:shadow-lg group"
+                  className="p-3 bg-white/5 rounded-lg border border-white/10 flex justify-between items-center transition-all hover:bg-white/10 hover:shadow-md group"
                 >
-                  <div>
-                    <div className="font-medium text-base group-hover:text-[#D3E4FD] transition-colors">
-                      {member.name}
+                  <div className="flex items-center gap-2 overflow-hidden">
+                    <div className="h-8 w-8 rounded-full flex items-center justify-center bg-[#D3E4FD]/10 flex-shrink-0">
+                      {member.name.charAt(0)}
                     </div>
-                    <div className="text-sm text-muted-foreground">
-                      {member.position}
+                    <div className="overflow-hidden">
+                      <div className="font-medium text-sm truncate group-hover:text-[#D3E4FD]">
+                        {member.name}
+                      </div>
+                      <div className="text-xs text-muted-foreground truncate">
+                        {member.position}
+                      </div>
                     </div>
                   </div>
-                  <Badge className="bg-[#D3E4FD]/10 text-[#D3E4FD] border-[#D3E4FD]/20 hover:bg-[#D3E4FD]/20 transition-colors">
+                  <Badge className="bg-[#D3E4FD]/10 text-[#D3E4FD] border-[#D3E4FD]/20 hover:bg-[#D3E4FD]/20 text-xs py-0.5">
                     Available
                   </Badge>
                 </div>

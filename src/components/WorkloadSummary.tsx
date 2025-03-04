@@ -66,7 +66,7 @@ const generateMockHistoricalData = (period: 'month' | 'year') => {
 };
 
 const DonutChart = ({ percentage, color, label, count }: { percentage: number; color: string; label: string; count: number }) => (
-  <div className="relative w-16 h-16">
+  <div className="relative w-14 h-14">
     <svg className="w-full h-full" viewBox="0 0 36 36">
       <defs>
         <linearGradient id={`gradient-${label}`} x1="0%" y1="0%" x2="100%" y2="100%">
@@ -157,11 +157,11 @@ export default function WorkloadSummary({ members, showOnlyCapacity = false }: P
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-      <Card className="p-8 bg-gradient-to-br from-[#F2FCE2]/5 to-[#E5DEFF]/5 backdrop-blur-md border border-white/10 shadow-2xl rounded-2xl">
-        <h3 className="text-2xl font-semibold text-gray-800 mb-6 bg-clip-text text-transparent bg-gradient-to-r from-[#F2FCE2] to-[#E5DEFF]">
+      <Card className="p-6 bg-white/10 backdrop-blur-md border border-white/10 shadow-xl rounded-2xl">
+        <h3 className="text-xl font-semibold text-gray-800 mb-5">
           Team Status
         </h3>
-        <div className="grid grid-cols-5 gap-4">
+        <div className="flex justify-around gap-2 px-2">
           {workloadData.map((data) => (
             <motion.div
               key={data.status}
@@ -180,9 +180,9 @@ export default function WorkloadSummary({ members, showOnlyCapacity = false }: P
         </div>
       </Card>
 
-      <Card className="p-8 bg-gradient-to-br from-[#E5DEFF]/5 to-[#F2FCE2]/5 backdrop-blur-md border border-white/10 shadow-2xl rounded-2xl">
-        <div className="flex items-center justify-between mb-6">
-          <h3 className="text-2xl font-semibold text-gray-800 bg-clip-text text-transparent bg-gradient-to-r from-[#E5DEFF] to-[#F2FCE2]">
+      <Card className="p-6 bg-white/10 backdrop-blur-md border border-white/10 shadow-xl rounded-2xl">
+        <div className="flex items-center justify-between mb-5">
+          <h3 className="text-xl font-semibold text-gray-800">
             Historical Capacity
           </h3>
           <ToggleGroup 
