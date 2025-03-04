@@ -79,7 +79,9 @@
   .fancy-scroll::-webkit-scrollbar-thumb:hover {
     background: rgba(255, 255, 255, 0.3);
   }
+}
 
+@layer components {
   .custom-scrollbar {
     @apply scrollbar-thin scrollbar-track-white/5 scrollbar-thumb-white/10 hover:scrollbar-thumb-white/20;
     scrollbar-width: thin;
