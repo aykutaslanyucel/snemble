@@ -1,9 +1,8 @@
-
 import { useState, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
-import { Shield, LogOut } from "lucide-react";
+import { Shield, LogOut, Folder, User } from "lucide-react";
 import { Link } from "react-router-dom";
 import { TeamHeader } from "@/components/TeamHeader";
 import { useToast } from "@/components/ui/use-toast";
@@ -66,7 +65,6 @@ export default function Index() {
   const { toast } = useToast();
   const { isAdmin, logout } = useAuth();
 
-  // Calculate active projects and available team members
   const activeProjects = useMemo(() => {
     const projectSet = new Set<string>();
     members.forEach(member => {
@@ -229,13 +227,14 @@ export default function Index() {
                 ({activeProjects.length})
               </span>
             </h2>
-            <div className="grid grid-cols-2 gap-2 max-h-[280px] overflow-y-auto pr-1 custom-scrollbar">
+            <div className="grid grid-cols-3 gap-2 max-h-[220px] overflow-y-auto pr-1 custom-scrollbar">
               {activeProjects.map((project, index) => (
                 <div 
                   key={index} 
-                  className="p-3 bg-white/5 rounded-lg border border-white/10 transition-all hover:bg-white/10 hover:shadow-md group"
+                  className="p-2.5 bg-white/5 rounded-lg border border-white/10 flex items-center transition-all hover:bg-white/10 hover:shadow-md group"
                 >
-                  <p className="font-medium text-sm truncate group-hover:text-[#E5DEFF]">
+                  <Folder className="w-3.5 h-3.5 text-[#E5DEFF] mr-2 flex-shrink-0" />
+                  <p className="font-medium text-xs truncate group-hover:text-[#E5DEFF]">
                     {project}
                   </p>
                 </div>
@@ -251,28 +250,23 @@ export default function Index() {
                 ({availableMembers.length})
               </span>
             </h2>
-            <div className="grid gap-2 max-h-[280px] overflow-y-auto pr-1 custom-scrollbar">
+            <div className="grid grid-cols-2 gap-2 max-h-[220px] overflow-y-auto pr-1 custom-scrollbar">
               {availableMembers.map((member) => (
                 <div 
                   key={member.id} 
-                  className="p-3 bg-white/5 rounded-lg border border-white/10 flex justify-between items-center transition-all hover:bg-white/10 hover:shadow-md group"
+                  className="p-2.5 bg-white/5 rounded-lg border border-white/10 flex items-center gap-2 transition-all hover:bg-white/10 hover:shadow-md group"
                 >
-                  <div className="flex items-center gap-2 overflow-hidden">
-                    <div className="h-8 w-8 rounded-full flex items-center justify-center bg-[#D3E4FD]/10 flex-shrink-0">
-                      {member.name.charAt(0)}
+                  <div className="h-6 w-6 rounded-full flex items-center justify-center bg-[#D3E4FD]/10 flex-shrink-0 text-xs font-medium">
+                    {member.name.charAt(0)}
+                  </div>
+                  <div className="overflow-hidden min-w-0">
+                    <div className="font-medium text-xs truncate group-hover:text-[#D3E4FD]">
+                      {member.name}
                     </div>
-                    <div className="overflow-hidden">
-                      <div className="font-medium text-sm truncate group-hover:text-[#D3E4FD]">
-                        {member.name}
-                      </div>
-                      <div className="text-xs text-muted-foreground truncate">
-                        {member.position}
-                      </div>
+                    <div className="text-[10px] text-muted-foreground truncate leading-tight">
+                      {member.position}
                     </div>
                   </div>
-                  <Badge className="bg-[#D3E4FD]/10 text-[#D3E4FD] border-[#D3E4FD]/20 hover:bg-[#D3E4FD]/20 text-xs py-0.5">
-                    Available
-                  </Badge>
                 </div>
               ))}
             </div>

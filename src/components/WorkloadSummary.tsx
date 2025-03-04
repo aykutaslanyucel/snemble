@@ -66,7 +66,7 @@ const generateMockHistoricalData = (period: 'month' | 'year') => {
 };
 
 const DonutChart = ({ percentage, color, label, count }: { percentage: number; color: string; label: string; count: number }) => (
-  <div className="relative w-14 h-14">
+  <div className="relative w-12 h-12">
     <svg className="w-full h-full" viewBox="0 0 36 36">
       <defs>
         <linearGradient id={`gradient-${label}`} x1="0%" y1="0%" x2="100%" y2="100%">
@@ -95,8 +95,8 @@ const DonutChart = ({ percentage, color, label, count }: { percentage: number; c
       />
     </svg>
     <div className="absolute inset-0 flex flex-col items-center justify-center text-center">
-      <span className="text-sm font-semibold">{count}</span>
-      <span className="text-[10px] text-gray-600">{label}</span>
+      <span className="text-xs font-semibold">{count}</span>
+      <span className="text-[8px] text-gray-600 leading-none">{label}</span>
     </div>
   </div>
 );
@@ -158,10 +158,11 @@ export default function WorkloadSummary({ members, showOnlyCapacity = false }: P
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
       <Card className="p-6 bg-white/10 backdrop-blur-md border border-white/10 shadow-xl rounded-2xl">
-        <h3 className="text-xl font-semibold text-gray-800 mb-5">
+        <h3 className="text-xl font-semibold text-gray-800 mb-5 flex items-center">
+          <div className="h-3 w-3 rounded-full bg-[#E5DEFF] mr-2"></div>
           Team Status
         </h3>
-        <div className="flex justify-around gap-2 px-2">
+        <div className="flex justify-between gap-6 px-4 max-w-md mx-auto">
           {workloadData.map((data) => (
             <motion.div
               key={data.status}
@@ -182,7 +183,8 @@ export default function WorkloadSummary({ members, showOnlyCapacity = false }: P
 
       <Card className="p-6 bg-white/10 backdrop-blur-md border border-white/10 shadow-xl rounded-2xl">
         <div className="flex items-center justify-between mb-5">
-          <h3 className="text-xl font-semibold text-gray-800">
+          <h3 className="text-xl font-semibold text-gray-800 flex items-center">
+            <div className="h-3 w-3 rounded-full bg-[#D3E4FD] mr-2"></div>
             Historical Capacity
           </h3>
           <ToggleGroup 
