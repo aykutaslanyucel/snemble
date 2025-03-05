@@ -5,6 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { Thermometer, Users, ListTodo, Briefcase, Star, Shield, UserCog } from "lucide-react";
 import { motion } from "framer-motion";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
+import { Button } from "@/components/ui/button";
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
 import { format, subMonths, subYears, startOfWeek } from "date-fns";
 
@@ -67,7 +68,7 @@ const roleColors = {
 
 const roleGroups = {
   'Associate': 'Associate',
-  'Senior/Managing': 'Senior/Managing',
+  'Senior/Managing Associate': 'Senior/Managing Associate',
   'Partner': 'Partner',
   'Assistant': 'Assistant',
 };
@@ -109,7 +110,7 @@ const DonutChart = ({ percentage, color, label, count, icon: Icon }: { percentag
         cy="18"
         r="15.91549430918954"
         fill="none"
-        stroke={`url(#gradient-${label})`}
+        stroke={color}
         strokeWidth="3"
         strokeDasharray={`${percentage} 100`}
         transform="rotate(-90 18 18)"
@@ -161,7 +162,7 @@ export default function WorkloadSummary({ members, showOnlyCapacity = false }: P
 
     const roleGroups = {
       'Associate': membersWithRoles.filter(m => m.role === 'Associate'),
-      'Senior/Managing': membersWithRoles.filter(m => 
+      'Senior Associate / Managing Associate': membersWithRoles.filter(m => 
         m.role === 'Senior Associate' || m.role === 'Managing Associate'
       ),
       'Partner': membersWithRoles.filter(m => m.role === 'Partner'),
@@ -180,13 +181,13 @@ export default function WorkloadSummary({ members, showOnlyCapacity = false }: P
           ? Math.min((totalCapacity / maxPossibleCapacity) * 100, 100) 
           : 0;
         
-        const roleColor = groupName === 'Senior/Managing' 
+        const roleColor = groupName === 'Senior Associate / Managing Associate' 
           ? roleColors['Senior Associate'] 
-          : roleColors[groupName as keyof typeof roleColors] || '#E5DEFF';
+          : roleColors[groupName.split(' /')[0] as keyof typeof roleColors] || '#E5DEFF';
         
-        const roleIcon = groupName === 'Senior/Managing'
+        const roleIcon = groupName === 'Senior Associate / Managing Associate'
           ? roleIcons['Senior Associate']
-          : roleIcons[groupName as keyof typeof roleIcons];
+          : roleIcons[groupName.split(' /')[0] as keyof typeof roleIcons];
 
         return {
           role: groupName,
@@ -243,19 +244,22 @@ export default function WorkloadSummary({ members, showOnlyCapacity = false }: P
             <div className="h-3 w-3 rounded-full bg-[#E5DEFF] mr-2"></div>
             Team Status
           </h3>
-          <ToggleGroup 
-            type="single" 
-            value={showRoleMetrics ? "roles" : "status"} 
-            onValueChange={(value) => value && setShowRoleMetrics(value === "roles")}
-            className="bg-white/5 backdrop-blur-sm rounded-xl border border-white/10 p-1"
-          >
-            <ToggleGroupItem value="status" aria-label="Status view" className="data-[state=on]:bg-white/10 text-xs">
-              Status
-            </ToggleGroupItem>
-            <ToggleGroupItem value="roles" aria-label="Roles view" className="data-[state=on]:bg-white/10 text-xs">
-              Roles
-            </ToggleGroupItem>
-          </ToggleGroup>
+          <div className="flex items-center space-x-2">
+            <span className="text-sm text-gray-600 mr-2">View by:</span>
+            <ToggleGroup 
+              type="single" 
+              value={showRoleMetrics ? "roles" : "status"} 
+              onValueChange={(value) => value && setShowRoleMetrics(value === "roles")}
+              className="bg-white/5 backdrop-blur-sm rounded-xl border border-white/10 p-1"
+            >
+              <ToggleGroupItem value="status" aria-label="Status view" className="data-[state=on]:bg-white/10 text-xs px-3">
+                Status
+              </ToggleGroupItem>
+              <ToggleGroupItem value="roles" aria-label="Roles view" className="data-[state=on]:bg-white/10 text-xs px-3">
+                Roles
+              </ToggleGroupItem>
+            </ToggleGroup>
+          </div>
         </div>
         
         {showRoleMetrics ? (
