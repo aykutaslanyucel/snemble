@@ -1,9 +1,8 @@
-
 import React from "react";
 import { Card } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
-import { Thermometer, Users, ListTodo } from "lucide-react";
+import { Thermometer, Users, ListTodo, Briefcase, Star, Shield, UserCog } from "lucide-react";
 import { motion } from "framer-motion";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
@@ -18,6 +17,7 @@ interface TeamMember {
   status: TeamMemberStatus;
   projects: string[];
   lastUpdated: Date;
+  role?: 'Associate' | 'Senior Associate' | 'Managing Associate' | 'Partner' | 'Assistant';
 }
 
 interface Props {
@@ -49,7 +49,29 @@ const statusWeights = {
   away: 0,
 };
 
-// Mock historical data - in real app, this would come from your backend
+const roleIcons = {
+  'Associate': Briefcase,
+  'Senior Associate': Star,
+  'Managing Associate': Star,
+  'Partner': Shield,
+  'Assistant': UserCog,
+};
+
+const roleColors = {
+  'Associate': "#D6BCFA",
+  'Senior Associate': "#9b87f5",
+  'Managing Associate': "#7E69AB",
+  'Partner': "#6E59A5",
+  'Assistant': "#F1F0FB",
+};
+
+const roleGroups = {
+  'Associate': 'Associate',
+  'Senior/Managing': 'Senior/Managing',
+  'Partner': 'Partner',
+  'Assistant': 'Assistant',
+};
+
 const generateMockHistoricalData = (period: 'month' | 'year') => {
   const data = [];
   const intervals = period === 'month' ? 4 : 12;
@@ -59,13 +81,13 @@ const generateMockHistoricalData = (period: 'month' | 'year') => {
     const date = dateFunc(new Date(), i);
     data.push({
       date: format(startOfWeek(date), 'MMM d'),
-      capacity: Math.floor(Math.random() * 40) + 60, // Random capacity between 60-100%
+      capacity: Math.floor(Math.random() * 40) + 60,
     });
   }
   return data;
 };
 
-const DonutChart = ({ percentage, color, label, count }: { percentage: number; color: string; label: string; count: number }) => (
+const DonutChart = ({ percentage, color, label, count, icon: Icon }: { percentage: number; color: string; label: string; count: number; icon?: React.ElementType }) => (
   <div className="relative w-24 h-24">
     <svg className="w-full h-full" viewBox="0 0 36 36">
       <defs>
@@ -95,14 +117,27 @@ const DonutChart = ({ percentage, color, label, count }: { percentage: number; c
       />
     </svg>
     <div className="absolute inset-0 flex flex-col items-center justify-center text-center">
+      {Icon && <Icon className="h-3 w-3 mb-0.5" />}
       <span className="text-xl font-semibold">{count}</span>
       <span className="text-xs text-gray-600 leading-tight max-w-full px-1">{label}</span>
     </div>
   </div>
 );
 
+function determineRoleFromPosition(position: string): TeamMember['role'] {
+  position = position.toLowerCase();
+  
+  if (position.includes('partner')) return 'Partner';
+  if (position.includes('senior') || position.includes('lead')) return 'Senior Associate';
+  if (position.includes('managing')) return 'Managing Associate';
+  if (position.includes('assistant') || position.includes('admin')) return 'Assistant';
+  
+  return 'Associate';
+}
+
 export default function WorkloadSummary({ members, showOnlyCapacity = false }: Props) {
   const [timeRange, setTimeRange] = React.useState<'month' | 'year'>('month');
+  const [showRoleMetrics, setShowRoleMetrics] = React.useState<boolean>(true);
   const historicalData = React.useMemo(() => generateMockHistoricalData(timeRange), [timeRange]);
 
   const workloadData = Object.entries(statusLabels).map(([status, label]) => {
@@ -117,6 +152,51 @@ export default function WorkloadSummary({ members, showOnlyCapacity = false }: P
       percentage,
     };
   });
+
+  const roleMetricsData = React.useMemo(() => {
+    const membersWithRoles = members.map(member => ({
+      ...member,
+      role: member.role || determineRoleFromPosition(member.position)
+    }));
+
+    const roleGroups = {
+      'Associate': membersWithRoles.filter(m => m.role === 'Associate'),
+      'Senior/Managing': membersWithRoles.filter(m => 
+        m.role === 'Senior Associate' || m.role === 'Managing Associate'
+      ),
+      'Partner': membersWithRoles.filter(m => m.role === 'Partner'),
+      'Assistant': membersWithRoles.filter(m => m.role === 'Assistant'),
+    };
+
+    return Object.entries(roleGroups)
+      .filter(([_, groupMembers]) => groupMembers.length > 0)
+      .map(([groupName, groupMembers]) => {
+        const totalCapacity = groupMembers.reduce((acc, member) => {
+          return acc + (member.status !== 'away' ? statusWeights[member.status] : 0);
+        }, 0);
+        
+        const maxPossibleCapacity = groupMembers.filter(m => m.status !== 'away').length * 100;
+        const capacityPercentage = maxPossibleCapacity > 0 
+          ? Math.min((totalCapacity / maxPossibleCapacity) * 100, 100) 
+          : 0;
+        
+        const roleColor = groupName === 'Senior/Managing' 
+          ? roleColors['Senior Associate'] 
+          : roleColors[groupName as keyof typeof roleColors] || '#E5DEFF';
+        
+        const roleIcon = groupName === 'Senior/Managing'
+          ? roleIcons['Senior Associate']
+          : roleIcons[groupName as keyof typeof roleIcons];
+
+        return {
+          role: groupName,
+          count: groupMembers.length,
+          percentage: capacityPercentage,
+          color: roleColor,
+          icon: roleIcon,
+        };
+      });
+  }, [members]);
 
   const activeMembers = members.filter(m => m.status !== "away");
   const availableMembers = members.filter(m => m.status === "available");
@@ -158,27 +238,64 @@ export default function WorkloadSummary({ members, showOnlyCapacity = false }: P
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
       <Card className="p-6 bg-white/10 backdrop-blur-md border border-white/10 shadow-xl rounded-2xl">
-        <h3 className="text-xl font-semibold text-gray-800 mb-6 flex items-center">
-          <div className="h-3 w-3 rounded-full bg-[#E5DEFF] mr-2"></div>
-          Team Status
-        </h3>
-        <div className="grid grid-cols-5 gap-4 w-full">
-          {workloadData.map((data) => (
-            <motion.div
-              key={data.status}
-              className="flex flex-col items-center justify-center"
-              whileHover={{ scale: 1.05 }}
-              transition={{ type: "spring", stiffness: 300, damping: 30 }}
-            >
-              <DonutChart
-                percentage={data.percentage}
-                color={data.color}
-                label={data.status}
-                count={data.count}
-              />
-            </motion.div>
-          ))}
+        <div className="flex items-center justify-between mb-6">
+          <h3 className="text-xl font-semibold text-gray-800 flex items-center">
+            <div className="h-3 w-3 rounded-full bg-[#E5DEFF] mr-2"></div>
+            Team Status
+          </h3>
+          <ToggleGroup 
+            type="single" 
+            value={showRoleMetrics ? "roles" : "status"} 
+            onValueChange={(value) => value && setShowRoleMetrics(value === "roles")}
+            className="bg-white/5 backdrop-blur-sm rounded-xl border border-white/10 p-1"
+          >
+            <ToggleGroupItem value="status" aria-label="Status view" className="data-[state=on]:bg-white/10 text-xs">
+              Status
+            </ToggleGroupItem>
+            <ToggleGroupItem value="roles" aria-label="Roles view" className="data-[state=on]:bg-white/10 text-xs">
+              Roles
+            </ToggleGroupItem>
+          </ToggleGroup>
         </div>
+        
+        {showRoleMetrics ? (
+          <div className="grid grid-cols-4 gap-4 w-full">
+            {roleMetricsData.map((data) => (
+              <motion.div
+                key={data.role}
+                className="flex flex-col items-center justify-center"
+                whileHover={{ scale: 1.05 }}
+                transition={{ type: "spring", stiffness: 300, damping: 30 }}
+              >
+                <DonutChart
+                  percentage={data.percentage}
+                  color={data.color}
+                  label={data.role}
+                  count={data.count}
+                  icon={data.icon}
+                />
+              </motion.div>
+            ))}
+          </div>
+        ) : (
+          <div className="grid grid-cols-5 gap-4 w-full">
+            {workloadData.map((data) => (
+              <motion.div
+                key={data.status}
+                className="flex flex-col items-center justify-center"
+                whileHover={{ scale: 1.05 }}
+                transition={{ type: "spring", stiffness: 300, damping: 30 }}
+              >
+                <DonutChart
+                  percentage={data.percentage}
+                  color={data.color}
+                  label={data.status}
+                  count={data.count}
+                />
+              </motion.div>
+            ))}
+          </div>
+        )}
       </Card>
 
       <Card className="p-6 bg-white/10 backdrop-blur-md border border-white/10 shadow-xl rounded-2xl">
