@@ -316,7 +316,6 @@ export default function WorkloadSummary({ members, showOnlyCapacity = false }: P
           <h3 className="text-xl font-semibold text-gray-800 flex items-center">
             <div className="h-3 w-3 rounded-full bg-[#D3E4FD] mr-2"></div>
             Historical Capacity
-            <span className="ml-2 text-xs font-normal text-gray-500">(Monday EOD)</span>
           </h3>
           <ToggleGroup 
             type="single" 
@@ -356,7 +355,7 @@ export default function WorkloadSummary({ members, showOnlyCapacity = false }: P
                   border: '1px solid rgba(255, 255, 255, 0.1)',
                   borderRadius: '12px'
                 }}
-                formatter={(value) => [`${value}% capacity`, 'Monday EOD']}
+                formatter={(value) => [`${value}% capacity`]}
                 labelFormatter={(label) => `${label}`}
               />
               <Line
