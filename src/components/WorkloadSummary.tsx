@@ -7,7 +7,7 @@ import { motion } from "framer-motion";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { Button } from "@/components/ui/button";
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
-import { format, subMonths, subYears, startOfWeek } from "date-fns";
+import { format, subMonths, subYears, startOfWeek, subWeeks, addDays, setHours, isMonday, previousMonday, endOfDay, getDay } from "date-fns";
 
 type TeamMemberStatus = 'available' | 'someAvailability' | 'busy' | 'seriouslyBusy' | 'away';
 
@@ -76,16 +76,25 @@ const roleGroups = {
 const generateMockHistoricalData = (period: 'month' | 'year') => {
   const data = [];
   const intervals = period === 'month' ? 4 : 12;
-  const dateFunc = period === 'month' ? subMonths : subYears;
   
-  for (let i = intervals - 1; i >= 0; i--) {
-    const date = dateFunc(new Date(), i);
-    data.push({
-      date: format(startOfWeek(date), 'MMM d'),
-      capacity: Math.floor(Math.random() * 40) + 60,
+  const today = new Date();
+  let currentDate = endOfDay(previousMonday(today));
+  
+  for (let i = 0; i < intervals; i++) {
+    const mondayDate = i === 0 ? currentDate : endOfDay(subWeeks(currentDate, i));
+    
+    const baseCapacity = 75;
+    const variance = Math.sin(i * 0.5) * 15;
+    const capacity = Math.floor(baseCapacity + variance);
+    
+    data.unshift({
+      date: format(mondayDate, 'MMM d'),
+      capacity: Math.min(Math.max(capacity, 40), 95),
+      fullDate: mondayDate,
     });
   }
-  return data;
+  
+  return data.sort((a, b) => a.fullDate.getTime() - b.fullDate.getTime());
 };
 
 const DonutChart = ({ percentage, color, label, count, icon: Icon }: { percentage: number; color: string; label: string; count: number; icon?: React.ElementType }) => (
@@ -307,6 +316,7 @@ export default function WorkloadSummary({ members, showOnlyCapacity = false }: P
           <h3 className="text-xl font-semibold text-gray-800 flex items-center">
             <div className="h-3 w-3 rounded-full bg-[#D3E4FD] mr-2"></div>
             Historical Capacity
+            <span className="ml-2 text-xs font-normal text-gray-500">(Monday EOD)</span>
           </h3>
           <ToggleGroup 
             type="single" 
@@ -346,6 +356,8 @@ export default function WorkloadSummary({ members, showOnlyCapacity = false }: P
                   border: '1px solid rgba(255, 255, 255, 0.1)',
                   borderRadius: '12px'
                 }}
+                formatter={(value) => [`${value}% capacity`, 'Monday EOD']}
+                labelFormatter={(label) => `${label}`}
               />
               <Line
                 type="monotone"
