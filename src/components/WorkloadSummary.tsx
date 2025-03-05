@@ -68,7 +68,7 @@ const roleColors = {
 
 const roleGroups = {
   'Associate': 'Associate',
-  'Senior/Managing Associate': 'Senior/Managing Associate',
+  'Senior / Managing': 'Senior / Managing',
   'Partner': 'Partner',
   'Assistant': 'Assistant',
 };
@@ -162,7 +162,7 @@ export default function WorkloadSummary({ members, showOnlyCapacity = false }: P
 
     const roleGroups = {
       'Associate': membersWithRoles.filter(m => m.role === 'Associate'),
-      'Senior Associate / Managing Associate': membersWithRoles.filter(m => 
+      'Senior / Managing': membersWithRoles.filter(m => 
         m.role === 'Senior Associate' || m.role === 'Managing Associate'
       ),
       'Partner': membersWithRoles.filter(m => m.role === 'Partner'),
@@ -181,11 +181,11 @@ export default function WorkloadSummary({ members, showOnlyCapacity = false }: P
           ? Math.min((totalCapacity / maxPossibleCapacity) * 100, 100) 
           : 0;
         
-        const roleColor = groupName === 'Senior Associate / Managing Associate' 
+        const roleColor = groupName === 'Senior / Managing' 
           ? roleColors['Senior Associate'] 
           : roleColors[groupName.split(' /')[0] as keyof typeof roleColors] || '#E5DEFF';
         
-        const roleIcon = groupName === 'Senior Associate / Managing Associate'
+        const roleIcon = groupName === 'Senior / Managing'
           ? roleIcons['Senior Associate']
           : roleIcons[groupName.split(' /')[0] as keyof typeof roleIcons];
 
