@@ -28,8 +28,8 @@ interface Props {
 
 const statusColors = {
   available: "#D3E4FD",
-  someAvailability: "#E5DEFF",
-  busy: "#FDE1D3",
+  someAvailability: "#F2FCE2",
+  busy: "#FEF7CD",
   seriouslyBusy: "#FFDEE2",
   away: "#F1F0FB",
 };
@@ -103,15 +103,16 @@ const chartVariants = {
     opacity: 1, 
     y: 0,
     transition: { 
-      duration: 0.5,
-      ease: "easeOut"
+      duration: 0.6,
+      ease: "easeOut",
+      staggerChildren: 0.1
     }
   },
   exit: { 
     opacity: 0, 
     y: -20, 
     transition: { 
-      duration: 0.3,
+      duration: 0.4,
       ease: "easeInOut"
     }
   }
@@ -123,15 +124,15 @@ const donutVariants = {
     scale: 1,
     opacity: 1,
     transition: {
-      delay: i * 0.1,
-      duration: 0.4,
+      delay: i * 0.08,
+      duration: 0.5,
       ease: "easeOut"
     }
   }),
   hover: {
     scale: 1.05,
     transition: {
-      duration: 0.2,
+      duration: 0.3,
       ease: "easeInOut"
     }
   }
@@ -168,14 +169,14 @@ const DonutChart = ({ percentage, color, label, count, icon: Icon, index = 0 }: 
         stroke="#f3f4f6"
         strokeWidth="3"
         initial={{ opacity: 0 }}
-        animate={{ opacity: 1, transition: { delay: index * 0.1, duration: 0.3 } }}
+        animate={{ opacity: 1, transition: { delay: index * 0.08, duration: 0.4 } }}
       />
       <motion.circle
         cx="18"
         cy="18"
         r="15.91549430918954"
         fill="none"
-        stroke={color}
+        stroke={`url(#gradient-${label})`}
         strokeWidth="3"
         strokeDasharray={`${percentage} 100`}
         transform="rotate(-90 18 18)"
@@ -184,8 +185,8 @@ const DonutChart = ({ percentage, color, label, count, icon: Icon, index = 0 }: 
         animate={{ 
           strokeDasharray: `${percentage} 100`,
           transition: { 
-            delay: index * 0.1 + 0.2, 
-            duration: 0.8,
+            delay: index * 0.08 + 0.2, 
+            duration: 1,
             ease: "easeOut" 
           }
         }}
@@ -200,8 +201,9 @@ const DonutChart = ({ percentage, color, label, count, icon: Icon, index = 0 }: 
           opacity: 1, 
           scale: 1,
           transition: { 
-            delay: index * 0.1 + 0.3,
-            duration: 0.3 
+            delay: index * 0.08 + 0.3,
+            duration: 0.4,
+            ease: "easeOut"
           }
         }}
       >{count}</motion.span>
@@ -211,8 +213,9 @@ const DonutChart = ({ percentage, color, label, count, icon: Icon, index = 0 }: 
         animate={{ 
           opacity: 1,
           transition: { 
-            delay: index * 0.1 + 0.4,
-            duration: 0.3 
+            delay: index * 0.08 + 0.4,
+            duration: 0.4,
+            ease: "easeOut"
           }
         }}
       >{label}</motion.span>
@@ -346,7 +349,7 @@ export default function WorkloadSummary({ members, showOnlyCapacity = false }: P
       <Card className="p-6 bg-white/10 backdrop-blur-md border border-white/10 shadow-xl rounded-2xl">
         <div className="flex items-center justify-between mb-6">
           <h3 className="text-xl font-semibold text-gray-800 flex items-center">
-            <div className="h-3 w-3 rounded-full bg-[#E5DEFF] mr-2"></div>
+            <div className="h-3 w-3 rounded-full bg-[#D3E4FD] mr-2"></div>
             Team Status
           </h3>
           <div className="flex items-center space-x-2">
@@ -471,6 +474,8 @@ export default function WorkloadSummary({ members, showOnlyCapacity = false }: P
                 stroke="#D3E4FD"
                 strokeWidth={2}
                 dot={{ fill: "#D3E4FD", strokeWidth: 2 }}
+                animationDuration={1500}
+                animationEasing="ease-out"
               />
             </LineChart>
           </ResponsiveContainer>
