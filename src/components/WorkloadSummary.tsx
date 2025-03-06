@@ -3,7 +3,7 @@ import { Card } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
 import { Thermometer, Users, ListTodo, Briefcase, Star, Shield, UserCog } from "lucide-react";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { Button } from "@/components/ui/button";
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
@@ -27,8 +27,8 @@ interface Props {
 }
 
 const statusColors = {
-  available: "#E5DEFF",
-  someAvailability: "#D3E4FD",
+  available: "#D3E4FD",
+  someAvailability: "#E5DEFF",
   busy: "#FDE1D3",
   seriouslyBusy: "#FFDEE2",
   away: "#F1F0FB",
@@ -97,8 +97,62 @@ const generateMockHistoricalData = (period: 'month' | 'year') => {
   return data.sort((a, b) => a.fullDate.getTime() - b.fullDate.getTime());
 };
 
-const DonutChart = ({ percentage, color, label, count, icon: Icon }: { percentage: number; color: string; label: string; count: number; icon?: React.ElementType }) => (
-  <div className="relative w-24 h-24">
+const chartVariants = {
+  hidden: { opacity: 0, y: 20 },
+  visible: { 
+    opacity: 1, 
+    y: 0,
+    transition: { 
+      duration: 0.5,
+      ease: "easeOut"
+    }
+  },
+  exit: { 
+    opacity: 0, 
+    y: -20, 
+    transition: { 
+      duration: 0.3,
+      ease: "easeInOut"
+    }
+  }
+};
+
+const donutVariants = {
+  hidden: { scale: 0.9, opacity: 0 },
+  visible: (i: number) => ({
+    scale: 1,
+    opacity: 1,
+    transition: {
+      delay: i * 0.1,
+      duration: 0.4,
+      ease: "easeOut"
+    }
+  }),
+  hover: {
+    scale: 1.05,
+    transition: {
+      duration: 0.2,
+      ease: "easeInOut"
+    }
+  }
+};
+
+const DonutChart = ({ percentage, color, label, count, icon: Icon, index = 0 }: { 
+  percentage: number; 
+  color: string; 
+  label: string; 
+  count: number; 
+  icon?: React.ElementType;
+  index?: number;
+}) => (
+  <motion.div 
+    className="relative w-24 h-24"
+    variants={donutVariants}
+    initial="hidden"
+    animate="visible"
+    whileHover="hover"
+    custom={index}
+  >
     <svg className="w-full h-full" viewBox="0 0 36 36">
       <defs>
         <linearGradient id={`gradient-${label}`} x1="0%" y1="0%" x2="100%" y2="100%">
@@ -106,15 +160,17 @@ const DonutChart = ({ percentage, color, label, count, icon: Icon }: { percentag
           <stop offset="100%" style={{ stopColor: color, stopOpacity: 0.8 }} />
         </linearGradient>
       </defs>
-      <circle
+      <motion.circle
         cx="18"
         cy="18"
         r="15.91549430918954"
         fill="none"
         stroke="#f3f4f6"
         strokeWidth="3"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1, transition: { delay: index * 0.1, duration: 0.3 } }}
       />
-      <circle
+      <motion.circle
         cx="18"
         cy="18"
         r="15.91549430918954"
@@ -124,14 +180,44 @@ const DonutChart = ({ percentage, color, label, count, icon: Icon }: { percentag
         strokeDasharray={`${percentage} 100`}
         transform="rotate(-90 18 18)"
         strokeLinecap="round"
+        initial={{ strokeDasharray: "0 100" }}
+        animate={{ 
+          strokeDasharray: `${percentage} 100`,
+          transition: { 
+            delay: index * 0.1 + 0.2, 
+            duration: 0.8,
+            ease: "easeOut" 
+          }
+        }}
       />
     </svg>
     <div className="absolute inset-0 flex flex-col items-center justify-center text-center">
       {Icon && <Icon className="h-3 w-3 mb-0.5" />}
-      <span className="text-xl font-semibold">{count}</span>
-      <span className="text-xs text-gray-600 leading-tight max-w-full px-1">{label}</span>
+      <motion.span 
+        className="text-xl font-semibold"
+        initial={{ opacity: 0, scale: 0.5 }}
+        animate={{ 
+          opacity: 1, 
+          scale: 1,
+          transition: { 
+            delay: index * 0.1 + 0.3,
+            duration: 0.3 
+          }
+        }}
+      >{count}</motion.span>
+      <motion.span 
+        className="text-xs text-gray-600 leading-tight max-w-full px-1"
+        initial={{ opacity: 0 }}
+        animate={{ 
+          opacity: 1,
+          transition: { 
+            delay: index * 0.1 + 0.4,
+            duration: 0.3 
+          }
+        }}
+      >{label}</motion.span>
     </div>
-  </div>
+  </motion.div>
 );
 
 function determineRoleFromPosition(position: string): TeamMember['role'] {
@@ -150,7 +236,7 @@ export default function WorkloadSummary({ members, showOnlyCapacity = false }: P
   const [showRoleMetrics, setShowRoleMetrics] = React.useState<boolean>(true);
   const historicalData = React.useMemo(() => generateMockHistoricalData(timeRange), [timeRange]);
 
-  const workloadData = Object.entries(statusLabels).map(([status, label]) => {
+  const workloadData = Object.entries(statusLabels).map(([status, label], index) => {
     const count = members.filter(m => m.status === status).length;
     const totalMembers = members.length;
     const percentage = totalMembers > 0 ? (count / totalMembers) * 100 : 0;
@@ -160,6 +246,7 @@ export default function WorkloadSummary({ members, showOnlyCapacity = false }: P
       count,
       color: statusColors[status as TeamMemberStatus],
       percentage,
+      index,
     };
   });
 
@@ -180,7 +267,7 @@ export default function WorkloadSummary({ members, showOnlyCapacity = false }: P
 
     return Object.entries(roleGroups)
       .filter(([_, groupMembers]) => groupMembers.length > 0)
-      .map(([groupName, groupMembers]) => {
+      .map(([groupName, groupMembers], index) => {
         const totalCapacity = groupMembers.reduce((acc, member) => {
           return acc + (member.status !== 'away' ? statusWeights[member.status] : 0);
         }, 0);
@@ -204,12 +291,13 @@ export default function WorkloadSummary({ members, showOnlyCapacity = false }: P
           percentage: capacityPercentage,
           color: roleColor,
           icon: roleIcon,
+          index,
         };
       });
   }, [members]);
 
   const activeMembers = members.filter(m => m.status !== "away");
-  const availableMembers = members.filter(m => m.status === "available");
+  const availableMembers = members.filter(m => m.status === "available" || m.status === "someAvailability");
   const usedCapacity = activeMembers.reduce((acc, member) => {
     return acc + statusWeights[member.status];
   }, 0);
@@ -229,15 +317,23 @@ export default function WorkloadSummary({ members, showOnlyCapacity = false }: P
           </div>
           <Thermometer className="h-5 w-5 text-fuchsia-400" />
         </div>
-        <div className="relative h-2 bg-gray-100 rounded-full overflow-hidden">
-          <div
-            className="absolute inset-y-0 left-0 rounded-full transition-all duration-500"
+        <motion.div 
+          className="relative h-2 bg-gray-100 rounded-full overflow-hidden"
+          initial={{ width: 0 }}
+          animate={{ width: "100%", transition: { duration: 0.5, ease: "easeOut" } }}
+        >
+          <motion.div
+            className="absolute inset-y-0 left-0 rounded-full"
+            initial={{ width: "0%" }}
+            animate={{ 
+              width: `${capacityPercentage}%`, 
+              transition: { duration: 0.8, ease: "easeInOut", delay: 0.2 }
+            }}
             style={{
-              width: `${capacityPercentage}%`,
               background: `linear-gradient(to right, ${statusColors.available}, ${statusColors.seriouslyBusy})`,
             }}
           />
-        </div>
+        </motion.div>
         <p className="text-sm text-gray-600 mt-2">
           {capacityPercentage.toFixed(0)}% capacity utilized
         </p>
@@ -271,44 +367,50 @@ export default function WorkloadSummary({ members, showOnlyCapacity = false }: P
           </div>
         </div>
         
-        {showRoleMetrics ? (
-          <div className="grid grid-cols-4 gap-4 w-full">
-            {roleMetricsData.map((data) => (
-              <motion.div
-                key={data.role}
-                className="flex flex-col items-center justify-center"
-                whileHover={{ scale: 1.05 }}
-                transition={{ type: "spring", stiffness: 300, damping: 30 }}
-              >
+        <AnimatePresence mode="wait">
+          {showRoleMetrics ? (
+            <motion.div 
+              key="roles"
+              className="grid grid-cols-4 gap-4 w-full"
+              variants={chartVariants}
+              initial="hidden"
+              animate="visible"
+              exit="exit"
+            >
+              {roleMetricsData.map((data, idx) => (
                 <DonutChart
+                  key={data.role}
                   percentage={data.percentage}
                   color={data.color}
                   label={data.role}
                   count={data.count}
                   icon={data.icon}
+                  index={idx}
                 />
-              </motion.div>
-            ))}
-          </div>
-        ) : (
-          <div className="grid grid-cols-5 gap-4 w-full">
-            {workloadData.map((data) => (
-              <motion.div
-                key={data.status}
-                className="flex flex-col items-center justify-center"
-                whileHover={{ scale: 1.05 }}
-                transition={{ type: "spring", stiffness: 300, damping: 30 }}
-              >
+              ))}
+            </motion.div>
+          ) : (
+            <motion.div
+              key="status"
+              className="grid grid-cols-5 gap-4 w-full"
+              variants={chartVariants}
+              initial="hidden"
+              animate="visible"
+              exit="exit"
+            >
+              {workloadData.map((data, idx) => (
                 <DonutChart
+                  key={data.status}
                   percentage={data.percentage}
                   color={data.color}
                   label={data.status}
                   count={data.count}
+                  index={idx}
                 />
-              </motion.div>
-            ))}
-          </div>
-        )}
+              ))}
+            </motion.div>
+          )}
+        </AnimatePresence>
       </Card>
 
       <Card className="p-6 bg-white/10 backdrop-blur-md border border-white/10 shadow-xl rounded-2xl">
@@ -331,7 +433,12 @@ export default function WorkloadSummary({ members, showOnlyCapacity = false }: P
             </ToggleGroupItem>
           </ToggleGroup>
         </div>
-        <div className="h-[250px]">
+        <motion.div 
+          className="h-[250px]"
+          variants={chartVariants}
+          initial="hidden"
+          animate="visible"
+        >
           <ResponsiveContainer width="100%" height="100%">
             <LineChart data={historicalData}>
               <XAxis 
@@ -361,13 +468,13 @@ export default function WorkloadSummary({ members, showOnlyCapacity = false }: P
               <Line
                 type="monotone"
                 dataKey="capacity"
-                stroke="#E5DEFF"
+                stroke="#D3E4FD"
                 strokeWidth={2}
-                dot={{ fill: "#E5DEFF", strokeWidth: 2 }}
+                dot={{ fill: "#D3E4FD", strokeWidth: 2 }}
               />
             </LineChart>
           </ResponsiveContainer>
-        </div>
+        </motion.div>
       </Card>
     </div>
   );

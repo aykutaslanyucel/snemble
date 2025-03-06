@@ -1,4 +1,3 @@
-
 import { useState, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -88,7 +87,7 @@ export default function Index() {
   }, [activeProjects, members]);
 
   const availableMembers = useMemo(() => {
-    return members.filter(member => member.status === 'available');
+    return members.filter(member => member.status === 'available' || member.status === 'someAvailability');
   }, [members]);
 
   const handleAddMember = () => {
