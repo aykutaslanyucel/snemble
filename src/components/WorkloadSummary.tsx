@@ -27,6 +27,7 @@ interface Props {
   showOnlyCapacity?: boolean;
 }
 
+// Status colors that match the capacity cards
 const statusColors = {
   available: "#D3E4FD",       // Blue
   someAvailability: "#F2FCE2", // Green
@@ -104,16 +105,16 @@ const chartVariants = {
     opacity: 1, 
     y: 0,
     transition: { 
-      duration: 0.6,
+      duration: 0.8,
       ease: "easeOut",
-      staggerChildren: 0.1
+      staggerChildren: 0.15
     }
   },
   exit: { 
     opacity: 0, 
     y: -20, 
     transition: { 
-      duration: 0.4,
+      duration: 0.6,
       ease: "easeInOut"
     }
   }
@@ -125,15 +126,15 @@ const donutVariants = {
     scale: 1,
     opacity: 1,
     transition: {
-      delay: i * 0.08,
-      duration: 0.5,
+      delay: i * 0.1,
+      duration: 0.7,
       ease: "easeOut"
     }
   }),
   hover: {
     scale: 1.05,
     transition: {
-      duration: 0.3,
+      duration: 0.4,
       ease: "easeInOut"
     }
   }
@@ -146,83 +147,88 @@ const DonutChart = ({ percentage, color, label, count, icon: Icon, index = 0 }: 
   count: number; 
   icon?: React.ElementType;
   index?: number;
-}) => (
-  <motion.div 
-    className="relative w-24 h-24"
-    variants={donutVariants}
-    initial="hidden"
-    animate="visible"
-    whileHover="hover"
-    custom={index}
-  >
-    <svg className="w-full h-full" viewBox="0 0 36 36">
-      <defs>
-        <linearGradient id={`gradient-${label.replace(/\s+/g, '-')}`} x1="0%" y1="0%" x2="100%" y2="100%">
-          <stop offset="0%" style={{ stopColor: color, stopOpacity: 1 }} />
-          <stop offset="100%" style={{ stopColor: color, stopOpacity: 0.8 }} />
-        </linearGradient>
-      </defs>
-      <motion.circle
-        cx="18"
-        cy="18"
-        r="15.91549430918954"
-        fill="none"
-        stroke="#f3f4f6"
-        strokeWidth="3"
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1, transition: { delay: index * 0.08, duration: 0.4 } }}
-      />
-      <motion.circle
-        cx="18"
-        cy="18"
-        r="15.91549430918954"
-        fill="none"
-        stroke={`url(#gradient-${label.replace(/\s+/g, '-')})`}
-        strokeWidth="3"
-        strokeDasharray={`${percentage} 100`}
-        transform="rotate(-90 18 18)"
-        strokeLinecap="round"
-        initial={{ strokeDasharray: "0 100" }}
-        animate={{ 
-          strokeDasharray: `${percentage} 100`,
-          transition: { 
-            delay: index * 0.08 + 0.2, 
-            duration: 1,
-            ease: "easeOut" 
-          }
-        }}
-      />
-    </svg>
-    <div className="absolute inset-0 flex flex-col items-center justify-center text-center">
-      {Icon && <Icon className="h-3 w-3 mb-0.5" />}
-      <motion.span 
-        className="text-xl font-semibold"
-        initial={{ opacity: 0, scale: 0.5 }}
-        animate={{ 
-          opacity: 1, 
-          scale: 1,
-          transition: { 
-            delay: index * 0.08 + 0.3,
-            duration: 0.4,
-            ease: "easeOut"
-          }
-        }}
-      >{count}</motion.span>
-      <motion.span 
-        className="text-xs text-gray-600 leading-tight max-w-full px-1"
-        initial={{ opacity: 0 }}
-        animate={{ 
-          opacity: 1,
-          transition: { 
-            delay: index * 0.08 + 0.4,
-            duration: 0.4,
-            ease: "easeOut"
-          }
-        }}
-      >{label}</motion.span>
-    </div>
-  </motion.div>
-);
+}) => {
+  // Create safe ID by replacing spaces with dashes
+  const safeId = `gradient-${label.replace(/\s+/g, '-')}`;
+  
+  return (
+    <motion.div 
+      className="relative w-24 h-24"
+      variants={donutVariants}
+      initial="hidden"
+      animate="visible"
+      whileHover="hover"
+      custom={index}
+    >
+      <svg className="w-full h-full" viewBox="0 0 36 36">
+        <defs>
+          <linearGradient id={safeId} x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" style={{ stopColor: color, stopOpacity: 1 }} />
+            <stop offset="100%" style={{ stopColor: color, stopOpacity: 0.8 }} />
+          </linearGradient>
+        </defs>
+        <motion.circle
+          cx="18"
+          cy="18"
+          r="15.91549430918954"
+          fill="none"
+          stroke="#f3f4f6"
+          strokeWidth="3"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1, transition: { delay: index * 0.1, duration: 0.5 } }}
+        />
+        <motion.circle
+          cx="18"
+          cy="18"
+          r="15.91549430918954"
+          fill="none"
+          stroke={`url(#${safeId})`}
+          strokeWidth="3"
+          strokeDasharray={`${percentage} 100`}
+          transform="rotate(-90 18 18)"
+          strokeLinecap="round"
+          initial={{ strokeDasharray: "0 100" }}
+          animate={{ 
+            strokeDasharray: `${percentage} 100`,
+            transition: { 
+              delay: index * 0.1 + 0.2, 
+              duration: 1.2,
+              ease: "easeOut" 
+            }
+          }}
+        />
+      </svg>
+      <div className="absolute inset-0 flex flex-col items-center justify-center text-center">
+        {Icon && <Icon className="h-3 w-3 mb-0.5" />}
+        <motion.span 
+          className="text-xl font-semibold"
+          initial={{ opacity: 0, scale: 0.5 }}
+          animate={{ 
+            opacity: 1, 
+            scale: 1,
+            transition: { 
+              delay: index * 0.1 + 0.3,
+              duration: 0.5,
+              ease: "easeOut"
+            }
+          }}
+        >{count}</motion.span>
+        <motion.span 
+          className="text-xs text-gray-600 leading-tight max-w-full px-1"
+          initial={{ opacity: 0 }}
+          animate={{ 
+            opacity: 1,
+            transition: { 
+              delay: index * 0.1 + 0.4,
+              duration: 0.5,
+              ease: "easeOut"
+            }
+          }}
+        >{label}</motion.span>
+      </div>
+    </motion.div>
+  );
+};
 
 function determineRoleFromPosition(position: string): TeamMember['role'] {
   position = position.toLowerCase();
@@ -301,6 +307,7 @@ export default function WorkloadSummary({ members, showOnlyCapacity = false }: P
       });
   }, [members]);
 
+  // Count members that are available or have some availability
   const activeMembers = members.filter(m => m.status !== "away");
   const availableMembers = members.filter(m => m.status === "available" || m.status === "someAvailability");
   const usedCapacity = activeMembers.reduce((acc, member) => {
@@ -325,14 +332,14 @@ export default function WorkloadSummary({ members, showOnlyCapacity = false }: P
         <motion.div 
           className="relative h-2 bg-gray-100 rounded-full overflow-hidden"
           initial={{ width: 0 }}
-          animate={{ width: "100%", transition: { duration: 0.5, ease: "easeOut" } }}
+          animate={{ width: "100%", transition: { duration: 0.7, ease: "easeOut" } }}
         >
           <motion.div
             className="absolute inset-y-0 left-0 rounded-full"
             initial={{ width: "0%" }}
             animate={{ 
               width: `${capacityPercentage}%`, 
-              transition: { duration: 0.8, ease: "easeInOut", delay: 0.2 }
+              transition: { duration: 1.2, ease: "easeInOut", delay: 0.3 }
             }}
             style={{
               background: `linear-gradient(to right, ${statusColors.available}, ${statusColors.seriouslyBusy})`,
