@@ -1,3 +1,4 @@
+
 import React from "react";
 import { Card } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
@@ -27,11 +28,11 @@ interface Props {
 }
 
 const statusColors = {
-  available: "#D3E4FD",
-  someAvailability: "#F2FCE2",
-  busy: "#FEF7CD",
-  seriouslyBusy: "#FFDEE2",
-  away: "#F1F0FB",
+  available: "#D3E4FD",       // Blue
+  someAvailability: "#F2FCE2", // Green
+  busy: "#FEF7CD",           // Yellow
+  seriouslyBusy: "#FFDEE2",   // Red
+  away: "#F1F0FB",           // Gray
 };
 
 const statusLabels = {
@@ -156,7 +157,7 @@ const DonutChart = ({ percentage, color, label, count, icon: Icon, index = 0 }: 
   >
     <svg className="w-full h-full" viewBox="0 0 36 36">
       <defs>
-        <linearGradient id={`gradient-${label}`} x1="0%" y1="0%" x2="100%" y2="100%">
+        <linearGradient id={`gradient-${label.replace(/\s+/g, '-')}`} x1="0%" y1="0%" x2="100%" y2="100%">
           <stop offset="0%" style={{ stopColor: color, stopOpacity: 1 }} />
           <stop offset="100%" style={{ stopColor: color, stopOpacity: 0.8 }} />
         </linearGradient>
@@ -176,7 +177,7 @@ const DonutChart = ({ percentage, color, label, count, icon: Icon, index = 0 }: 
         cy="18"
         r="15.91549430918954"
         fill="none"
-        stroke={`url(#gradient-${label})`}
+        stroke={`url(#gradient-${label.replace(/\s+/g, '-')})`}
         strokeWidth="3"
         strokeDasharray={`${percentage} 100`}
         transform="rotate(-90 18 18)"
@@ -240,14 +241,15 @@ export default function WorkloadSummary({ members, showOnlyCapacity = false }: P
   const historicalData = React.useMemo(() => generateMockHistoricalData(timeRange), [timeRange]);
 
   const workloadData = Object.entries(statusLabels).map(([status, label], index) => {
-    const count = members.filter(m => m.status === status).length;
+    const statusKey = status as TeamMemberStatus;
+    const count = members.filter(m => m.status === statusKey).length;
     const totalMembers = members.length;
     const percentage = totalMembers > 0 ? (count / totalMembers) * 100 : 0;
     
     return {
       status: label,
       count,
-      color: statusColors[status as TeamMemberStatus],
+      color: statusColors[statusKey],
       percentage,
       index,
     };
