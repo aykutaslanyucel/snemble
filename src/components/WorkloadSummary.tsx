@@ -1,4 +1,3 @@
-
 import React from "react";
 import { Card } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
@@ -27,13 +26,20 @@ interface Props {
   showOnlyCapacity?: boolean;
 }
 
-// Status colors that match the capacity cards
 const statusColors = {
   available: "#D3E4FD",       // Blue
   someAvailability: "#F2FCE2", // Green
   busy: "#FEF7CD",           // Yellow
   seriouslyBusy: "#FFDEE2",   // Red
   away: "#F1F0FB",           // Gray
+};
+
+const statusGradientColors = {
+  available: "#B3D4FF",       // Slightly darker blue
+  someAvailability: "#D2ECB2", // Slightly darker green
+  busy: "#FEE69D",           // Slightly darker yellow
+  seriouslyBusy: "#FFBEC2",   // Slightly darker red
+  away: "#E1E0EB",           // Slightly darker gray
 };
 
 const statusLabels = {
@@ -140,16 +146,17 @@ const donutVariants = {
   }
 };
 
-const DonutChart = ({ percentage, color, label, count, icon: Icon, index = 0 }: { 
+const DonutChart = ({ percentage, color, gradientColor, label, count, icon: Icon, index = 0 }: { 
   percentage: number; 
   color: string; 
+  gradientColor?: string;
   label: string; 
   count: number; 
   icon?: React.ElementType;
   index?: number;
 }) => {
-  // Create safe ID by replacing spaces with dashes
   const safeId = `gradient-${label.replace(/\s+/g, '-')}`;
+  const finalGradientColor = gradientColor || color;
   
   return (
     <motion.div 
@@ -164,7 +171,7 @@ const DonutChart = ({ percentage, color, label, count, icon: Icon, index = 0 }: 
         <defs>
           <linearGradient id={safeId} x1="0%" y1="0%" x2="100%" y2="100%">
             <stop offset="0%" style={{ stopColor: color, stopOpacity: 1 }} />
-            <stop offset="100%" style={{ stopColor: color, stopOpacity: 0.8 }} />
+            <stop offset="100%" style={{ stopColor: finalGradientColor, stopOpacity: 0.85 }} />
           </linearGradient>
         </defs>
         <motion.circle
@@ -256,6 +263,7 @@ export default function WorkloadSummary({ members, showOnlyCapacity = false }: P
       status: label,
       count,
       color: statusColors[statusKey],
+      gradientColor: statusGradientColors[statusKey],
       percentage,
       index,
     };
@@ -292,6 +300,17 @@ export default function WorkloadSummary({ members, showOnlyCapacity = false }: P
           ? roleColors['Senior Associate'] 
           : roleColors[groupName.split(' /')[0] as keyof typeof roleColors] || '#E5DEFF';
         
+        const darkerRoleColor = roleColor.replace(
+          /^#([a-f0-9]{2})([a-f0-9]{2})([a-f0-9]{2})$/i,
+          (_, r, g, b) => {
+            const darken = (hex: string) => {
+              const num = Math.max(0, parseInt(hex, 16) - 20);
+              return num.toString(16).padStart(2, '0');
+            };
+            return `#${darken(r)}${darken(g)}${darken(b)}`;
+          }
+        );
+
         const roleIcon = groupName === 'Senior / Managing'
           ? roleIcons['Senior Associate']
           : roleIcons[groupName.split(' /')[0] as keyof typeof roleIcons];
@@ -301,13 +320,13 @@ export default function WorkloadSummary({ members, showOnlyCapacity = false }: P
           count: groupMembers.length,
           percentage: capacityPercentage,
           color: roleColor,
+          gradientColor: darkerRoleColor,
           icon: roleIcon,
           index,
         };
       });
   }, [members]);
 
-  // Count members that are available or have some availability
   const activeMembers = members.filter(m => m.status !== "away");
   const availableMembers = members.filter(m => m.status === "available" || m.status === "someAvailability");
   const usedCapacity = activeMembers.reduce((acc, member) => {
@@ -394,6 +413,7 @@ export default function WorkloadSummary({ members, showOnlyCapacity = false }: P
                   key={data.role}
                   percentage={data.percentage}
                   color={data.color}
+                  gradientColor={data.gradientColor}
                   label={data.role}
                   count={data.count}
                   icon={data.icon}
@@ -415,6 +435,7 @@ export default function WorkloadSummary({ members, showOnlyCapacity = false }: P
                   key={data.status}
                   percentage={data.percentage}
                   color={data.color}
+                  gradientColor={data.gradientColor}
                   label={data.status}
                   count={data.count}
                   index={idx}
