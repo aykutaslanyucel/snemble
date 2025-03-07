@@ -232,7 +232,7 @@ export default function Index() {
           onDelete={handleDeleteMember}
         />
         
-        <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
           <Card className="p-6 bg-white/10 backdrop-blur-md border border-white/10 shadow-xl rounded-xl">
             <h2 className="text-xl font-semibold mb-4 flex items-center gap-2">
               <div className="h-2.5 w-2.5 rounded-full bg-[#E5DEFF]" />
@@ -306,7 +306,9 @@ export default function Index() {
           </Card>
         </div>
         
-        <WorkloadSummary members={members} showOnlyCapacity={false} />
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          <WorkloadSummary members={members} showOnlyCapacity={false} />
+        </div>
         
         <ProjectHeatmap members={members} />
       </div>
