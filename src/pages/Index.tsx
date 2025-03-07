@@ -12,7 +12,6 @@ import { ActionButtons } from "@/components/ActionButtons";
 import { TeamMembers } from "@/components/TeamMembers";
 import { AnnouncementBanner } from "@/components/AnnouncementBanner";
 import WorkloadSummary from "@/components/WorkloadSummary";
-import ProjectHeatmap from "@/components/ProjectHeatmap";
 
 type TeamMemberStatus = 'available' | 'someAvailability' | 'busy' | 'seriouslyBusy' | 'away';
 
@@ -188,10 +187,10 @@ export default function Index() {
     <div className="min-h-screen bg-gradient-to-b from-background to-secondary/20">
       {latestAnnouncement && <AnnouncementBanner announcement={latestAnnouncement} />}
       
-      <div className="container py-8 sm:py-12 space-y-6 sm:space-y-8">
-        <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-6">
+      <div className="container py-12 space-y-8">
+        <div className="flex items-start justify-between">
           <TeamHeader />
-          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
+          <div className="space-y-4">
             <div className="flex items-center gap-2">
               {isAdmin && (
                 <Link to="/admin">
@@ -231,8 +230,10 @@ export default function Index() {
           onUpdate={handleUpdateMember}
           onDelete={handleDeleteMember}
         />
-        
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+
+        <WorkloadSummary members={members} showOnlyCapacity={false} />
+
+        <div className="grid grid-cols-1 xl:grid-cols-2 gap-8 mt-8">
           <Card className="p-6 bg-white/10 backdrop-blur-md border border-white/10 shadow-xl rounded-xl">
             <h2 className="text-xl font-semibold mb-4 flex items-center gap-2">
               <div className="h-2.5 w-2.5 rounded-full bg-[#E5DEFF]" />
@@ -241,7 +242,7 @@ export default function Index() {
                 ({activeProjects.length})
               </span>
             </h2>
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 max-h-[220px] overflow-y-auto pr-1 custom-scrollbar">
+            <div className="grid grid-cols-3 gap-2 max-h-[220px] overflow-y-auto pr-1 custom-scrollbar">
               {activeProjects.map((project, index) => {
                 const assignedMembers = projectsWithMembers.get(project) || [];
                 return (
@@ -305,12 +306,6 @@ export default function Index() {
             </div>
           </Card>
         </div>
-        
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-          <WorkloadSummary members={members} showOnlyCapacity={false} />
-        </div>
-        
-        <ProjectHeatmap members={members} />
       </div>
     </div>
   );
