@@ -1,7 +1,7 @@
 
 import React, { useMemo } from "react";
 import { Card } from "@/components/ui/card";
-import { Folder } from "lucide-react";
+import { Folder, PieChart, AlertTriangle } from "lucide-react";
 import { motion } from "framer-motion";
 import { Badge } from "@/components/ui/badge";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
@@ -28,14 +28,6 @@ const statusColors = {
   busy: "#FEF7CD",           // Yellow
   seriouslyBusy: "#FFDEE2",   // Red
   away: "#F1F0FB",           // Gray
-};
-
-const statusGradientColors = {
-  available: "#B3D4FF",       // Slightly darker blue
-  someAvailability: "#D2ECB2", // Slightly darker green
-  busy: "#FEE69D",           // Slightly darker yellow
-  seriouslyBusy: "#FFBEC2",   // Slightly darker red
-  away: "#E1E0EB",           // Slightly darker gray
 };
 
 // Map availability scores to status for color coding
@@ -115,116 +107,147 @@ const ProjectHeatmap: React.FC<ProjectHeatmapProps> = ({ members }) => {
     });
   }, [members]);
   
+  const sortedProjects = useMemo(() => {
+    return [...projectData].sort((a, b) => a.averageScore - b.averageScore);
+  }, [projectData]);
+  
   // Animation variants for the container
   const containerVariants = {
     hidden: { opacity: 0 },
     visible: { 
       opacity: 1,
       transition: { 
-        staggerChildren: 0.02,
-        delayChildren: 0.05,
-        duration: 0.3,
+        staggerChildren: 0.04,
+        delayChildren: 0.1,
       }
     }
   };
   
-  // Animation variants for the project tiles
-  const projectVariants = {
-    hidden: { opacity: 0, y: 5 },
+  // Animation variants for the project items
+  const itemVariants = {
+    hidden: { opacity: 0, y: 10 },
     visible: { 
       opacity: 1, 
       y: 0,
-      transition: { duration: 0.2, ease: "easeOut" }
-    },
-    hover: { 
-      scale: 1.03, 
-      boxShadow: "0 4px 10px rgba(0, 0, 0, 0.08)",
-      transition: { duration: 0.15 }
+      transition: { duration: 0.3, ease: "easeOut" }
     }
   };
 
   return (
-    <Card className="p-4 sm:p-5 bg-white/10 backdrop-blur-md border border-white/10 shadow-xl rounded-xl">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-4 gap-2">
-        <h3 className="text-base sm:text-lg font-semibold text-gray-800 flex items-center">
-          <div className="h-2.5 w-2.5 rounded-full bg-[#F2FCE2] mr-2"></div>
-          Project Health
+    <Card className="p-5 bg-white/5 backdrop-blur-lg border border-white/10 shadow-lg rounded-2xl overflow-hidden">
+      <div className="flex items-center justify-between mb-6">
+        <h3 className="text-lg font-semibold flex items-center">
+          <PieChart className="w-4 h-4 mr-2 text-fuchsia-300" />
+          <span>Project Health</span>
+          <Badge 
+            variant="outline" 
+            className="ml-2 bg-white/10 text-xs font-normal"
+          >
+            {projectData.length}
+          </Badge>
         </h3>
-        <div className="text-xs text-gray-500">
-          {projectData.length} projects
-        </div>
       </div>
       
-      <TooltipProvider delayDuration={200}>
+      <TooltipProvider>
         <motion.div 
-          className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 2xl:grid-cols-12 gap-2.5"
+          className="space-y-3"
           variants={containerVariants}
           initial="hidden"
           animate="visible"
         >
-          {projectData.map((project, idx) => {
+          {sortedProjects.map((project, idx) => {
             const statusKey = scoreToStatus[project.category];
-            const colorBase = statusColors[statusKey];
-            const colorGradient = statusGradientColors[statusKey];
+            const color = statusColors[statusKey];
+            
+            // Calculate risk level indicator
+            let riskIndicator = "Low";
+            let riskColor = "bg-green-100 text-green-800";
+            
+            if (project.category === "overloaded" || project.category === "constrained") {
+              riskIndicator = "High";
+              riskColor = "bg-red-100 text-red-800";
+            } else if (project.category === "manageable") {
+              riskIndicator = "Medium";
+              riskColor = "bg-yellow-100 text-yellow-800";
+            }
             
             return (
               <Tooltip key={idx}>
                 <TooltipTrigger asChild>
                   <motion.div
-                    className="rounded-md p-2 overflow-hidden cursor-pointer h-[70px] flex flex-col justify-between"
-                    style={{
-                      background: `linear-gradient(135deg, ${colorBase} 0%, ${colorGradient} 100%)`,
-                      boxShadow: "0 2px 4px rgba(0, 0, 0, 0.04)"
-                    }}
-                    variants={projectVariants}
-                    whileHover="hover"
+                    className="bg-white/5 rounded-xl p-3 border border-white/10 transition-all hover:bg-white/10 cursor-pointer"
+                    variants={itemVariants}
+                    whileHover={{ scale: 1.01, transition: { duration: 0.2 } }}
                   >
-                    <div className="flex items-start justify-between gap-1">
+                    <div className="flex items-center justify-between">
                       <div className="flex items-center">
-                        <Folder className="h-3 w-3 text-gray-700 mr-1.5 flex-shrink-0" />
-                        <p className="font-medium text-xs text-gray-800 truncate w-full">
-                          {project.name}
-                        </p>
+                        <div
+                          className="w-3 h-3 rounded-full mr-3 flex-shrink-0"
+                          style={{ backgroundColor: color }}
+                        />
+                        <div className="flex flex-col">
+                          <div className="flex items-center gap-2">
+                            <h4 className="font-medium text-sm">{project.name}</h4>
+                            {project.category === "overloaded" && (
+                              <AlertTriangle className="h-3 w-3 text-red-400" />
+                            )}
+                          </div>
+                          <div className="flex items-center mt-1 space-x-1">
+                            <div className="flex -space-x-1.5">
+                              {project.members.slice(0, 3).map((member, midx) => (
+                                <div 
+                                  key={midx}
+                                  className="h-5 w-5 rounded-full flex items-center justify-center bg-white/20 text-[10px] font-medium ring-1 ring-white/5"
+                                  title={member.name}
+                                >
+                                  {member.name.charAt(0)}
+                                </div>
+                              ))}
+                              {project.members.length > 3 && (
+                                <div className="h-5 w-5 rounded-full flex items-center justify-center bg-white/10 text-[10px] font-medium ring-1 ring-white/5">
+                                  +{project.members.length - 3}
+                                </div>
+                              )}
+                            </div>
+                            <span className="text-xs text-gray-400 ml-2">
+                              {project.members.length} {project.members.length === 1 ? 'member' : 'members'}
+                            </span>
+                          </div>
+                        </div>
                       </div>
-                      <Badge 
-                        variant="outline" 
-                        className="h-4 px-1 text-[9px] bg-white/40 border-0 font-semibold"
-                      >
-                        {project.averageScore.toFixed(1)}
-                      </Badge>
+                      <div className="flex flex-col items-end">
+                        <div className={`px-2 py-0.5 rounded-full text-[10px] font-medium ${riskColor}`}>
+                          {riskIndicator}
+                        </div>
+                        <div className="text-xs font-medium mt-1">
+                          Score: {project.averageScore.toFixed(1)}
+                        </div>
+                      </div>
                     </div>
-                    <div className="flex -space-x-1 mt-1">
-                      {project.members.slice(0, 3).map((member, midx) => (
-                        <div 
-                          key={midx}
-                          className="h-4 w-4 rounded-full flex items-center justify-center bg-white/70 text-[8px] font-medium ring-1 ring-white shadow-sm"
-                          title={member.name}
-                        >
-                          {member.name.charAt(0)}
-                        </div>
-                      ))}
-                      {project.members.length > 3 && (
-                        <div className="h-4 w-4 rounded-full flex items-center justify-center bg-white/70 text-[8px] font-medium ring-1 ring-white shadow-sm">
-                          +{project.members.length - 3}
-                        </div>
-                      )}
+                    
+                    {/* Progress indicator */}
+                    <div className="mt-2 h-1.5 bg-white/5 rounded-full overflow-hidden">
+                      <div 
+                        className="h-full rounded-full"
+                        style={{ 
+                          width: `${(project.averageScore / 3) * 100}%`,
+                          backgroundColor: color
+                        }}
+                      />
                     </div>
                   </motion.div>
                 </TooltipTrigger>
-                <TooltipContent side="top" align="center" className="p-0 overflow-hidden rounded-lg border-0 shadow-lg">
-                  <div className="bg-white/95 backdrop-blur-md p-3 max-w-[200px]">
-                    <p className="font-semibold text-xs mb-1.5">{project.name}</p>
-                    <div className="space-y-1 max-h-[120px] overflow-y-auto pr-1 custom-scrollbar">
+                <TooltipContent side="top" align="center" className="p-0 overflow-hidden rounded-lg border border-white/10">
+                  <div className="bg-white/10 backdrop-blur-lg p-3">
+                    <h5 className="font-semibold text-sm mb-2">{project.name}</h5>
+                    <div className="space-y-1.5 max-h-[150px] overflow-y-auto">
                       {project.members.map((member, midx) => (
                         <div key={midx} className="flex items-center text-xs">
                           <div 
-                            className="h-3 w-3 rounded-full mr-1.5"
-                            style={{ 
-                              backgroundColor: statusColors[member.status]
-                            }}
-                            title={member.status}
-                          ></div>
-                          <span className="truncate text-[10px]">{member.name}</span>
+                            className="h-2 w-2 rounded-full mr-1.5"
+                            style={{ backgroundColor: statusColors[member.status] }}
+                          />
+                          <span>{member.name}</span>
                         </div>
                       ))}
                     </div>
