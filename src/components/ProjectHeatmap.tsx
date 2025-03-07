@@ -1,7 +1,7 @@
 
 import React, { useMemo } from "react";
 import { Card } from "@/components/ui/card";
-import { Folder, User, Info } from "lucide-react";
+import { Folder } from "lucide-react";
 import { motion } from "framer-motion";
 import { Badge } from "@/components/ui/badge";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
@@ -56,16 +56,6 @@ const statusScores: Record<TeamMemberStatus, number> = {
   seriouslyBusy: 0,
   away: 0 // Away members are excluded from calculation
 };
-
-// Legend labels for heatmap interpretation
-const heatmapLegend = [
-  { key: "veryHealthy", label: "Very Healthy (2.8-3.0)", status: "available" },
-  { key: "healthy", label: "Healthy (2.1-2.7)", status: "someAvailability" },
-  { key: "manageable", label: "Manageable (1.5-2.0)", status: "busy" },
-  { key: "constrained", label: "Constrained (0.6-1.4)", status: "busy" },
-  { key: "overloaded", label: "Overloaded (0-0.5)", status: "seriouslyBusy" },
-  { key: "unknown", label: "No Data / All Away", status: "away" }
-];
 
 const ProjectHeatmap: React.FC<ProjectHeatmapProps> = ({ members }) => {
   const projectData = useMemo(() => {
@@ -131,57 +121,43 @@ const ProjectHeatmap: React.FC<ProjectHeatmapProps> = ({ members }) => {
     visible: { 
       opacity: 1,
       transition: { 
-        staggerChildren: 0.05,
-        delayChildren: 0.1,
-        duration: 0.4,
+        staggerChildren: 0.02,
+        delayChildren: 0.05,
+        duration: 0.3,
       }
     }
   };
   
   // Animation variants for the project tiles
   const projectVariants = {
-    hidden: { opacity: 0, scale: 0.8 },
+    hidden: { opacity: 0, y: 5 },
     visible: { 
       opacity: 1, 
-      scale: 1, 
-      transition: { duration: 0.4, ease: "easeOut" }
+      y: 0,
+      transition: { duration: 0.2, ease: "easeOut" }
     },
     hover: { 
-      scale: 1.05, 
-      boxShadow: "0 10px 15px rgba(0, 0, 0, 0.1)",
-      transition: { duration: 0.2 }
+      scale: 1.03, 
+      boxShadow: "0 4px 10px rgba(0, 0, 0, 0.08)",
+      transition: { duration: 0.15 }
     }
-  };
-  
-  // Animation variants for the legend items
-  const legendVariants = {
-    hidden: { opacity: 0, y: 20 },
-    visible: (i: number) => ({ 
-      opacity: 1, 
-      y: 0, 
-      transition: { 
-        delay: 0.3 + (i * 0.05),
-        duration: 0.3,
-        ease: "easeOut"
-      }
-    })
   };
 
   return (
-    <Card className="p-4 sm:p-6 bg-white/10 backdrop-blur-md border border-white/10 shadow-xl rounded-2xl">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-6 gap-4">
-        <h3 className="text-lg sm:text-xl font-semibold text-gray-800 flex items-center">
-          <div className="h-3 w-3 rounded-full bg-[#F2FCE2] mr-2"></div>
-          Project Heatmap
+    <Card className="p-4 sm:p-5 bg-white/10 backdrop-blur-md border border-white/10 shadow-xl rounded-xl">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-4 gap-2">
+        <h3 className="text-base sm:text-lg font-semibold text-gray-800 flex items-center">
+          <div className="h-2.5 w-2.5 rounded-full bg-[#F2FCE2] mr-2"></div>
+          Project Health
         </h3>
-        <div className="text-sm text-gray-600">
+        <div className="text-xs text-gray-500">
           {projectData.length} projects
         </div>
       </div>
       
-      <TooltipProvider delayDuration={300}>
+      <TooltipProvider delayDuration={200}>
         <motion.div 
-          className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3 sm:gap-4 mb-6"
+          className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 2xl:grid-cols-12 gap-2.5"
           variants={containerVariants}
           initial="hidden"
           animate="visible"
@@ -195,60 +171,60 @@ const ProjectHeatmap: React.FC<ProjectHeatmapProps> = ({ members }) => {
               <Tooltip key={idx}>
                 <TooltipTrigger asChild>
                   <motion.div
-                    className="relative rounded-lg p-3 overflow-hidden cursor-pointer"
+                    className="rounded-md p-2 overflow-hidden cursor-pointer h-[70px] flex flex-col justify-between"
                     style={{
                       background: `linear-gradient(135deg, ${colorBase} 0%, ${colorGradient} 100%)`,
-                      boxShadow: "0 4px 6px rgba(0, 0, 0, 0.05)"
+                      boxShadow: "0 2px 4px rgba(0, 0, 0, 0.04)"
                     }}
                     variants={projectVariants}
                     whileHover="hover"
                   >
-                    <div className="flex items-start justify-between mb-1.5">
+                    <div className="flex items-start justify-between gap-1">
                       <div className="flex items-center">
-                        <Folder className="h-3.5 w-3.5 text-gray-700 mr-1.5 flex-shrink-0" />
-                        <p className="font-semibold text-xs text-gray-800 truncate max-w-[80%]">
+                        <Folder className="h-3 w-3 text-gray-700 mr-1.5 flex-shrink-0" />
+                        <p className="font-medium text-xs text-gray-800 truncate w-full">
                           {project.name}
                         </p>
                       </div>
                       <Badge 
                         variant="outline" 
-                        className="h-5 px-1.5 text-[10px] bg-white/50 border-0"
+                        className="h-4 px-1 text-[9px] bg-white/40 border-0 font-semibold"
                       >
                         {project.averageScore.toFixed(1)}
                       </Badge>
                     </div>
-                    <div className="flex -space-x-1.5 mt-2">
-                      {project.members.slice(0, 5).map((member, midx) => (
+                    <div className="flex -space-x-1 mt-1">
+                      {project.members.slice(0, 3).map((member, midx) => (
                         <div 
                           key={midx}
-                          className="h-5 w-5 rounded-full flex items-center justify-center bg-white/70 text-[10px] font-medium ring-1 ring-white"
+                          className="h-4 w-4 rounded-full flex items-center justify-center bg-white/70 text-[8px] font-medium ring-1 ring-white shadow-sm"
                           title={member.name}
                         >
                           {member.name.charAt(0)}
                         </div>
                       ))}
-                      {project.members.length > 5 && (
-                        <div className="h-5 w-5 rounded-full flex items-center justify-center bg-white/70 text-[10px] font-medium ring-1 ring-white">
-                          +{project.members.length - 5}
+                      {project.members.length > 3 && (
+                        <div className="h-4 w-4 rounded-full flex items-center justify-center bg-white/70 text-[8px] font-medium ring-1 ring-white shadow-sm">
+                          +{project.members.length - 3}
                         </div>
                       )}
                     </div>
                   </motion.div>
                 </TooltipTrigger>
-                <TooltipContent side="top" align="center" className="p-0 overflow-hidden rounded-lg border-0">
-                  <div className="bg-white/90 backdrop-blur-md p-3 max-w-[250px]">
-                    <p className="font-semibold text-sm mb-2">{project.name}</p>
-                    <div className="space-y-1.5 max-h-[150px] overflow-y-auto pr-1 custom-scrollbar">
+                <TooltipContent side="top" align="center" className="p-0 overflow-hidden rounded-lg border-0 shadow-lg">
+                  <div className="bg-white/95 backdrop-blur-md p-3 max-w-[200px]">
+                    <p className="font-semibold text-xs mb-1.5">{project.name}</p>
+                    <div className="space-y-1 max-h-[120px] overflow-y-auto pr-1 custom-scrollbar">
                       {project.members.map((member, midx) => (
                         <div key={midx} className="flex items-center text-xs">
                           <div 
-                            className="h-4 w-4 rounded-full mr-1.5"
+                            className="h-3 w-3 rounded-full mr-1.5"
                             style={{ 
                               backgroundColor: statusColors[member.status]
                             }}
                             title={member.status}
                           ></div>
-                          <span className="truncate">{member.name}</span>
+                          <span className="truncate text-[10px]">{member.name}</span>
                         </div>
                       ))}
                     </div>
@@ -259,35 +235,6 @@ const ProjectHeatmap: React.FC<ProjectHeatmapProps> = ({ members }) => {
           })}
         </motion.div>
       </TooltipProvider>
-      
-      <div className="mt-3 pt-3 border-t border-gray-200/10">
-        <div className="text-xs font-medium text-gray-600 mb-2 flex items-center">
-          <Info className="h-3 w-3 mr-1" /> Legend
-        </div>
-        <div className="flex flex-wrap gap-2">
-          {heatmapLegend.map((item, idx) => {
-            const statusKey = item.status as TeamMemberStatus;
-            return (
-              <motion.div
-                key={idx}
-                className="flex items-center text-xs py-0.5 px-1.5 rounded"
-                custom={idx}
-                variants={legendVariants}
-                initial="hidden"
-                animate="visible"
-              >
-                <div 
-                  className="h-3 w-3 rounded-full mr-1.5"
-                  style={{ 
-                    background: `linear-gradient(135deg, ${statusColors[statusKey]} 0%, ${statusGradientColors[statusKey]} 100%)`
-                  }}
-                ></div>
-                <span className="text-gray-600">{item.label}</span>
-              </motion.div>
-            );
-          })}
-        </div>
-      </div>
     </Card>
   );
 };
