@@ -79,19 +79,6 @@
   .fancy-scroll::-webkit-scrollbar-thumb:hover {
     background: rgba(255, 255, 255, 0.3);
   }
-  
-  /* Mobile responsiveness */
-  @media (max-width: 640px) {
-    .container {
-      padding-left: 1rem;
-      padding-right: 1rem;
-    }
-    
-    .donut-chart-container {
-      grid-template-columns: repeat(2, 1fr);
-      gap: 1rem;
-    }
-  }
 }
 
 @layer components {
