@@ -160,7 +160,7 @@ const DonutChart = ({ percentage, color, gradientColor, label, count, icon: Icon
   
   return (
     <motion.div 
-      className="relative w-24 h-24"
+      className="relative w-full h-24 sm:w-24 sm:h-24"
       variants={donutVariants}
       initial="hidden"
       animate="visible"
@@ -338,15 +338,15 @@ export default function WorkloadSummary({ members, showOnlyCapacity = false }: P
 
   if (showOnlyCapacity) {
     return (
-      <Card className="w-72 p-4 bg-white border-white/10">
+      <Card className="w-full sm:w-72 p-4 bg-white border-white/10">
         <div className="flex items-center justify-between mb-4">
           <div>
-            <h3 className="text-lg font-semibold text-gray-800">Team Capacity</h3>
-            <p className="text-sm text-gray-600">
+            <h3 className="text-base sm:text-lg font-semibold text-gray-800">Team Capacity</h3>
+            <p className="text-xs sm:text-sm text-gray-600">
               {availableMembers.length} members available
             </p>
           </div>
-          <Thermometer className="h-5 w-5 text-fuchsia-400" />
+          <Thermometer className="h-4 w-4 sm:h-5 sm:w-5 text-fuchsia-400" />
         </div>
         <motion.div 
           className="relative h-2 bg-gray-100 rounded-full overflow-hidden"
@@ -365,7 +365,7 @@ export default function WorkloadSummary({ members, showOnlyCapacity = false }: P
             }}
           />
         </motion.div>
-        <p className="text-sm text-gray-600 mt-2">
+        <p className="text-xs sm:text-sm text-gray-600 mt-2">
           {capacityPercentage.toFixed(0)}% capacity utilized
         </p>
       </Card>
@@ -373,25 +373,25 @@ export default function WorkloadSummary({ members, showOnlyCapacity = false }: P
   }
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-      <Card className="p-6 bg-white/10 backdrop-blur-md border border-white/10 shadow-xl rounded-2xl">
-        <div className="flex items-center justify-between mb-6">
-          <h3 className="text-xl font-semibold text-gray-800 flex items-center">
+    <div className="grid grid-cols-1 gap-8">
+      <Card className="p-4 sm:p-6 bg-white/10 backdrop-blur-md border border-white/10 shadow-xl rounded-2xl">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-6 gap-4">
+          <h3 className="text-lg sm:text-xl font-semibold text-gray-800 flex items-center">
             <div className="h-3 w-3 rounded-full bg-[#D3E4FD] mr-2"></div>
             Team Status
           </h3>
           <div className="flex items-center space-x-2">
-            <span className="text-sm text-gray-600 mr-2">View by:</span>
+            <span className="text-xs sm:text-sm text-gray-600 mr-2">View by:</span>
             <ToggleGroup 
               type="single" 
               value={showRoleMetrics ? "roles" : "status"} 
               onValueChange={(value) => value && setShowRoleMetrics(value === "roles")}
               className="bg-white/5 backdrop-blur-sm rounded-xl border border-white/10 p-1"
             >
-              <ToggleGroupItem value="status" aria-label="Status view" className="data-[state=on]:bg-white/10 text-xs px-3">
+              <ToggleGroupItem value="status" aria-label="Status view" className="data-[state=on]:bg-white/10 text-xs px-2 sm:px-3">
                 Status
               </ToggleGroupItem>
-              <ToggleGroupItem value="roles" aria-label="Roles view" className="data-[state=on]:bg-white/10 text-xs px-3">
+              <ToggleGroupItem value="roles" aria-label="Roles view" className="data-[state=on]:bg-white/10 text-xs px-2 sm:px-3">
                 Roles
               </ToggleGroupItem>
             </ToggleGroup>
@@ -402,7 +402,7 @@ export default function WorkloadSummary({ members, showOnlyCapacity = false }: P
           {showRoleMetrics ? (
             <motion.div 
               key="roles"
-              className="grid grid-cols-4 gap-4 w-full"
+              className="grid grid-cols-2 sm:grid-cols-4 gap-4 w-full donut-chart-container"
               variants={chartVariants}
               initial="hidden"
               animate="visible"
@@ -424,7 +424,7 @@ export default function WorkloadSummary({ members, showOnlyCapacity = false }: P
           ) : (
             <motion.div
               key="status"
-              className="grid grid-cols-5 gap-4 w-full"
+              className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-4 w-full donut-chart-container"
               variants={chartVariants}
               initial="hidden"
               animate="visible"
@@ -446,9 +446,9 @@ export default function WorkloadSummary({ members, showOnlyCapacity = false }: P
         </AnimatePresence>
       </Card>
 
-      <Card className="p-6 bg-white/10 backdrop-blur-md border border-white/10 shadow-xl rounded-2xl">
-        <div className="flex items-center justify-between mb-5">
-          <h3 className="text-xl font-semibold text-gray-800 flex items-center">
+      <Card className="p-4 sm:p-6 bg-white/10 backdrop-blur-md border border-white/10 shadow-xl rounded-2xl">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-5 gap-4">
+          <h3 className="text-lg sm:text-xl font-semibold text-gray-800 flex items-center">
             <div className="h-3 w-3 rounded-full bg-[#D3E4FD] mr-2"></div>
             Historical Capacity
           </h3>
@@ -458,16 +458,16 @@ export default function WorkloadSummary({ members, showOnlyCapacity = false }: P
             onValueChange={(value) => value && setTimeRange(value as 'month' | 'year')}
             className="bg-white/5 backdrop-blur-sm rounded-xl border border-white/10 p-1"
           >
-            <ToggleGroupItem value="month" aria-label="Month view" className="data-[state=on]:bg-white/10">
+            <ToggleGroupItem value="month" aria-label="Month view" className="data-[state=on]:bg-white/10 text-xs px-2 sm:px-3">
               Month
             </ToggleGroupItem>
-            <ToggleGroupItem value="year" aria-label="Year view" className="data-[state=on]:bg-white/10">
+            <ToggleGroupItem value="year" aria-label="Year view" className="data-[state=on]:bg-white/10 text-xs px-2 sm:px-3">
               Year
             </ToggleGroupItem>
           </ToggleGroup>
         </div>
         <motion.div 
-          className="h-[250px]"
+          className="h-[200px] sm:h-[250px]"
           variants={chartVariants}
           initial="hidden"
           animate="visible"
@@ -477,16 +477,18 @@ export default function WorkloadSummary({ members, showOnlyCapacity = false }: P
               <XAxis 
                 dataKey="date" 
                 stroke="#888888"
-                fontSize={12}
+                fontSize={10}
                 tickLine={false}
                 axisLine={false}
+                tickFormatter={(value) => window.innerWidth < 640 ? value.substring(0, 3) : value}
               />
               <YAxis
                 stroke="#888888"
-                fontSize={12}
+                fontSize={10}
                 tickLine={false}
                 axisLine={false}
                 tickFormatter={(value) => `${value}%`}
+                width={30}
               />
               <Tooltip 
                 contentStyle={{
