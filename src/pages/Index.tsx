@@ -12,6 +12,7 @@ import { ActionButtons } from "@/components/ActionButtons";
 import { TeamMembers } from "@/components/TeamMembers";
 import { AnnouncementBanner } from "@/components/AnnouncementBanner";
 import WorkloadSummary from "@/components/WorkloadSummary";
+import ProjectHeatmap from "@/components/ProjectHeatmap";
 
 type TeamMemberStatus = 'available' | 'someAvailability' | 'busy' | 'seriouslyBusy' | 'away';
 
@@ -187,10 +188,10 @@ export default function Index() {
     <div className="min-h-screen bg-gradient-to-b from-background to-secondary/20">
       {latestAnnouncement && <AnnouncementBanner announcement={latestAnnouncement} />}
       
-      <div className="container py-12 space-y-8">
-        <div className="flex items-start justify-between">
+      <div className="container py-8 sm:py-12 space-y-6 sm:space-y-8">
+        <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-6">
           <TeamHeader />
-          <div className="space-y-4">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
             <div className="flex items-center gap-2">
               {isAdmin && (
                 <Link to="/admin">
@@ -230,6 +231,8 @@ export default function Index() {
           onUpdate={handleUpdateMember}
           onDelete={handleDeleteMember}
         />
+        
+        <ProjectHeatmap members={members} />
 
         <WorkloadSummary members={members} showOnlyCapacity={false} />
 
