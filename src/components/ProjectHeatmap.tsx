@@ -161,7 +161,7 @@ export function ProjectHeatmap({ members }: Props) {
     
     // Calculate position in gradient (0 = darkest, 1 = lightest)
     // We invert the position to make highest workload (lowest score) darkest
-    const position = index / (totalInCategory - 1 || 1);
+    const position = totalInCategory > 1 ? index / (totalInCategory - 1) : 0.5;
     
     // Convert hex to RGB
     const r = parseInt(baseColor.slice(1, 3), 16);
@@ -219,7 +219,13 @@ export function ProjectHeatmap({ members }: Props) {
               <motion.div key={category} className="space-y-2" variants={itemVariants}>
                 <div className="flex items-center gap-2">
                   {React.createElement(CATEGORY_ICONS[category as keyof typeof CATEGORY_ICONS], {
-                    className: `h-4 w-4 text-${category === 'severelyOverloaded' || category === 'highWorkload' ? 'amber-500' : 'emerald-500'}`
+                    className: `h-4 w-4 ${
+                      category === 'severelyOverloaded' ? 'text-red-500' : 
+                      category === 'highWorkload' ? 'text-amber-500' : 
+                      category === 'balancedWorkload' ? 'text-emerald-500' : 
+                      category === 'lowWorkload' ? 'text-blue-500' : 
+                      'text-gray-500'
+                    }`
                   })}
                   <h4 className="text-sm font-medium text-gray-700">
                     {CATEGORY_NAMES[category as keyof typeof CATEGORY_NAMES]} ({projects.length})
