@@ -3,7 +3,7 @@ import React, { useState, useMemo } from "react";
 import { Card } from "@/components/ui/card";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { motion } from "framer-motion";
-import { Users, AlertTriangle, CheckCircle } from "lucide-react";
+import { AlertTriangle, CheckCircle, Circle } from "lucide-react";
 
 type TeamMemberStatus = 'available' | 'someAvailability' | 'busy' | 'seriouslyBusy' | 'away';
 
@@ -36,31 +36,31 @@ const STATUS_POINTS = {
   away: 0, // Away members are excluded from calculation
 };
 
-// Base colors for each category
+// Updated modern color palette for 2025 design trend
 const CATEGORY_COLORS = {
-  severelyOverloaded: "#FFA6A6", // Red
-  highWorkload: "#FFDCB1",       // Yellow
-  balancedWorkload: "#CDECDB",   // Green
-  lowWorkload: "#D6E4FF",        // Blue
-  inactive: "#C4C4C4",           // Gray
+  severelyOverloaded: "#FF8080", // Refined red
+  highWorkload: "#FFBB66",       // Refined amber
+  balancedWorkload: "#A8DEBC",   // Refined green
+  lowWorkload: "#ACCBEE",        // Refined blue
+  inactive: "#E0E0E0",           // Refined gray
 };
 
-// Category names for display
+// Category names with shorter labels for minimalistic design
 const CATEGORY_NAMES = {
-  severelyOverloaded: "Severely Overloaded",
-  highWorkload: "High Workload",
-  balancedWorkload: "Balanced Workload",
-  lowWorkload: "Low Workload",
-  inactive: "Inactive Projects",
+  severelyOverloaded: "Critical",
+  highWorkload: "High",
+  balancedWorkload: "Balanced",
+  lowWorkload: "Available",
+  inactive: "Inactive",
 };
 
-// Icons for categories
+// Icons for categories - simplified
 const CATEGORY_ICONS = {
   severelyOverloaded: AlertTriangle,
   highWorkload: AlertTriangle,
   balancedWorkload: CheckCircle,
   lowWorkload: CheckCircle,
-  inactive: Users,
+  inactive: Circle,
 };
 
 export function ProjectHeatmap({ members }: Props) {
@@ -187,32 +187,32 @@ export function ProjectHeatmap({ members }: Props) {
     visible: {
       opacity: 1,
       transition: {
-        staggerChildren: 0.1
+        staggerChildren: 0.05
       }
     }
   };
 
   const itemVariants = {
-    hidden: { opacity: 0, y: 20 },
+    hidden: { opacity: 0, y: 10 },
     visible: { 
       opacity: 1, 
       y: 0,
-      transition: { duration: 0.4 }
+      transition: { duration: 0.3 }
     }
   };
 
   return (
-    <Card className="p-6 bg-white/10 backdrop-blur-md border border-white/10 shadow-xl rounded-2xl w-full mt-8">
-      <div className="flex items-center justify-between mb-5">
-        <h3 className="text-xl font-semibold text-gray-800 flex items-center">
-          <div className="h-3 w-3 rounded-full bg-[#E5DEFF] mr-2" />
-          Project Workload Heatmap
+    <Card className="p-6 bg-white/5 backdrop-blur-md border border-white/5 shadow-lg rounded-xl w-full mt-8">
+      <div className="flex items-center mb-5">
+        <h3 className="text-lg font-medium text-gray-800 flex items-center">
+          <div className="h-2 w-2 rounded-full bg-[#ACCBEE] mr-2" />
+          Project Workload
         </h3>
       </div>
 
       <TooltipProvider>
         <motion.div 
-          className="space-y-6"
+          className="space-y-5"
           variants={containerVariants}
           initial="hidden"
           animate="visible"
@@ -221,65 +221,66 @@ export function ProjectHeatmap({ members }: Props) {
             .filter(([_, projects]) => projects.length > 0)
             .map(([category, projects]) => (
               <motion.div key={category} className="space-y-2" variants={itemVariants}>
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-1.5 mb-1">
                   {React.createElement(CATEGORY_ICONS[category as keyof typeof CATEGORY_ICONS], {
-                    className: `h-4 w-4 ${
-                      category === 'severelyOverloaded' ? 'text-red-500' : 
-                      category === 'highWorkload' ? 'text-amber-500' : 
-                      category === 'balancedWorkload' ? 'text-emerald-500' : 
-                      category === 'lowWorkload' ? 'text-blue-500' : 
-                      'text-gray-500'
+                    className: `h-3 w-3 ${
+                      category === 'severelyOverloaded' ? 'text-[#FF8080]' : 
+                      category === 'highWorkload' ? 'text-[#FFBB66]' : 
+                      category === 'balancedWorkload' ? 'text-[#A8DEBC]' : 
+                      category === 'lowWorkload' ? 'text-[#ACCBEE]' : 
+                      'text-[#E0E0E0]'
                     }`
                   })}
-                  <h4 className="text-sm font-medium text-gray-700">
+                  <h4 className="text-xs font-medium text-gray-700 uppercase tracking-wide">
                     {CATEGORY_NAMES[category as keyof typeof CATEGORY_NAMES]} ({projects.length})
                   </h4>
                 </div>
                 
-                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8 gap-2">
+                <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 xl:grid-cols-10 gap-1.5">
                   {projects.map((project, index) => (
                     <Tooltip key={project.name}>
                       <TooltipTrigger asChild>
                         <motion.div
-                          className="h-14 rounded-lg flex items-center justify-center px-3 py-2 cursor-pointer transition-shadow hover:shadow-md relative overflow-hidden group"
+                          className="h-12 rounded-md flex items-center justify-center px-2 py-1 cursor-pointer transition-all hover:shadow-sm relative overflow-hidden group"
                           style={{ 
                             backgroundColor: getBackgroundColor(project, index, projects.length),
                           }}
                           onMouseEnter={() => setHoveredProject(project.name)}
                           onMouseLeave={() => setHoveredProject(null)}
-                          whileHover={{ scale: 1.02 }}
+                          whileHover={{ scale: 1.01 }}
                           variants={itemVariants}
                         >
                           <div className="absolute inset-0 bg-black/5 opacity-0 group-hover:opacity-100 transition-opacity" />
                           <p className="text-xs font-medium text-center line-clamp-2 text-gray-800 z-10">
                             {project.name}
                           </p>
-                          {project.name === hoveredProject && (
-                            <div className="absolute bottom-1 right-1">
-                              <Users className="h-3 w-3 text-gray-600" />
-                            </div>
-                          )}
                         </motion.div>
                       </TooltipTrigger>
-                      <TooltipContent className="p-3 max-w-xs bg-white/90 backdrop-blur border-white/20 shadow-lg rounded-lg">
-                        <div className="space-y-2">
-                          <div className="font-medium">{project.name}</div>
-                          <div className="text-xs text-gray-600">
-                            Score: {project.score.toFixed(1)}/3.0
+                      <TooltipContent className="p-2.5 max-w-xs bg-white/95 backdrop-blur border-white/10 shadow-sm rounded-md">
+                        <div className="space-y-1.5">
+                          <div className="font-medium text-sm">{project.name}</div>
+                          <div className="text-xs text-gray-600 flex items-center gap-1">
+                            <div 
+                              className="h-1.5 w-1.5 rounded-full" 
+                              style={{ 
+                                backgroundColor: CATEGORY_COLORS[project.category]
+                              }}
+                            />
+                            {CATEGORY_NAMES[project.category as keyof typeof CATEGORY_NAMES]} ({project.score.toFixed(1)}/3.0)
                           </div>
-                          <div className="text-xs font-medium mt-1">Team Members:</div>
-                          <div className="max-h-40 overflow-y-auto pr-1 fancy-scroll space-y-1">
+                          <div className="text-xs font-medium mt-1">Team ({project.assignedMembers.length})</div>
+                          <div className="max-h-32 overflow-y-auto pr-1 fancy-scroll space-y-1">
                             {project.assignedMembers.length > 0 ? (
                               project.assignedMembers.map(member => (
-                                <div key={member.id} className="flex items-center gap-2">
+                                <div key={member.id} className="flex items-center gap-1.5">
                                   <div 
-                                    className="h-2 w-2 rounded-full flex-shrink-0" 
+                                    className="h-1.5 w-1.5 rounded-full flex-shrink-0" 
                                     style={{ 
                                       backgroundColor: 
-                                        member.status === 'available' ? '#D3E4FD' :
-                                        member.status === 'someAvailability' ? '#F2FCE2' :
-                                        member.status === 'busy' ? '#FEF7CD' :
-                                        member.status === 'seriouslyBusy' ? '#FFDEE2' : '#F1F0FB'
+                                        member.status === 'available' ? '#A8DEBC' :
+                                        member.status === 'someAvailability' ? '#ACCBEE' :
+                                        member.status === 'busy' ? '#FFBB66' :
+                                        member.status === 'seriouslyBusy' ? '#FF8080' : '#E0E0E0'
                                     }}
                                   />
                                   <span className="text-xs">{member.name}</span>
