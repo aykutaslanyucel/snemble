@@ -101,6 +101,7 @@ export function ProjectHeatmap({ members }: Props) {
       const avgScore = totalPoints / activeMembers.length;
 
       // Determine category based on score
+      // Using the exact thresholds: 0-1.0, 1.0-2.0, 2.0-2.7, 2.7-3.0
       let category: ProjectWorkload['category'];
       if (avgScore <= 1.0) {
         category = 'severelyOverloaded';
