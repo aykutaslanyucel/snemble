@@ -100,14 +100,17 @@ export function ProjectHeatmap({ members }: Props) {
       }, 0);
       const avgScore = totalPoints / activeMembers.length;
 
-      // Determine category based on score
-      // Using the exact thresholds: 0-1.0, 1.0-2.0, 2.0-2.7, 2.7-3.0
+      // Determine category based on score using corrected boundaries:
+      // 0.0-0.9: severely overloaded (Red)
+      // 1.0-1.9: high workload (Yellow)
+      // 2.0-2.69: balanced workload (Green)
+      // 2.7-3.0: low workload (Blue)
       let category: ProjectWorkload['category'];
-      if (avgScore <= 1.0) {
+      if (avgScore < 1.0) {
         category = 'severelyOverloaded';
-      } else if (avgScore <= 2.0) {
+      } else if (avgScore < 2.0) {
         category = 'highWorkload';
-      } else if (avgScore <= 2.7) {
+      } else if (avgScore < 2.7) {
         category = 'balancedWorkload';
       } else {
         category = 'lowWorkload';
