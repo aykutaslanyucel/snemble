@@ -1,6 +1,6 @@
+
 import { useState, useMemo } from "react";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import { Shield, LogOut, Folder, User } from "lucide-react";
 import { Link } from "react-router-dom";
@@ -12,6 +12,7 @@ import { ActionButtons } from "@/components/ActionButtons";
 import { TeamMembers } from "@/components/TeamMembers";
 import { AnnouncementBanner } from "@/components/AnnouncementBanner";
 import WorkloadSummary from "@/components/WorkloadSummary";
+import { ProjectHeatmap } from "@/components/ProjectHeatmap";
 
 type TeamMemberStatus = 'available' | 'someAvailability' | 'busy' | 'seriouslyBusy' | 'away';
 
@@ -231,7 +232,10 @@ export default function Index() {
           onDelete={handleDeleteMember}
         />
 
-        <WorkloadSummary members={members} showOnlyCapacity={false} />
+        {/* Team Status and Historical Capacity in the same row */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          <WorkloadSummary members={members} showOnlyCapacity={false} />
+        </div>
 
         <div className="grid grid-cols-1 xl:grid-cols-2 gap-8 mt-8">
           <Card className="p-6 bg-white/10 backdrop-blur-md border border-white/10 shadow-xl rounded-xl">
@@ -306,6 +310,9 @@ export default function Index() {
             </div>
           </Card>
         </div>
+        
+        {/* Project Heatmap (full width) */}
+        <ProjectHeatmap members={members} />
       </div>
     </div>
   );
