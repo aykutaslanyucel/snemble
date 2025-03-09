@@ -188,7 +188,7 @@ export default function Index() {
     <div className="min-h-screen bg-gradient-to-b from-background to-secondary/20">
       {latestAnnouncement && <AnnouncementBanner announcement={latestAnnouncement} />}
       
-      <div className="container py-12 space-y-10"> {/* Increased space-y-8 to space-y-10 */}
+      <div className="container py-12 space-y-10">
         <div className="flex items-start justify-between">
           <TeamHeader />
           <div className="space-y-4">
@@ -233,48 +233,48 @@ export default function Index() {
         />
 
         {/* Team Status and Historical Capacity row */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-10 w-full"> {/* Increased gap-8 to gap-10 */}
-          <Card className="p-8 bg-white/10 backdrop-blur-md border border-white/10 shadow-xl rounded-2xl w-full"> {/* Increased p-6 to p-8 */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-10 w-full">
+          <Card className="p-8 bg-white/10 backdrop-blur-md border border-white/10 shadow-xl rounded-2xl w-full">
             <WorkloadSummary members={members} showOnlyCapacity={false} showStatusOnly={true} />
           </Card>
-          <Card className="p-8 bg-white/10 backdrop-blur-md border border-white/10 shadow-xl rounded-2xl w-full"> {/* Increased p-6 to p-8 */}
+          <Card className="p-8 bg-white/10 backdrop-blur-md border border-white/10 shadow-xl rounded-2xl w-full">
             <WorkloadSummary members={members} showOnlyCapacity={false} showHistoricalOnly={true} />
           </Card>
         </div>
 
         {/* Active Projects and Available Team Members row */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-10"> {/* Increased gap-8 to gap-10 */}
-          <Card className="p-8 bg-white/10 backdrop-blur-md border border-white/10 shadow-xl rounded-xl"> {/* Increased p-6 to p-8 */}
-            <h2 className="text-xl font-semibold mb-6 flex items-center gap-2"> {/* Increased mb-4 to mb-6 */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
+          <Card className="p-8 bg-white/10 backdrop-blur-md border border-white/10 shadow-xl rounded-xl">
+            <h2 className="text-xl font-semibold mb-6 flex items-center gap-2">
               <div className="h-2.5 w-2.5 rounded-full bg-[#E5DEFF]" />
               <span className="text-gray-800">Active Projects</span>
               <span className="text-sm font-normal text-muted-foreground ml-1">
                 ({activeProjects.length})
               </span>
             </h2>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 max-h-[220px] overflow-y-auto pr-1 custom-scrollbar"> {/* Increased gap-2 to gap-4 */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 max-h-[220px] overflow-y-auto pr-1 custom-scrollbar">
               {activeProjects.map((project, index) => {
                 const assignedMembers = projectsWithMembers.get(project) || [];
                 return (
                   <div 
                     key={index} 
-                    className="p-4 bg-white/5 rounded-lg border border-white/10 flex flex-col transition-all hover:bg-white/10 hover:shadow-md group" {/* Increased p-2.5 to p-4 */}
+                    className="p-4 bg-white/5 rounded-lg border border-white/10 flex flex-col transition-all hover:bg-white/10 hover:shadow-md group"
                   >
                     <div className="flex items-center">
-                      <Folder className="w-4 h-4 text-[#E5DEFF] mr-2 flex-shrink-0" /> {/* Increased w-3.5 h-3.5 to w-4 h-4 */}
-                      <p className="font-medium text-sm truncate group-hover:text-[#E5DEFF]"> {/* Increased text-xs to text-sm */}
+                      <Folder className="w-4 h-4 text-[#E5DEFF] mr-2 flex-shrink-0" />
+                      <p className="font-medium text-sm truncate group-hover:text-[#E5DEFF]">
                         {project}
                       </p>
                     </div>
                     {assignedMembers.length > 0 && (
-                      <div className="mt-2 pl-6"> {/* Increased mt-1.5 pl-5 to mt-2 pl-6 */}
+                      <div className="mt-2 pl-6">
                         {assignedMembers.slice(0, 3).map((member, idx) => (
-                          <div key={idx} className="text-xs text-muted-foreground truncate"> {/* Increased text-[10px] to text-xs */}
+                          <div key={idx} className="text-xs text-muted-foreground truncate">
                             {member.name}
                           </div>
                         ))}
                         {assignedMembers.length > 3 && (
-                          <div className="text-xs text-muted-foreground"> {/* Increased text-[10px] to text-xs */}
+                          <div className="text-xs text-muted-foreground">
                             +{assignedMembers.length - 3} more
                           </div>
                         )}
@@ -286,28 +286,28 @@ export default function Index() {
             </div>
           </Card>
 
-          <Card className="p-8 bg-white/10 backdrop-blur-md border border-white/10 shadow-xl rounded-xl"> {/* Increased p-6 to p-8 */}
-            <h2 className="text-xl font-semibold mb-6 flex items-center gap-2"> {/* Increased mb-4 to mb-6 */}
+          <Card className="p-8 bg-white/10 backdrop-blur-md border border-white/10 shadow-xl rounded-xl">
+            <h2 className="text-xl font-semibold mb-6 flex items-center gap-2">
               <div className="h-2.5 w-2.5 rounded-full bg-[#D3E4FD]" />
               <span className="text-gray-800">Available Team Members</span>
               <span className="text-sm font-normal text-muted-foreground ml-1">
                 ({availableMembers.length})
               </span>
             </h2>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 max-h-[220px] overflow-y-auto pr-1 custom-scrollbar"> {/* Increased gap-2 to gap-4 */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 max-h-[220px] overflow-y-auto pr-1 custom-scrollbar">
               {availableMembers.map((member) => (
                 <div 
                   key={member.id} 
-                  className="p-4 bg-white/5 rounded-lg border border-white/10 flex items-center gap-3 transition-all hover:bg-white/10 hover:shadow-md group" {/* Increased p-2.5 to p-4 and gap-2 to gap-3 */}
+                  className="p-4 bg-white/5 rounded-lg border border-white/10 flex items-center gap-3 transition-all hover:bg-white/10 hover:shadow-md group"
                 >
-                  <div className="h-8 w-8 rounded-full flex items-center justify-center bg-[#D3E4FD]/10 flex-shrink-0 text-sm font-medium"> {/* Increased h-6 w-6 to h-8 w-8 and text-xs to text-sm */}
+                  <div className="h-8 w-8 rounded-full flex items-center justify-center bg-[#D3E4FD]/10 flex-shrink-0 text-sm font-medium">
                     {member.name.charAt(0)}
                   </div>
                   <div className="overflow-hidden min-w-0">
-                    <div className="font-medium text-sm truncate group-hover:text-[#D3E4FD]"> {/* Increased text-xs to text-sm */}
+                    <div className="font-medium text-sm truncate group-hover:text-[#D3E4FD]">
                       {member.name}
                     </div>
-                    <div className="text-xs text-muted-foreground truncate leading-tight"> {/* Increased text-[10px] to text-xs */}
+                    <div className="text-xs text-muted-foreground truncate leading-tight">
                       {member.position}
                     </div>
                   </div>
