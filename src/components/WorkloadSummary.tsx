@@ -1,4 +1,3 @@
-
 import React from "react";
 import { Card } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
@@ -25,6 +24,8 @@ interface TeamMember {
 interface Props {
   members: TeamMember[];
   showOnlyCapacity?: boolean;
+  showStatusOnly?: boolean;
+  showHistoricalOnly?: boolean;
 }
 
 const statusColors = {
@@ -249,7 +250,15 @@ function determineRoleFromPosition(position: string): TeamMember['role'] {
   return 'Associate';
 }
 
-export default function WorkloadSummary({ members, showOnlyCapacity = false }: Props) {
+export default function WorkloadSummary({ 
+  members, 
+  showOnlyCapacity = false, 
+  showStatusOnly = false,
+  showHistoricalOnly = false
+}: Props & { 
+  showStatusOnly?: boolean, 
+  showHistoricalOnly?: boolean 
+}) {
   const [timeRange, setTimeRange] = React.useState<'month' | 'year'>('month');
   const [showRoleMetrics, setShowRoleMetrics] = React.useState<boolean>(true);
   const historicalData = React.useMemo(() => generateMockHistoricalData(timeRange), [timeRange]);
@@ -373,9 +382,9 @@ export default function WorkloadSummary({ members, showOnlyCapacity = false }: P
     );
   }
 
-  return (
-    <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 w-full">
-      <Card className="p-6 bg-white/10 backdrop-blur-md border border-white/10 shadow-xl rounded-2xl w-full">
+  if (showStatusOnly) {
+    return (
+      <div>
         <div className="flex items-center justify-between mb-6">
           <h3 className="text-xl font-semibold text-gray-800 flex items-center">
             <div className="h-3 w-3 rounded-full bg-[#D3E4FD] mr-2"></div>
@@ -445,9 +454,13 @@ export default function WorkloadSummary({ members, showOnlyCapacity = false }: P
             </motion.div>
           )}
         </AnimatePresence>
-      </Card>
+      </div>
+    );
+  }
 
-      <Card className="p-6 bg-white/10 backdrop-blur-md border border-white/10 shadow-xl rounded-2xl w-full">
+  if (showHistoricalOnly) {
+    return (
+      <div>
         <div className="flex items-center justify-between mb-5">
           <h3 className="text-xl font-semibold text-gray-800 flex items-center">
             <div className="h-3 w-3 rounded-full bg-[#D3E4FD] mr-2"></div>
@@ -511,7 +524,9 @@ export default function WorkloadSummary({ members, showOnlyCapacity = false }: P
             </LineChart>
           </ResponsiveContainer>
         </motion.div>
-      </Card>
-    </div>
-  );
+      </div>
+    );
+  }
+
+  return null;
 }

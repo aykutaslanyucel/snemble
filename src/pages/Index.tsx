@@ -232,9 +232,14 @@ export default function Index() {
           onDelete={handleDeleteMember}
         />
 
-        {/* Team Status and Historical Capacity row - fixed to properly adapt to desktop space */}
+        {/* Team Status and Historical Capacity row */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8 w-full">
-          <WorkloadSummary members={members} showOnlyCapacity={false} />
+          <Card className="p-6 bg-white/10 backdrop-blur-md border border-white/10 shadow-xl rounded-2xl w-full">
+            <WorkloadSummary members={members} showOnlyCapacity={false} showStatusOnly={true} />
+          </Card>
+          <Card className="p-6 bg-white/10 backdrop-blur-md border border-white/10 shadow-xl rounded-2xl w-full">
+            <WorkloadSummary members={members} showOnlyCapacity={false} showHistoricalOnly={true} />
+          </Card>
         </div>
 
         {/* Active Projects and Available Team Members row */}
