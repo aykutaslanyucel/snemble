@@ -232,12 +232,13 @@ export default function Index() {
           onDelete={handleDeleteMember}
         />
 
-        {/* Team Status and Historical Capacity in the same row */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        {/* Team Status and Historical Capacity row */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
           <WorkloadSummary members={members} showOnlyCapacity={false} />
         </div>
 
-        <div className="grid grid-cols-1 xl:grid-cols-2 gap-8 mt-8">
+        {/* Active Projects and Available Team Members row */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
           <Card className="p-6 bg-white/10 backdrop-blur-md border border-white/10 shadow-xl rounded-xl">
             <h2 className="text-xl font-semibold mb-4 flex items-center gap-2">
               <div className="h-2.5 w-2.5 rounded-full bg-[#E5DEFF]" />
@@ -246,7 +247,7 @@ export default function Index() {
                 ({activeProjects.length})
               </span>
             </h2>
-            <div className="grid grid-cols-3 gap-2 max-h-[220px] overflow-y-auto pr-1 custom-scrollbar">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 max-h-[220px] overflow-y-auto pr-1 custom-scrollbar">
               {activeProjects.map((project, index) => {
                 const assignedMembers = projectsWithMembers.get(project) || [];
                 return (
@@ -288,7 +289,7 @@ export default function Index() {
                 ({availableMembers.length})
               </span>
             </h2>
-            <div className="grid grid-cols-2 gap-2 max-h-[220px] overflow-y-auto pr-1 custom-scrollbar">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-[220px] overflow-y-auto pr-1 custom-scrollbar">
               {availableMembers.map((member) => (
                 <div 
                   key={member.id} 
