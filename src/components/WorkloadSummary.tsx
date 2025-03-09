@@ -162,7 +162,7 @@ const DonutChart = ({ percentage, color, gradientColor, label, count, icon: Icon
   
   return (
     <motion.div 
-      className="relative w-24 h-24"
+      className="relative w-32 h-32"
       variants={donutVariants}
       initial="hidden"
       animate="visible"
@@ -208,9 +208,9 @@ const DonutChart = ({ percentage, color, gradientColor, label, count, icon: Icon
         />
       </svg>
       <div className="absolute inset-0 flex flex-col items-center justify-center text-center">
-        {Icon && <Icon className="h-3 w-3 mb-0.5" />}
+        {Icon && <Icon className="h-4 w-4 mb-1" />}
         <motion.span 
-          className="text-xl font-semibold"
+          className="text-2xl font-semibold"
           initial={{ opacity: 0, scale: 0.5 }}
           animate={{ 
             opacity: 1, 
@@ -223,7 +223,7 @@ const DonutChart = ({ percentage, color, gradientColor, label, count, icon: Icon
           }}
         >{count}</motion.span>
         <motion.span 
-          className="text-xs text-gray-600 leading-tight max-w-full px-1"
+          className="text-sm text-gray-600 leading-tight max-w-full px-1"
           initial={{ opacity: 0 }}
           animate={{ 
             opacity: 1,
@@ -412,7 +412,7 @@ export default function WorkloadSummary({
           {showRoleMetrics ? (
             <motion.div 
               key="roles"
-              className="grid grid-cols-2 sm:grid-cols-4 gap-4 w-full"
+              className="flex flex-wrap justify-center gap-8 w-full p-4"
               variants={chartVariants}
               initial="hidden"
               animate="visible"
@@ -434,7 +434,7 @@ export default function WorkloadSummary({
           ) : (
             <motion.div
               key="status"
-              className="grid grid-cols-2 sm:grid-cols-5 gap-4 w-full"
+              className="flex flex-wrap justify-center gap-8 w-full p-4"
               variants={chartVariants}
               initial="hidden"
               animate="visible"
