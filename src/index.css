@@ -9,7 +9,7 @@
   :root {
     --background: 0 0% 100%;
     --foreground: 222.2 84% 4.9%;
-    --card: 0 0% 100%;
+    --card: 0, 0%, 100%;
     --card-foreground: 222.2 84% 4.9%;
     --popover: 0 0% 100%;
     --popover-foreground: 222.2 84% 4.9%;
@@ -29,6 +29,28 @@
     --radius: 1rem;
   }
 
+  .dark {
+    --background: 222.2 84% 4.9%;
+    --foreground: 210 40% 98%;
+    --card: 22, 22%, 10%;
+    --card-foreground: 210 40% 98%;
+    --popover: 222.2 84% 4.9%;
+    --popover-foreground: 210 40% 98%;
+    --primary: 210 40% 98%;
+    --primary-foreground: 222.2 47.4% 11.2%;
+    --secondary: 217.2 32.6% 17.5%;
+    --secondary-foreground: 210 40% 98%;
+    --muted: 217.2 32.6% 17.5%;
+    --muted-foreground: 215 20.2% 65.1%;
+    --accent: 217.2 32.6% 17.5%;
+    --accent-foreground: 210 40% 98%;
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 210 40% 98%;
+    --border: 217.2 32.6% 17.5%;
+    --input: 217.2 32.6% 17.5%;
+    --ring: 212.7 26.8% 83.9%;
+  }
+
   * {
     @apply border-border;
   }
@@ -40,6 +62,10 @@
 
   .glass {
     @apply bg-white/10 backdrop-blur-lg border border-white/20 rounded-2xl;
+  }
+
+  .dark .glass {
+    @apply bg-black/30 backdrop-blur-lg border border-white/10 rounded-2xl;
   }
 
   .team-member-card {
@@ -79,6 +105,22 @@
   .fancy-scroll::-webkit-scrollbar-thumb:hover {
     background: rgba(255, 255, 255, 0.3);
   }
+
+  .dark .fancy-scroll {
+    scrollbar-color: rgba(255, 255, 255, 0.15) rgba(0, 0, 0, 0.2);
+  }
+
+  .dark .fancy-scroll::-webkit-scrollbar-track {
+    background: rgba(0, 0, 0, 0.2);
+  }
+
+  .dark .fancy-scroll::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.15);
+  }
+
+  .dark .fancy-scroll::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 255, 255, 0.25);
+  }
 }
 
 @layer components {
@@ -106,6 +148,23 @@
   .custom-scrollbar::-webkit-scrollbar-thumb:hover {
     background: rgba(255, 255, 255, 0.2);
   }
+
+  .dark .custom-scrollbar {
+    @apply scrollbar-track-black/20 scrollbar-thumb-white/10 hover:scrollbar-thumb-white/20;
+    scrollbar-color: rgba(255, 255, 255, 0.1) rgba(0, 0, 0, 0.2);
+  }
+
+  .dark .custom-scrollbar::-webkit-scrollbar-track {
+    background: rgba(0, 0, 0, 0.2);
+  }
+
+  .dark .custom-scrollbar::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.1);
+  }
+
+  .dark .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 255, 255, 0.25);
+  }
 }
 
 @font-face {
@@ -118,4 +177,55 @@
 
 .font-inter {
   font-family: 'Inter', sans-serif;
+}
+
+/* Dark mode specific styles that preserve capacity colors */
+.dark .bg-white\/5 {
+  background-color: rgba(30, 30, 40, 0.5);
+}
+
+.dark .bg-white\/10 {
+  background-color: rgba(30, 30, 40, 0.7);
+}
+
+.dark .border-white\/10 {
+  border-color: rgba(255, 255, 255, 0.05);
+}
+
+.dark .text-gray-800 {
+  color: rgba(230, 230, 240, 0.95);
+}
+
+.dark .text-gray-600, 
+.dark .text-gray-700,
+.dark .text-muted-foreground {
+  color: rgba(200, 200, 220, 0.75);
+}
+
+.dark .from-background {
+  --tw-gradient-from: hsl(var(--background)) var(--tw-gradient-from-position);
+}
+
+.dark .to-secondary\/20 {
+  --tw-gradient-to: hsl(var(--secondary) / 0.2) var(--tw-gradient-to-position);
+}
+
+/* Preserve capacity colors in dark mode */
+.dark .bg-\[\#D3E4FD\]\/10,
+.dark .text-\[\#D3E4FD\], 
+.dark .text-\[\#E5DEFF\],
+.dark .bg-\[\#E5DEFF\],
+.dark .bg-\[\#D3E4FD\],
+.dark .bg-\[\#ACCBEE\] {
+  /* Keep original colors */
+  opacity: 1;
+}
+
+/* Shadow adjustments for dark mode */
+.dark .shadow-lg,
+.dark .shadow-md,
+.dark .shadow-xl {
+  --tw-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.25), 0 4px 6px -4px rgba(0, 0, 0, 0.15);
+  --tw-shadow-colored: 0 10px 15px -3px var(--tw-shadow-color), 0 4px 6px -4px var(--tw-shadow-color);
+  box-shadow: var(--tw-ring-offset-shadow, 0 0 #0000), var(--tw-ring-shadow, 0 0 #0000), var(--tw-shadow);
 }

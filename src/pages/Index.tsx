@@ -1,8 +1,7 @@
-
 import { useState, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Shield, LogOut, Folder, User } from "lucide-react";
+import { Shield, LogOut, Folder } from "lucide-react";
 import { Link } from "react-router-dom";
 import { TeamHeader } from "@/components/TeamHeader";
 import { useToast } from "@/components/ui/use-toast";
@@ -13,6 +12,7 @@ import { TeamMembers } from "@/components/TeamMembers";
 import { AnnouncementBanner } from "@/components/AnnouncementBanner";
 import WorkloadSummary from "@/components/WorkloadSummary";
 import { ProjectHeatmap } from "@/components/ProjectHeatmap";
+import { ThemeToggle } from "@/components/ThemeToggle";
 
 type TeamMemberStatus = 'available' | 'someAvailability' | 'busy' | 'seriouslyBusy' | 'away';
 
@@ -205,6 +205,7 @@ export default function Index() {
                 <LogOut className="h-4 w-4" />
                 Logout
               </Button>
+              <ThemeToggle />
             </div>
             <WorkloadSummary members={members} showOnlyCapacity />
           </div>
@@ -232,7 +233,6 @@ export default function Index() {
           onDelete={handleDeleteMember}
         />
 
-        {/* Team Status and Historical Capacity row */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-10 w-full">
           <Card className="p-8 bg-white/10 backdrop-blur-md border border-white/10 shadow-xl rounded-2xl w-full">
             <WorkloadSummary members={members} showOnlyCapacity={false} showStatusOnly={true} />
@@ -242,7 +242,6 @@ export default function Index() {
           </Card>
         </div>
 
-        {/* Active Projects and Available Team Members row */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
           <Card className="p-8 bg-white/10 backdrop-blur-md border border-white/10 shadow-xl rounded-xl">
             <h2 className="text-xl font-semibold mb-6 flex items-center gap-2">
@@ -317,7 +316,6 @@ export default function Index() {
           </Card>
         </div>
         
-        {/* Project Heatmap (full width) */}
         <ProjectHeatmap members={members} />
       </div>
     </div>
