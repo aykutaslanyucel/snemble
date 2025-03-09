@@ -1,3 +1,4 @@
+
 import React from "react";
 import { Card } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
@@ -373,8 +374,8 @@ export default function WorkloadSummary({ members, showOnlyCapacity = false }: P
   }
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-      <Card className="p-6 bg-white/10 backdrop-blur-md border border-white/10 shadow-xl rounded-2xl">
+    <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 w-full">
+      <Card className="p-6 bg-white/10 backdrop-blur-md border border-white/10 shadow-xl rounded-2xl w-full">
         <div className="flex items-center justify-between mb-6">
           <h3 className="text-xl font-semibold text-gray-800 flex items-center">
             <div className="h-3 w-3 rounded-full bg-[#D3E4FD] mr-2"></div>
@@ -402,7 +403,7 @@ export default function WorkloadSummary({ members, showOnlyCapacity = false }: P
           {showRoleMetrics ? (
             <motion.div 
               key="roles"
-              className="grid grid-cols-4 gap-4 w-full"
+              className="grid grid-cols-2 sm:grid-cols-4 gap-4 w-full"
               variants={chartVariants}
               initial="hidden"
               animate="visible"
@@ -424,7 +425,7 @@ export default function WorkloadSummary({ members, showOnlyCapacity = false }: P
           ) : (
             <motion.div
               key="status"
-              className="grid grid-cols-5 gap-4 w-full"
+              className="grid grid-cols-2 sm:grid-cols-5 gap-4 w-full"
               variants={chartVariants}
               initial="hidden"
               animate="visible"
@@ -446,7 +447,7 @@ export default function WorkloadSummary({ members, showOnlyCapacity = false }: P
         </AnimatePresence>
       </Card>
 
-      <Card className="p-6 bg-white/10 backdrop-blur-md border border-white/10 shadow-xl rounded-2xl">
+      <Card className="p-6 bg-white/10 backdrop-blur-md border border-white/10 shadow-xl rounded-2xl w-full">
         <div className="flex items-center justify-between mb-5">
           <h3 className="text-xl font-semibold text-gray-800 flex items-center">
             <div className="h-3 w-3 rounded-full bg-[#D3E4FD] mr-2"></div>

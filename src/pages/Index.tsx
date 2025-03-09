@@ -232,8 +232,8 @@ export default function Index() {
           onDelete={handleDeleteMember}
         />
 
-        {/* Team Status and Historical Capacity row */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+        {/* Team Status and Historical Capacity row - fixed to properly adapt to desktop space */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 w-full">
           <WorkloadSummary members={members} showOnlyCapacity={false} />
         </div>
 
