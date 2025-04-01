@@ -1,17 +1,7 @@
 
 import { motion, AnimatePresence } from "framer-motion";
 import TeamMemberCard from "@/components/TeamMemberCard";
-
-type TeamMemberStatus = 'available' | 'someAvailability' | 'busy' | 'seriouslyBusy' | 'away';
-
-interface TeamMember {
-  id: string;
-  name: string;
-  position: string;
-  status: TeamMemberStatus;
-  projects: string[];
-  lastUpdated: Date;
-}
+import { TeamMember } from "@/types/TeamMemberTypes";
 
 interface TeamMembersProps {
   members: TeamMember[];

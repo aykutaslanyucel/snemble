@@ -12,12 +12,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { useAuth } from "@/contexts/AuthContext";
-
-interface Announcement {
-  id: string;
-  message: string;
-  timestamp: Date;
-}
+import { Announcement } from "@/types/TeamMemberTypes";
 
 interface ActionButtonsProps {
   onAddMember: () => void;

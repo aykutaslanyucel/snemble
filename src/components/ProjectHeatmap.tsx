@@ -1,20 +1,9 @@
-
 import React, { useState, useMemo } from "react";
 import { Card } from "@/components/ui/card";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { motion } from "framer-motion";
 import { AlertTriangle, CheckCircle, Circle } from "lucide-react";
-
-type TeamMemberStatus = 'available' | 'someAvailability' | 'busy' | 'seriouslyBusy' | 'away';
-
-interface TeamMember {
-  id: string;
-  name: string;
-  position: string;
-  status: TeamMemberStatus;
-  projects: string[];
-  lastUpdated: Date;
-}
+import { TeamMember } from "@/types/TeamMemberTypes";
 
 interface ProjectWorkload {
   name: string;

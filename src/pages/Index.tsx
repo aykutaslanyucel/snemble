@@ -1,35 +1,16 @@
+
 import { useState, useMemo } from "react";
-import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
-import { Shield, LogOut, Folder } from "lucide-react";
-import { Link } from "react-router-dom";
-import { TeamHeader } from "@/components/TeamHeader";
-import { useToast } from "@/components/ui/use-toast";
+import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
-import { SearchBar } from "@/components/SearchBar";
-import { ActionButtons } from "@/components/ActionButtons";
-import { TeamMembers } from "@/components/TeamMembers";
 import { AnnouncementBanner } from "@/components/AnnouncementBanner";
-import WorkloadSummary from "@/components/WorkloadSummary";
+import { TeamMembers } from "@/components/TeamMembers";
 import { ProjectHeatmap } from "@/components/ProjectHeatmap";
-import { ThemeToggle } from "@/components/ThemeToggle";
-
-type TeamMemberStatus = 'available' | 'someAvailability' | 'busy' | 'seriouslyBusy' | 'away';
-
-interface TeamMember {
-  id: string;
-  name: string;
-  position: string;
-  status: TeamMemberStatus;
-  projects: string[];
-  lastUpdated: Date;
-}
-
-interface Announcement {
-  id: string;
-  message: string;
-  timestamp: Date;
-}
+import { TeamMember, Announcement } from "@/types/TeamMemberTypes";
+import { NavigationHeader } from "@/components/NavigationHeader";
+import { SearchAndActions } from "@/components/SearchAndActions";
+import { WorkloadDashboard } from "@/components/WorkloadDashboard";
+import { ProjectList } from "@/components/ProjectList";
+import { AvailableMembersList } from "@/components/AvailableMembersList";
 
 const initialMembers: TeamMember[] = [
   {
@@ -189,43 +170,21 @@ export default function Index() {
       {latestAnnouncement && <AnnouncementBanner announcement={latestAnnouncement} />}
       
       <div className="container py-12 space-y-10">
-        <div className="flex items-start justify-between">
-          <TeamHeader />
-          <div className="space-y-4">
-            <div className="flex items-center gap-2">
-              {isAdmin && (
-                <Link to="/admin">
-                  <Button variant="outline" className="gap-2">
-                    <Shield className="h-4 w-4" />
-                    Admin Dashboard
-                  </Button>
-                </Link>
-              )}
-              <Button variant="outline" onClick={handleLogout} className="gap-2">
-                <LogOut className="h-4 w-4" />
-                Logout
-              </Button>
-              <ThemeToggle />
-            </div>
-            <WorkloadSummary members={members} showOnlyCapacity />
-          </div>
-        </div>
+        <NavigationHeader 
+          isAdmin={isAdmin} 
+          members={members} 
+          handleLogout={handleLogout} 
+        />
         
-        <Card className="p-6">
-          <div className="flex items-center justify-between gap-4 flex-wrap">
-            <SearchBar 
-              searchQuery={searchQuery}
-              onSearchChange={setSearchQuery}
-            />
-            <ActionButtons
-              onAddMember={handleAddMember}
-              announcements={announcements}
-              newAnnouncement={newAnnouncement}
-              onAnnouncementChange={setNewAnnouncement}
-              onAddAnnouncement={handleAddAnnouncement}
-            />
-          </div>
-        </Card>
+        <SearchAndActions
+          searchQuery={searchQuery}
+          onSearchChange={setSearchQuery}
+          onAddMember={handleAddMember}
+          announcements={announcements}
+          newAnnouncement={newAnnouncement}
+          onAnnouncementChange={setNewAnnouncement}
+          onAddAnnouncement={handleAddAnnouncement}
+        />
 
         <TeamMembers
           members={filteredMembers}
@@ -233,87 +192,15 @@ export default function Index() {
           onDelete={handleDeleteMember}
         />
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-10 w-full">
-          <Card className="p-8 bg-white/10 backdrop-blur-md border border-white/10 shadow-xl rounded-2xl w-full">
-            <WorkloadSummary members={members} showOnlyCapacity={false} showStatusOnly={true} />
-          </Card>
-          <Card className="p-8 bg-white/10 backdrop-blur-md border border-white/10 shadow-xl rounded-2xl w-full">
-            <WorkloadSummary members={members} showOnlyCapacity={false} showHistoricalOnly={true} />
-          </Card>
-        </div>
+        <WorkloadDashboard members={members} />
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
-          <Card className="p-8 bg-white/10 backdrop-blur-md border border-white/10 shadow-xl rounded-xl">
-            <h2 className="text-xl font-semibold mb-6 flex items-center gap-2">
-              <div className="h-2.5 w-2.5 rounded-full bg-[#E5DEFF]" />
-              <span className="text-gray-800">Active Projects</span>
-              <span className="text-sm font-normal text-muted-foreground ml-1">
-                ({activeProjects.length})
-              </span>
-            </h2>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 max-h-[220px] overflow-y-auto pr-1 custom-scrollbar">
-              {activeProjects.map((project, index) => {
-                const assignedMembers = projectsWithMembers.get(project) || [];
-                return (
-                  <div 
-                    key={index} 
-                    className="p-4 bg-white/5 rounded-lg border border-white/10 flex flex-col transition-all hover:bg-white/10 hover:shadow-md group"
-                  >
-                    <div className="flex items-center">
-                      <Folder className="w-4 h-4 text-[#E5DEFF] mr-2 flex-shrink-0" />
-                      <p className="font-medium text-sm truncate group-hover:text-[#E5DEFF]">
-                        {project}
-                      </p>
-                    </div>
-                    {assignedMembers.length > 0 && (
-                      <div className="mt-2 pl-6">
-                        {assignedMembers.slice(0, 3).map((member, idx) => (
-                          <div key={idx} className="text-xs text-muted-foreground truncate">
-                            {member.name}
-                          </div>
-                        ))}
-                        {assignedMembers.length > 3 && (
-                          <div className="text-xs text-muted-foreground">
-                            +{assignedMembers.length - 3} more
-                          </div>
-                        )}
-                      </div>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
-          </Card>
-
-          <Card className="p-8 bg-white/10 backdrop-blur-md border border-white/10 shadow-xl rounded-xl">
-            <h2 className="text-xl font-semibold mb-6 flex items-center gap-2">
-              <div className="h-2.5 w-2.5 rounded-full bg-[#D3E4FD]" />
-              <span className="text-gray-800">Available Team Members</span>
-              <span className="text-sm font-normal text-muted-foreground ml-1">
-                ({availableMembers.length})
-              </span>
-            </h2>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 max-h-[220px] overflow-y-auto pr-1 custom-scrollbar">
-              {availableMembers.map((member) => (
-                <div 
-                  key={member.id} 
-                  className="p-4 bg-white/5 rounded-lg border border-white/10 flex items-center gap-3 transition-all hover:bg-white/10 hover:shadow-md group"
-                >
-                  <div className="h-8 w-8 rounded-full flex items-center justify-center bg-[#D3E4FD]/10 flex-shrink-0 text-sm font-medium">
-                    {member.name.charAt(0)}
-                  </div>
-                  <div className="overflow-hidden min-w-0">
-                    <div className="font-medium text-sm truncate group-hover:text-[#D3E4FD]">
-                      {member.name}
-                    </div>
-                    <div className="text-xs text-muted-foreground truncate leading-tight">
-                      {member.position}
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </Card>
+          <ProjectList 
+            activeProjects={activeProjects}
+            projectsWithMembers={projectsWithMembers}
+          />
+          
+          <AvailableMembersList availableMembers={availableMembers} />
         </div>
         
         <ProjectHeatmap members={members} />

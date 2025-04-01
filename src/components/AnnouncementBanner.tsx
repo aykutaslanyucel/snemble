@@ -1,10 +1,6 @@
 
 import { motion } from "framer-motion";
-
-interface Announcement {
-  message: string;
-  timestamp: Date;
-}
+import { Announcement } from "@/types/TeamMemberTypes";
 
 interface AnnouncementBannerProps {
   announcement: Announcement;
