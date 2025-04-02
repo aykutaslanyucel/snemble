@@ -1,4 +1,3 @@
-
 import { useState, useMemo } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
@@ -184,6 +183,7 @@ export default function Index() {
           newAnnouncement={newAnnouncement}
           onAnnouncementChange={setNewAnnouncement}
           onAddAnnouncement={handleAddAnnouncement}
+          members={members}
         />
 
         <TeamMembers

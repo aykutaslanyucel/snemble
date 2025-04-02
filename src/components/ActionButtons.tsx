@@ -1,5 +1,5 @@
 
-import { UserPlus, Settings, MessageSquarePlus } from "lucide-react";
+import { UserPlus, Settings, MessageSquarePlus, FileDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Sheet,
@@ -12,7 +12,13 @@ import { Textarea } from "@/components/ui/textarea";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { useAuth } from "@/contexts/AuthContext";
-import { Announcement } from "@/types/TeamMemberTypes";
+import { Announcement, TeamMember } from "@/types/TeamMemberTypes";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 interface ActionButtonsProps {
   onAddMember: () => void;
@@ -20,6 +26,7 @@ interface ActionButtonsProps {
   newAnnouncement: string;
   onAnnouncementChange: (value: string) => void;
   onAddAnnouncement: () => void;
+  members?: TeamMember[];
 }
 
 export function ActionButtons({
@@ -28,6 +35,7 @@ export function ActionButtons({
   newAnnouncement,
   onAnnouncementChange,
   onAddAnnouncement,
+  members = [],
 }: ActionButtonsProps) {
   const { isAdmin } = useAuth();
 
@@ -79,9 +87,22 @@ export function ActionButtons({
           </Button>
         </>
       )}
-      <Button variant="outline" className="bg-white/5">
-        <Settings className="h-4 w-4" />
-      </Button>
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button variant="outline" className="bg-white/5">
+            <Settings className="h-4 w-4" />
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end">
+          <DropdownMenuItem 
+            className="cursor-pointer"
+            onClick={() => window.dispatchEvent(new CustomEvent("export-capacity-report"))}
+          >
+            <FileDown className="h-4 w-4 mr-2" />
+            Export Capacity Report
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
     </div>
   );
 }

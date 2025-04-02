@@ -3,6 +3,7 @@ import React from "react";
 import { Card } from "@/components/ui/card";
 import { SearchBar } from "@/components/SearchBar";
 import { ActionButtons } from "@/components/ActionButtons";
+import { TeamMember } from "@/types/TeamMemberTypes";
 
 interface Announcement {
   id: string;
@@ -18,6 +19,7 @@ interface SearchAndActionsProps {
   newAnnouncement: string;
   onAnnouncementChange: (value: string) => void;
   onAddAnnouncement: () => void;
+  members?: TeamMember[];
 }
 
 export function SearchAndActions({
@@ -27,7 +29,8 @@ export function SearchAndActions({
   announcements,
   newAnnouncement,
   onAnnouncementChange,
-  onAddAnnouncement
+  onAddAnnouncement,
+  members
 }: SearchAndActionsProps) {
   return (
     <Card className="p-6">
@@ -42,6 +45,7 @@ export function SearchAndActions({
           newAnnouncement={newAnnouncement}
           onAnnouncementChange={onAnnouncementChange}
           onAddAnnouncement={onAddAnnouncement}
+          members={members}
         />
       </div>
     </Card>
