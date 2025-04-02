@@ -52,8 +52,8 @@ export const exportCapacityReport = (members: TeamMember[]) => {
     const statusInfo = statusConfig[member.status] || statusConfig.available;
     const timeAgo = formatDistanceToNow(member.lastUpdated, { addSuffix: true });
     
-    // Create card shape
-    slide.addShape("ROUNDED_RECTANGLE", {
+    // Create card shape - Fixed type error by using the correct shape name from pptxgenjs
+    slide.addShape("rect", {
       x: x,
       y: y,
       w: cardWidth,
