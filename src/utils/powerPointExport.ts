@@ -34,33 +34,16 @@ export const exportCapacityReport = (members: TeamMember[]) => {
   // Set the presentation properties
   pptx.layout = "LAYOUT_16x9";
   pptx.title = "Team Capacity Report";
-  pptx.subject = "Generated on " + format(new Date(), "MMMM dd, yyyy");
   
   // Add a slide
   const slide = pptx.addSlide();
-  
-  // Add title
-  slide.addText("Team Capacity Report", {
-    x: 0.5,
-    y: 0.5,
-    fontSize: 24,
-    bold: true,
-    color: "333333",
-  });
-  
-  slide.addText(`Generated on ${format(new Date(), "MMMM dd, yyyy")}`, {
-    x: 0.5,
-    y: 0.8,
-    fontSize: 14,
-    color: "666666",
-  });
   
   // Calculate layout for team member cards
   const cardWidth = 2.5; // inches
   const cardHeight = 1.8; // inches
   const cardsPerRow = 4;
   const startX = 0.5; // inches from left
-  const startY = 1.3; // inches from top
+  const startY = 0.5; // inches from top
   const hGap = 0.2; // horizontal gap between cards
   const vGap = 0.2; // vertical gap between cards
   
