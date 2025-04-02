@@ -8,6 +8,7 @@ import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { Button } from "@/components/ui/button";
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
 import { format, subMonths, subYears, startOfWeek, subWeeks, addDays, setHours, isMonday, previousMonday, endOfDay, getDay } from "date-fns";
+import { TeamMember, TeamMemberStatus } from "@/types/TeamMemberTypes";
 
 type TeamMemberStatus = 'available' | 'someAvailability' | 'busy' | 'seriouslyBusy' | 'away';
 
@@ -348,18 +349,18 @@ export default function WorkloadSummary({
 
   if (showOnlyCapacity) {
     return (
-      <Card className="w-72 p-4 bg-white border-white/10">
+      <Card className="w-72 p-4 bg-card border-white/10 dark:border-white/5 dark:bg-black/40 backdrop-blur-md">
         <div className="flex items-center justify-between mb-4">
           <div>
-            <h3 className="text-lg font-semibold text-gray-800">Team Capacity</h3>
-            <p className="text-sm text-gray-600">
+            <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-100">Team Capacity</h3>
+            <p className="text-sm text-gray-600 dark:text-gray-300">
               {availableMembers.length} members available
             </p>
           </div>
           <Thermometer className="h-5 w-5 text-fuchsia-400" />
         </div>
         <motion.div 
-          className="relative h-2 bg-gray-100 rounded-full overflow-hidden"
+          className="relative h-2 bg-gray-100 dark:bg-gray-700 rounded-full overflow-hidden"
           initial={{ width: 0 }}
           animate={{ width: "100%", transition: { duration: 0.7, ease: "easeOut" } }}
         >
@@ -375,7 +376,7 @@ export default function WorkloadSummary({
             }}
           />
         </motion.div>
-        <p className="text-sm text-gray-600 mt-2">
+        <p className="text-sm text-gray-600 dark:text-gray-300 mt-2">
           {capacityPercentage.toFixed(0)}% capacity utilized
         </p>
       </Card>
