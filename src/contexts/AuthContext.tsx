@@ -1,28 +1,26 @@
 
 import { createContext, useContext, useEffect, useState } from "react";
-import { getAuth, onAuthStateChanged, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, User } from "firebase/auth";
-import { getFirestore, doc, getDoc, collection, query, where, getDocs, setDoc } from "firebase/firestore";
-import { initializeApp } from "firebase/app";
+import { User, Session } from "@supabase/supabase-js";
+import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
-const firebaseConfig = {
-  apiKey: "AIzaSyApcg3_eIT5Dj_Z97238VTjFWj8-CqVJT0",
-  authDomain: "aelion-94120.firebaseapp.com",
-  projectId: "aelion-94120",
-  storageBucket: "aelion-94120.appspot.com",
-  messagingSenderId: "562716040878",
-  appId: "1:562716040878:web:8a398f504c40010527d73f"
-};
-
-const app = initializeApp(firebaseConfig);
-const auth = getAuth(app);
-const db = getFirestore(app);
+interface UserProfile {
+  id: string;
+  email: string;
+  name?: string;
+  avatar_url?: string;
+  role?: string;
+  seniority?: string;
+}
 
 interface AuthContextType {
   user: User | null;
+  session: Session | null;
+  profile: UserProfile | null;
   isAdmin: boolean;
   login: (email: string, password: string) => Promise<void>;
-  signup: (email: string, password: string, role?: string) => Promise<void>;
+  signup: (email: string, password: string) => Promise<void>;
+  loginWithMicrosoft: () => Promise<void>;
   logout: () => Promise<void>;
   loading: boolean;
 }
@@ -31,129 +29,151 @@ const AuthContext = createContext<AuthContextType | null>(null);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
+  const [session, setSession] = useState<Session | null>(null);
+  const [profile, setProfile] = useState<UserProfile | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
   const [loading, setLoading] = useState(true);
 
-  const ensureAdminUser = async (email: string) => {
-    if (email === "aykut.yucel@snellman.com") {
-      const usersRef = collection(db, "users");
-      const q = query(usersRef, where("email", "==", email));
-      const querySnapshot = await getDocs(q);
-      
-      if (querySnapshot.empty) {
-        await signup(email, "admin123", "admin"); // Create admin with default password
-        console.log("Created admin user:", email);
-        return true;
-      } else {
-        const userData = querySnapshot.docs[0].data();
-        if (userData.role !== "admin") {
-          await setDoc(doc(db, "users", querySnapshot.docs[0].id), {
-            ...userData,
-            role: "admin",
-          });
-          console.log("Updated user to admin:", email);
-        }
-        return true;
-      }
-    }
-    return false;
-  };
-
-  const checkAdminStatus = async (email: string) => {
-    console.log("Checking admin status for:", email);
+  // Fetch user profile data
+  const fetchProfile = async (userId: string) => {
     try {
-      if (email === "aykut.yucel@snellman.com") {
-        await ensureAdminUser(email);
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', userId)
+        .single();
+
+      if (error) {
+        console.error('Error fetching profile:', error);
+        return null;
       }
 
-      const usersRef = collection(db, "users");
-      const q = query(usersRef, where("email", "==", email));
-      const querySnapshot = await getDocs(q);
-      
-      console.log("User document exists:", !querySnapshot.empty);
-      
-      if (!querySnapshot.empty) {
-        const userData = querySnapshot.docs[0].data();
-        console.log("User role:", userData.role);
-        return userData.role === "admin";
-      }
-      return false;
+      return data;
     } catch (error) {
-      console.error("Error checking admin status:", error);
-      return false;
+      console.error('Error fetching profile:', error);
+      return null;
     }
   };
 
+  // Set up auth state listener
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (user) => {
-      setUser(user);
-      if (user) {
-        const adminStatus = await checkAdminStatus(user.email!);
-        console.log("Setting admin status to:", adminStatus);
-        setIsAdmin(adminStatus);
-      } else {
-        setIsAdmin(false);
+    setLoading(true);
+
+    // First set up auth state listener
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      async (event, currentSession) => {
+        setSession(currentSession);
+        setUser(currentSession?.user ?? null);
+
+        // Fetch user profile after auth state change
+        if (currentSession?.user) {
+          setTimeout(async () => {
+            const profileData = await fetchProfile(currentSession.user.id);
+            setProfile(profileData);
+            setIsAdmin(profileData?.role === 'admin');
+          }, 0);
+        } else {
+          setProfile(null);
+          setIsAdmin(false);
+        }
+
+        setLoading(false);
       }
+    );
+
+    // Then check for existing session
+    supabase.auth.getSession().then(({ data: { session: currentSession } }) => {
+      setSession(currentSession);
+      setUser(currentSession?.user ?? null);
+
+      if (currentSession?.user) {
+        fetchProfile(currentSession.user.id).then((data) => {
+          setProfile(data);
+          setIsAdmin(data?.role === 'admin');
+        });
+      }
+      
       setLoading(false);
     });
 
-    return unsubscribe;
+    return () => {
+      subscription.unsubscribe();
+    };
   }, []);
 
   const login = async (email: string, password: string) => {
     try {
-      const userCredential = await signInWithEmailAndPassword(auth, email, password);
-      await ensureAdminUser(email);
-      const adminStatus = await checkAdminStatus(email);
-      setIsAdmin(adminStatus);
+      const { error } = await supabase.auth.signInWithPassword({
+        email,
+        password
+      });
+
+      if (error) throw error;
       toast.success("Logged in successfully!");
-    } catch (error) {
+    } catch (error: any) {
       console.error("Login error:", error);
-      toast.error("Failed to log in. Please check your credentials.");
+      toast.error(error.message || "Failed to log in. Please check your credentials.");
       throw error;
     }
   };
 
-  const signup = async (email: string, password: string, role: string = "user") => {
+  const signup = async (email: string, password: string) => {
     try {
-      // First check if the user already exists in Firestore
-      const usersRef = collection(db, "users");
-      const q = query(usersRef, where("email", "==", email));
-      const querySnapshot = await getDocs(q);
-      
-      if (!querySnapshot.empty) {
-        console.log("User document already exists for:", email);
-        throw new Error("User already exists");
-      }
-
-      // Create the user in Firebase Auth
-      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-      
-      // Create the user document in Firestore using the auth UID
-      await setDoc(doc(db, "users", userCredential.user.uid), {
-        email: email,
-        role: role,
-        seniority: role === "admin" ? "Partners" : "Other", // Default seniority
-        createdAt: new Date().toISOString(),
-        lastUpdated: new Date().toISOString()
+      const { error } = await supabase.auth.signUp({
+        email,
+        password,
       });
-      
+
+      if (error) throw error;
       toast.success("Account created successfully!");
     } catch (error: any) {
       console.error("Signup error:", error);
-      if (error.code === "auth/email-already-in-use") {
-        toast.error("This email is already registered. Please try logging in instead.");
-      } else {
-        toast.error("Failed to create account. Please try again.");
-      }
+      toast.error(error.message || "Failed to create account. Please try again.");
       throw error;
     }
   };
 
-  const logout = () => signOut(auth);
+  const loginWithMicrosoft = async () => {
+    try {
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: 'azure',
+        options: {
+          redirectTo: window.location.origin,
+        }
+      });
+      
+      if (error) throw error;
+    } catch (error: any) {
+      console.error("Microsoft login error:", error);
+      toast.error(error.message || "Failed to log in with Microsoft. Please try again.");
+      throw error;
+    }
+  };
+
+  const logout = async () => {
+    try {
+      const { error } = await supabase.auth.signOut();
+      if (error) throw error;
+      toast.success("Logged out successfully");
+    } catch (error) {
+      console.error("Logout error:", error);
+      toast.error("Failed to log out. Please try again.");
+      throw error;
+    }
+  };
 
   return (
-    <AuthContext.Provider value={{ user, isAdmin, login, signup, logout, loading }}>
+    <AuthContext.Provider value={{
+      user,
+      session,
+      profile,
+      isAdmin,
+      login,
+      signup,
+      loginWithMicrosoft,
+      logout,
+      loading
+    }}>
       {!loading && children}
     </AuthContext.Provider>
   );

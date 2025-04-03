@@ -7,16 +7,21 @@ import { useToast } from "@/components/ui/use-toast";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
+import { Separator } from "@/components/ui/separator";
+import { MicrosoftLogo } from "@/components/ui/icons";
 
 export default function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const { login } = useAuth();
+  const [isLoading, setIsLoading] = useState(false);
+  const { login, loginWithMicrosoft } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setIsLoading(true);
+    
     try {
       await login(email, password);
       toast({
@@ -25,11 +30,21 @@ export default function Login() {
       });
       navigate("/");
     } catch (error) {
-      toast({
-        title: "Error",
-        description: error instanceof Error ? error.message : "An error occurred",
-        variant: "destructive",
-      });
+      // Error is handled in the auth context
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleMicrosoftLogin = async () => {
+    setIsLoading(true);
+    try {
+      await loginWithMicrosoft();
+      // Redirect is handled by OAuth
+    } catch (error) {
+      // Error is handled in the auth context
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -65,10 +80,27 @@ export default function Login() {
                 onChange={(e) => setPassword(e.target.value)}
               />
             </div>
-            <Button type="submit" className="w-full">
+            <Button type="submit" className="w-full" disabled={isLoading}>
               Login
             </Button>
           </form>
+
+          <div className="flex items-center gap-2">
+            <Separator className="flex-1" />
+            <span className="text-xs text-muted-foreground">OR</span>
+            <Separator className="flex-1" />
+          </div>
+
+          <Button 
+            type="button" 
+            variant="outline" 
+            className="w-full" 
+            onClick={handleMicrosoftLogin}
+            disabled={isLoading}
+          >
+            <MicrosoftLogo className="h-4 w-4 mr-2" />
+            Sign in with Microsoft
+          </Button>
 
           <div className="text-center space-y-2">
             <Button
