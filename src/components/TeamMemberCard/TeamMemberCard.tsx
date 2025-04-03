@@ -130,7 +130,9 @@ export default function TeamMemberCard({
                 )}
                 {!canEdit && (
                   <Badge variant="outline" className="bg-gray-100/50">
-                    <Lock className="h-3 w-3 mr-1 text-gray-600" />
+                    <span className="h-3 w-3 mr-1 flex items-center">
+                      <Lock className="h-3 w-3 text-gray-600" />
+                    </span>
                     Locked
                   </Badge>
                 )}
@@ -207,7 +209,8 @@ export default function TeamMemberCard({
                   onSaveProjects={handleAddProject}
                   onProjectChange={setNewProject}
                 />
-                
+              )}
+              {canEdit && (
                 <Button variant="outline" size="sm" onClick={openProjectDialog}>
                   <Plus className="h-4 w-4 mr-1" />
                   Add Project
