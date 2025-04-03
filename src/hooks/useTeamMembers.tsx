@@ -17,6 +17,7 @@ export interface UseTeamMembersResult {
   handleDeleteMember: (id: string) => void;
 }
 
+// Initial members with explicit user associations
 const initialMembers: TeamMember[] = [
   {
     id: "1",
@@ -79,7 +80,14 @@ export function useTeamMembers(): UseTeamMembersResult {
   }, [members]);
 
   const handleAddMember = () => {
-    if (!isAdmin && !currentUserId) return;
+    if (!currentUserId) {
+      toast({
+        title: "Authentication required",
+        description: "You must be logged in to add a team member.",
+        variant: "destructive"
+      });
+      return;
+    }
     
     const newMember: TeamMember = {
       id: Date.now().toString(),
@@ -88,7 +96,7 @@ export function useTeamMembers(): UseTeamMembersResult {
       status: "available",
       projects: [],
       lastUpdated: new Date(),
-      userId: currentUserId || undefined,  // Associate with current user
+      userId: currentUserId,  // Associate with current user
     };
     
     setMembers([newMember, ...members]);

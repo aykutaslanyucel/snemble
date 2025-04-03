@@ -17,6 +17,7 @@ import { getFirestore, collection, getDocs, doc, setDoc, updateDoc, query, where
 import { useTheme } from "@/contexts/ThemeContext";
 import { UserTable } from "@/components/Admin/UserTable";
 import { UserForm } from "@/components/Admin/UserForm";
+import { firebaseApp } from "@/integrations/firebase/client";
 
 interface User {
   id: string;
@@ -36,7 +37,7 @@ export default function Admin() {
   const [sortOrder, setSortOrder] = useState<SortOrder>("desc");
   const { user, isAdmin, signup } = useAuth();
   const { toast } = useToast();
-  const db = getFirestore();
+  const db = getFirestore(firebaseApp);
   const { theme, setTheme } = useTheme();
   const navigate = useNavigate();
 

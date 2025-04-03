@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { motion } from "framer-motion";
 import { format, formatDistanceToNow } from "date-fns";
@@ -68,6 +67,7 @@ const statusConfig = {
     label: "Away"
   }
 } as const;
+
 export default function TeamMemberCard({
   member,
   onUpdate,
@@ -83,7 +83,6 @@ export default function TeamMemberCard({
   const statusSound = new Audio("/status-change.mp3");
   const { isAdmin, currentUserId } = useAuth();
 
-  // Check if user can edit this card
   const canEdit = isAdmin || member.userId === currentUserId;
 
   const handleSave = () => {
