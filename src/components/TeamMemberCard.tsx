@@ -3,7 +3,7 @@ import { useState } from "react";
 import { motion } from "framer-motion";
 import { format, formatDistanceToNow } from "date-fns";
 import { Card } from "@/components/ui/card";
-import { MoreVertical, Trash2, Edit, CheckCircle, XCircle, User, Clock, Coffee, Plus, Crown, Palette, Brush, Settings } from "lucide-react";
+import { MoreVertical, Trash2, Edit, CheckCircle, XCircle, User, Clock, Coffee, Plus, Crown, Palette, Brush, Settings, Lock } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
@@ -158,7 +158,9 @@ export default function TeamMemberCard({
                   </Badge>}
                 {!canEdit && (
                   <Badge variant="outline" className="bg-gray-100/50">
-                    <Lock className="h-3 w-3 mr-1 text-gray-600" />
+                    <span className="h-3 w-3 mr-1 flex items-center">
+                      <Lock className="h-3 w-3 text-gray-600" />
+                    </span>
                     Locked
                   </Badge>
                 )}
