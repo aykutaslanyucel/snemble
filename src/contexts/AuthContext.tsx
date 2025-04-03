@@ -21,7 +21,6 @@ interface AuthContextType {
   currentUserId: string | null;
   login: (email: string, password: string) => Promise<void>;
   signup: (email: string, password: string) => Promise<void>;
-  loginWithMicrosoft: () => Promise<void>;
   logout: () => Promise<void>;
   loading: boolean;
 }
@@ -134,23 +133,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-  const loginWithMicrosoft = async () => {
-    try {
-      const { error } = await supabase.auth.signInWithOAuth({
-        provider: 'azure',
-        options: {
-          redirectTo: window.location.origin,
-        }
-      });
-      
-      if (error) throw error;
-    } catch (error: any) {
-      console.error("Microsoft login error:", error);
-      toast.error(error.message || "Failed to log in with Microsoft. Please try again.");
-      throw error;
-    }
-  };
-
   const logout = async () => {
     try {
       const { error } = await supabase.auth.signOut();
@@ -174,7 +156,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       currentUserId,
       login,
       signup,
-      loginWithMicrosoft,
       logout,
       loading
     }}>

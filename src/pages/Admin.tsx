@@ -1,19 +1,10 @@
+
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { motion } from "framer-motion";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/components/ui/use-toast";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
 import {
   Select,
   SelectContent,
@@ -21,9 +12,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { UserPlus, Users, LogOut, ArrowUpDown, Trash2, Lock } from "lucide-react";
+import { Users, LogOut } from "lucide-react";
 import { getFirestore, collection, getDocs, doc, setDoc, updateDoc, query, where, deleteDoc } from "firebase/firestore";
 import { useTheme } from "@/contexts/ThemeContext";
+import { UserTable } from "@/components/Admin/UserTable";
+import { UserForm } from "@/components/Admin/UserForm";
 
 interface User {
   id: string;
@@ -38,8 +31,6 @@ type SortOrder = "asc" | "desc";
 
 export default function Admin() {
   const [users, setUsers] = useState<User[]>([]);
-  const [newUserEmail, setNewUserEmail] = useState("");
-  const [newUserPassword, setNewUserPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [sortField, setSortField] = useState<SortField>("lastUpdated");
   const [sortOrder, setSortOrder] = useState<SortOrder>("desc");
@@ -48,37 +39,6 @@ export default function Admin() {
   const db = getFirestore();
   const { theme, setTheme } = useTheme();
   const navigate = useNavigate();
-
-  const handleSort = (field: SortField) => {
-    if (sortField === field) {
-      setSortOrder(sortOrder === "asc" ? "desc" : "asc");
-    } else {
-      setSortField(field);
-      setSortOrder("asc");
-    }
-  };
-
-  const sortedUsers = [...users].sort((a, b) => {
-    let comparison = 0;
-    switch (sortField) {
-      case "lastUpdated":
-        comparison = new Date(a.lastUpdated).getTime() - new Date(b.lastUpdated).getTime();
-        break;
-      case "seniority":
-        const seniorityOrder = {
-          "Other": 0,
-          "Junior Associate": 1,
-          "Senior Associate": 2,
-          "Partners": 3,
-        };
-        comparison = seniorityOrder[a.seniority] - seniorityOrder[b.seniority];
-        break;
-      case "name":
-        comparison = a.email.localeCompare(b.email);
-        break;
-    }
-    return sortOrder === "asc" ? comparison : -comparison;
-  });
 
   useEffect(() => {
     fetchUsers();
@@ -172,68 +132,10 @@ export default function Admin() {
     }
   };
 
-  const handleRoleChange = async (userId: string, newRole: string, newSeniority?: string) => {
-    try {
-      await updateDoc(doc(db, "users", userId), {
-        role: newRole,
-        seniority: newSeniority
-      });
-      toast({
-        title: "Success",
-        description: "User role updated successfully",
-      });
-      fetchUsers(); // Refresh the users list
-    } catch (error) {
-      toast({
-        title: "Error",
-        description: "Failed to update user role",
-        variant: "destructive",
-      });
-    }
-  };
-
-  const handleDeleteUser = async (userId: string) => {
-    try {
-      await deleteDoc(doc(db, "users", userId));
-      toast({
-        title: "Success",
-        description: "User deleted successfully",
-      });
-      fetchUsers(); // Refresh the users list
-    } catch (error) {
-      toast({
-        title: "Error",
-        description: "Failed to delete user",
-        variant: "destructive",
-      });
-    }
-  };
-
-  const handleAddUser = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!newUserEmail.endsWith("@snellman.com")) {
-      toast({
-        title: "Invalid email domain",
-        description: "Only @snellman.com email addresses are allowed",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    if (!newUserPassword || newUserPassword.length < 6) {
-      toast({
-        title: "Invalid password",
-        description: "Password must be at least 6 characters long",
-        variant: "destructive",
-      });
-      return;
-    }
-
+  const handleAddUser = async (email: string, password: string) => {
     setLoading(true);
     try {
-      await signup(newUserEmail, newUserPassword);
-      setNewUserEmail("");
-      setNewUserPassword("");
+      await signup(email, password);
       fetchUsers(); // Refresh the users list
     } catch (error) {
       console.error("Error adding user:", error);
@@ -284,97 +186,19 @@ export default function Admin() {
 
       <Card className="p-6">
         <h2 className="text-xl font-semibold mb-4">Add New User</h2>
-        <form onSubmit={handleAddUser} className="flex gap-4">
-          <Input
-            type="email"
-            placeholder="email@snellman.com"
-            value={newUserEmail}
-            onChange={(e) => setNewUserEmail(e.target.value)}
-            className="flex-1"
-          />
-          <Input
-            type="password"
-            placeholder="Password"
-            value={newUserPassword}
-            onChange={(e) => setNewUserPassword(e.target.value)}
-            className="flex-1"
-          />
-          <Button type="submit" disabled={loading}>
-            <UserPlus className="h-4 w-4 mr-2" />
-            Add User
-          </Button>
-        </form>
+        <UserForm onAddUser={handleAddUser} />
       </Card>
 
       <Card className="p-6">
         <h2 className="text-xl font-semibold mb-4">Manage Users</h2>
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead onClick={() => handleSort("name")} className="cursor-pointer">
-                Email <ArrowUpDown className="h-4 w-4 inline-block ml-2" />
-              </TableHead>
-              <TableHead>Role</TableHead>
-              <TableHead onClick={() => handleSort("seniority")} className="cursor-pointer">
-                Seniority <ArrowUpDown className="h-4 w-4 inline-block ml-2" />
-              </TableHead>
-              <TableHead onClick={() => handleSort("lastUpdated")} className="cursor-pointer">
-                Last Updated <ArrowUpDown className="h-4 w-4 inline-block ml-2" />
-              </TableHead>
-              <TableHead>Actions</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {sortedUsers.map((user) => (
-              <TableRow key={user.id}>
-                <TableCell>{user.email}</TableCell>
-                <TableCell>
-                  <Select
-                    value={user.role}
-                    onValueChange={(value) => handleRoleChange(user.id, value)}
-                  >
-                    <SelectTrigger className="w-32">
-                      <SelectValue placeholder="Select role" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="user">User</SelectItem>
-                      <SelectItem value="admin">Admin</SelectItem>
-                      <SelectItem value="premium">Premium</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </TableCell>
-                <TableCell>
-                  <Select
-                    value={user.seniority}
-                    onValueChange={(value) => handleRoleChange(user.id, user.role, value)}
-                  >
-                    <SelectTrigger className="w-40">
-                      <SelectValue placeholder="Select seniority" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="Other">Other</SelectItem>
-                      <SelectItem value="Junior Associate">Junior Associate</SelectItem>
-                      <SelectItem value="Senior Associate">Senior Associate</SelectItem>
-                      <SelectItem value="Partners">Partners</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </TableCell>
-                <TableCell>{new Date(user.lastUpdated).toLocaleDateString()}</TableCell>
-                <TableCell>
-                  <div className="flex gap-2">
-                    <Button 
-                      variant="destructive" 
-                      size="sm"
-                      onClick={() => handleDeleteUser(user.id)}
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  </div>
-                </TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
+        <UserTable 
+          users={users}
+          fetchUsers={fetchUsers}
+          sortField={sortField}
+          sortOrder={sortOrder}
+          setSortField={setSortField}
+          setSortOrder={setSortOrder}
+        />
       </Card>
     </div>
   );
