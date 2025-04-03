@@ -18,6 +18,7 @@ interface AuthContextType {
   session: Session | null;
   profile: UserProfile | null;
   isAdmin: boolean;
+  currentUserId: string | null;
   login: (email: string, password: string) => Promise<void>;
   signup: (email: string, password: string) => Promise<void>;
   loginWithMicrosoft: () => Promise<void>;
@@ -162,12 +163,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
+  const currentUserId = user?.id || null;
+
   return (
     <AuthContext.Provider value={{
       user,
       session,
       profile,
       isAdmin,
+      currentUserId,
       login,
       signup,
       loginWithMicrosoft,

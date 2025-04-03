@@ -1,3 +1,4 @@
+
 import { useState, useMemo } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
@@ -19,6 +20,7 @@ const initialMembers: TeamMember[] = [
     status: "available",
     projects: ["Project Alpha", "Project Beta"],
     lastUpdated: new Date(),
+    userId: "1", // Assigning user ID to track ownership
   },
   {
     id: "2",
@@ -27,6 +29,7 @@ const initialMembers: TeamMember[] = [
     status: "busy",
     projects: ["Project Gamma"],
     lastUpdated: new Date(),
+    userId: "2", // Assigning user ID to track ownership
   },
   {
     id: "3",
@@ -35,6 +38,7 @@ const initialMembers: TeamMember[] = [
     status: "away",
     projects: ["Project Delta", "Project Epsilon"],
     lastUpdated: new Date(),
+    userId: "3", // Assigning user ID to track ownership
   },
 ];
 
@@ -44,7 +48,7 @@ export default function Index() {
   const [announcements, setAnnouncements] = useState<Announcement[]>([]);
   const [newAnnouncement, setNewAnnouncement] = useState("");
   const { toast } = useToast();
-  const { isAdmin, logout } = useAuth();
+  const { isAdmin, logout, currentUserId } = useAuth();
 
   const activeProjects = useMemo(() => {
     const projectSet = new Set<string>();
@@ -72,6 +76,8 @@ export default function Index() {
   }, [members]);
 
   const handleAddMember = () => {
+    if (!isAdmin && !currentUserId) return;
+    
     const newMember: TeamMember = {
       id: Date.now().toString(),
       name: "New Member",
@@ -79,7 +85,9 @@ export default function Index() {
       status: "available",
       projects: [],
       lastUpdated: new Date(),
+      userId: currentUserId || undefined,  // Associate with current user
     };
+    
     setMembers([newMember, ...members]);
     toast({
       title: "Team member added",
@@ -88,6 +96,19 @@ export default function Index() {
   };
 
   const handleUpdateMember = (id: string, field: string, value: any) => {
+    const memberToUpdate = members.find(member => member.id === id);
+    
+    // Check if user can update this member
+    if (!memberToUpdate || 
+        (!isAdmin && memberToUpdate.userId !== currentUserId)) {
+      toast({
+        title: "Permission denied",
+        description: "You can only update your own team members.",
+        variant: "destructive",
+      });
+      return;
+    }
+    
     setMembers(
       members.map((member) =>
         member.id === id
@@ -113,6 +134,19 @@ export default function Index() {
   };
 
   const handleDeleteMember = (id: string) => {
+    const memberToDelete = members.find(member => member.id === id);
+    
+    // Check if user can delete this member
+    if (!memberToDelete || 
+        (!isAdmin && memberToDelete.userId !== currentUserId)) {
+      toast({
+        title: "Permission denied",
+        description: "You can only delete your own team members.",
+        variant: "destructive",
+      });
+      return;
+    }
+    
     setMembers(members.filter((member) => member.id !== id));
     toast({
       title: "Team member removed",
@@ -123,6 +157,16 @@ export default function Index() {
 
   const handleAddAnnouncement = () => {
     if (!newAnnouncement.trim()) return;
+    
+    // Only admins can add announcements
+    if (!isAdmin) {
+      toast({
+        title: "Permission denied",
+        description: "Only admins can post announcements.",
+        variant: "destructive",
+      });
+      return;
+    }
     
     const announcement: Announcement = {
       id: Date.now().toString(),
@@ -184,6 +228,7 @@ export default function Index() {
           onAnnouncementChange={setNewAnnouncement}
           onAddAnnouncement={handleAddAnnouncement}
           members={members}
+          isAdmin={isAdmin}
         />
 
         <TeamMembers

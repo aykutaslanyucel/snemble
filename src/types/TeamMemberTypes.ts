@@ -8,6 +8,14 @@ export interface TeamMember {
   status: TeamMemberStatus;
   projects: string[];
   lastUpdated: Date;
+  userId?: string; // Added to track the user who owns this team member
+  customization?: {
+    color?: string;
+    texture?: string;
+    hat?: string;
+    emoji?: string;
+  };
+  role?: string;
 }
 
 export interface Announcement {
