@@ -1,13 +1,14 @@
 import React, { createContext, useContext, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { auth, db } from "@/integrations/firebase/client";
+import { db } from "@/integrations/firebase/client";
 import { supabase } from "@/integrations/supabase/client";
 import { 
   createUserWithEmailAndPassword, 
   signInWithEmailAndPassword,
   signOut as firebaseSignOut,
   onAuthStateChanged,
-  User as FirebaseUser
+  User as FirebaseUser,
+  getAuth
 } from "firebase/auth";
 import { collection, doc, getDoc, setDoc, updateDoc } from "firebase/firestore";
 import { useToast } from "@/hooks/use-toast";
@@ -40,6 +41,7 @@ interface AuthContextType {
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
+const auth = getAuth();
 
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
@@ -76,9 +78,9 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         return {
           id: profile.id,
           email: profile.email,
-          name: profile.name,
-          role: profile.role as UserRole,
-          position: profile.position || profile.seniority,
+          name: profile.name || "",
+          role: (profile.role as UserRole) || "user",
+          position: profile.seniority || "",
           seniority: profile.seniority,
           avatar_url: profile.avatar_url
         };
@@ -92,28 +94,28 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         const userData = docSnap.data();
         return {
           id: firebaseUser.uid,
-          email: userData.email || firebaseUser.email,
+          email: userData.email || firebaseUser.email || "",
           name: userData.name || formatEmailAsName(firebaseUser.email || ""),
-          role: userData.role || "user",
+          role: (userData.role as UserRole) || "user",
           position: userData.position || "",
           avatar_url: userData.avatar_url
         };
       }
 
       // If no profile anywhere, create one in Firestore
-      const newUser = {
+      const newUser: User = {
         id: firebaseUser.uid,
-        email: firebaseUser.email,
+        email: firebaseUser.email || "",
         name: formatEmailAsName(firebaseUser.email || ""),
         role: firebaseUser.uid === "b82c63f6-1aa9-4150-a857-eeac0b9c921b" ? "admin" : "user",
         position: "",
-        createdAt: new Date().toISOString()
       };
 
       await setDoc(doc(db, "users", firebaseUser.uid), newUser);
       
       // If email contains snellman.com, make them admin by default
-      if (firebaseUser.email?.includes("snellman.com") || firebaseUser.uid === "b82c63f6-1aa9-4150-a857-eeac0b9c921b") {
+      if ((firebaseUser.email?.includes("snellman.com") || firebaseUser.uid === "b82c63f6-1aa9-4150-a857-eeac0b9c921b") 
+          && newUser.role !== "admin") {
         await updateDoc(doc(db, "users", firebaseUser.uid), {
           role: "admin"
         });
@@ -161,23 +163,21 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       const { user: firebaseUser } = await createUserWithEmailAndPassword(auth, email, password);
       
       // Create user in Firestore with name and position
-      await setDoc(doc(db, "users", firebaseUser.uid), {
+      const userData: User = {
         id: firebaseUser.uid,
         email: email,
         name: name,
         position: position,
         role: email.includes("snellman.com") ? "admin" : "user",
+      };
+      
+      await setDoc(doc(db, "users", firebaseUser.uid), {
+        ...userData,
         createdAt: new Date().toISOString()
       });
       
       // Set user state
-      setUser({
-        id: firebaseUser.uid,
-        email: email,
-        name: name,
-        position: position,
-        role: email.includes("snellman.com") ? "admin" : "user"
-      });
+      setUser(userData);
 
       // Create team member card for the new user
       try {
@@ -282,9 +282,9 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       const formattedUsers = supabaseUsers.map(user => ({
         id: user.id,
         email: user.email,
-        name: user.name,
-        role: user.role as UserRole,
-        position: user.position || user.seniority,
+        name: user.name || "",
+        role: (user.role as UserRole) || "user",
+        position: user.seniority || "",
         seniority: user.seniority,
         avatar_url: user.avatar_url
       }));
@@ -305,12 +305,16 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       const { user: firebaseUser } = await createUserWithEmailAndPassword(auth, email, password);
       
       // Create user in Firestore
-      await setDoc(doc(db, "users", firebaseUser.uid), {
+      const userData: User = {
         id: firebaseUser.uid,
         email: email,
         name: name,
         position: position,
         role: role,
+      };
+      
+      await setDoc(doc(db, "users", firebaseUser.uid), {
+        ...userData,
         createdAt: new Date().toISOString()
       });
       

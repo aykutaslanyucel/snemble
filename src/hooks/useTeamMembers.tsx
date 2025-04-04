@@ -5,7 +5,7 @@ import { db } from "@/integrations/firebase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import { v4 as uuidv4 } from "uuid";
-import { TeamMember, TeamMemberStatus } from "@/types/TeamMemberTypes";
+import { TeamMember, TeamMemberStatus, TeamMemberRole } from "@/types/TeamMemberTypes";
 
 export function useTeamMembers() {
   const [members, setMembers] = useState<TeamMember[]>([]);
@@ -90,7 +90,7 @@ export function useTeamMembers() {
 
       // Ensure admin user has admin role
       const adminUser = fetchedMembers.find(member => member.id === "b82c63f6-1aa9-4150-a857-eeac0b9c921b");
-      if (adminUser && adminUser.role !== "admin") {
+      if (adminUser && adminUser.role !== "admin" as TeamMemberRole) {
         updateDoc(doc(db, "teamMembers", "b82c63f6-1aa9-4150-a857-eeac0b9c921b"), {
           role: "admin"
         });
@@ -98,14 +98,14 @@ export function useTeamMembers() {
 
       // Create admin user team member if doesn't exist
       if (!adminUser && isAdmin) {
-        const adminMember = {
+        const adminMember: TeamMember = {
           id: "b82c63f6-1aa9-4150-a857-eeac0b9c921b",
           name: "Admin User",
           position: "Admin",
           status: "available" as TeamMemberStatus,
           projects: [],
           lastUpdated: new Date(),
-          role: "admin",
+          role: "admin" as TeamMemberRole,
           userId: "b82c63f6-1aa9-4150-a857-eeac0b9c921b"
         };
         setDoc(doc(db, "teamMembers", "b82c63f6-1aa9-4150-a857-eeac0b9c921b"), adminMember);

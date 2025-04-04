@@ -1,16 +1,14 @@
 
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import { useAuth } from "@/contexts/AuthContext";
-import { useToast } from "@/components/ui/use-toast";
+import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
 import { ArrowLeft } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { collection, addDoc } from "firebase/firestore";
-import { db } from "@/integrations/firebase/client";
 
 export default function Signup() {
   const [email, setEmail] = useState("");
@@ -62,20 +60,7 @@ export default function Signup() {
     setIsLoading(true);
     try {
       // Sign up the user
-      const userCredential = await signup(email, password);
-      
-      // Create team member card
-      if (userCredential?.user?.uid) {
-        await addDoc(collection(db, "teamMembers"), {
-          name: name,
-          position: position,
-          status: "available",
-          projects: [],
-          lastUpdated: new Date(),
-          userId: userCredential.user.uid,
-          role: position
-        });
-      }
+      await signup(email, password, name, position);
       
       toast({
         title: "Account created!",
