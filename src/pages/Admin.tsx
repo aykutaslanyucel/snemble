@@ -12,12 +12,12 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Users, LogOut } from "lucide-react";
-import { getFirestore, collection, getDocs, doc, setDoc, updateDoc, query, where, deleteDoc } from "firebase/firestore";
+import { Users, LogOut, UserPlus } from "lucide-react";
+import { getFirestore, collection, getDocs, doc, setDoc, updateDoc, query, where, deleteDoc, addDoc } from "firebase/firestore";
 import { useTheme } from "@/contexts/ThemeContext";
 import { UserTable } from "@/components/Admin/UserTable";
 import { UserForm } from "@/components/Admin/UserForm";
-import { firebaseApp } from "@/integrations/firebase/client";
+import { db, firebaseApp } from "@/integrations/firebase/client";
 
 interface User {
   id: string;
@@ -25,6 +25,7 @@ interface User {
   role: string;
   seniority: "Other" | "Junior Associate" | "Senior Associate" | "Partners";
   lastUpdated: Date;
+  name?: string;
 }
 
 type SortField = "lastUpdated" | "seniority" | "name";
@@ -37,7 +38,6 @@ export default function Admin() {
   const [sortOrder, setSortOrder] = useState<SortOrder>("desc");
   const { user, isAdmin, signup } = useAuth();
   const { toast } = useToast();
-  const db = getFirestore(firebaseApp);
   const { theme, setTheme } = useTheme();
   const navigate = useNavigate();
 
@@ -89,6 +89,10 @@ export default function Admin() {
         await setDoc(doc(db, "users", userId), {
           email: "aykut.yucel@snellman.com",
           role: "admin",
+          name: "Aykut Yucel",
+          position: "Administrator",
+          seniority: "Partners",
+          lastUpdated: new Date()
         });
         toast({
           title: "Success",
@@ -121,7 +125,8 @@ export default function Admin() {
       const usersSnapshot = await getDocs(collection(db, "users"));
       const usersData = usersSnapshot.docs.map(doc => ({
         id: doc.id,
-        ...doc.data()
+        ...doc.data(),
+        lastUpdated: doc.data().lastUpdated?.toDate() || new Date()
       } as User));
       setUsers(usersData);
     } catch (error) {
@@ -133,15 +138,86 @@ export default function Admin() {
     }
   };
 
-  const handleAddUser = async (email: string, password: string) => {
+  const handleAddUser = async (email: string, password: string, name: string = "", position: string = "") => {
     setLoading(true);
     try {
+      // Create the user account
       await signup(email, password);
+      
+      // Find the newly created user
+      const usersRef = collection(db, "users");
+      const q = query(usersRef, where("email", "==", email));
+      const querySnapshot = await getDocs(q);
+      
+      if (!querySnapshot.empty) {
+        const userDoc = querySnapshot.docs[0];
+        const userId = userDoc.id;
+        
+        // Update user with additional details
+        await updateDoc(doc(db, "users", userId), {
+          name: name || email.split('@')[0],
+          position: position || "Team Member",
+          lastUpdated: new Date()
+        });
+        
+        // Create a team member card for the new user
+        await addDoc(collection(db, "teamMembers"), {
+          name: name || email.split('@')[0],
+          position: position || "Team Member",
+          status: "available",
+          projects: [],
+          lastUpdated: new Date(),
+          userId: userId
+        });
+      }
+      
       fetchUsers(); // Refresh the users list
+      toast({
+        title: "Success",
+        description: "User added and team member card created successfully",
+      });
     } catch (error) {
       console.error("Error adding user:", error);
+      toast({
+        title: "Error",
+        description: "Failed to add user: " + (error instanceof Error ? error.message : "Unknown error"),
+        variant: "destructive",
+      });
     }
     setLoading(false);
+  };
+
+  const createTeamMemberForUser = async (userId: string, userData: any) => {
+    try {
+      // Check if user already has a team member card
+      const teamMembersRef = collection(db, "teamMembers");
+      const q = query(teamMembersRef, where("userId", "==", userId));
+      const querySnapshot = await getDocs(q);
+      
+      if (querySnapshot.empty) {
+        // Create a new team member card
+        await addDoc(collection(db, "teamMembers"), {
+          name: userData.name || userData.email.split('@')[0],
+          position: userData.position || "Team Member",
+          status: "available",
+          projects: [],
+          lastUpdated: new Date(),
+          userId: userId
+        });
+        
+        toast({
+          title: "Success",
+          description: "Team member card created for user",
+        });
+      }
+    } catch (error) {
+      console.error("Error creating team member card:", error);
+      toast({
+        title: "Error",
+        description: "Failed to create team member card",
+        variant: "destructive",
+      });
+    }
   };
 
   if (!isAdmin) {
@@ -192,6 +268,17 @@ export default function Admin() {
 
       <Card className="p-6">
         <h2 className="text-xl font-semibold mb-4">Manage Users</h2>
+        <div className="flex justify-end mb-4">
+          <Button 
+            onClick={() => {
+              users.forEach(user => createTeamMemberForUser(user.id, user));
+            }}
+            className="gap-2"
+          >
+            <UserPlus className="h-4 w-4" />
+            Create Missing Team Member Cards
+          </Button>
+        </div>
         <UserTable 
           users={users}
           fetchUsers={fetchUsers}
