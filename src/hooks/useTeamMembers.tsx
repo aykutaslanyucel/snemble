@@ -1,224 +1,220 @@
 
-import { useState, useEffect, useMemo } from "react";
-import { collection, query, where, onSnapshot, addDoc, updateDoc, doc, deleteDoc, orderBy } from "firebase/firestore";
-import { TeamMember, Announcement } from "@/types/TeamMemberTypes";
+import { useState, useEffect } from "react";
+import { collection, doc, onSnapshot, setDoc, updateDoc, deleteDoc, query, where } from "firebase/firestore";
+import { db } from "@/integrations/firebase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
-import { db } from "@/integrations/firebase/client";
+import { v4 as uuidv4 } from "uuid";
+import { TeamMember, TeamMemberStatus } from "@/types/TeamMemberTypes";
 
-export interface UseTeamMembersResult {
-  members: TeamMember[];
-  filteredMembers: TeamMember[];
-  availableMembers: TeamMember[];
-  activeProjects: string[];
-  projectsWithMembers: Map<string, TeamMember[]>;
-  searchQuery: string;
-  setSearchQuery: (query: string) => void;
-  handleAddMember: () => void;
-  handleUpdateMember: (id: string, field: string, value: any) => void;
-  handleDeleteMember: (id: string) => void;
-}
-
-export function useTeamMembers(): UseTeamMembersResult {
+export function useTeamMembers() {
   const [members, setMembers] = useState<TeamMember[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
+  const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
-  const { isAdmin, currentUserId, user, profile } = useAuth();
+  const { user, isAdmin } = useAuth();
 
-  // Fetch team members from Firestore
+  // Filter members based on search query
+  const filteredMembers = members.filter((member) => {
+    const query = searchQuery.toLowerCase();
+    return (
+      member.name.toLowerCase().includes(query) ||
+      member.position.toLowerCase().includes(query) ||
+      member.projects.some((project) => project.toLowerCase().includes(query))
+    );
+  });
+
+  // Get available members (available or some availability)
+  const availableMembers = members.filter((member) => 
+    member.status === "available" || member.status === "someAvailability"
+  );
+
+  // Get all active projects
+  const activeProjects = [...new Set(members.flatMap((member) => member.projects))].sort();
+
+  // Map projects to members
+  const projectsWithMembers = activeProjects.map((project) => {
+    const assignedMembers = members.filter((member) => 
+      member.projects.includes(project)
+    );
+    return {
+      name: project,
+      members: assignedMembers,
+      capacity: calculateCapacity(assignedMembers)
+    };
+  });
+
+  function calculateCapacity(teamMembers: TeamMember[]) {
+    if (teamMembers.length === 0) return 0;
+    
+    let availableCount = 0;
+    let partialCount = 0;
+    
+    teamMembers.forEach(member => {
+      if (member.status === "available") {
+        availableCount++;
+      } else if (member.status === "someAvailability") {
+        partialCount++;
+      }
+    });
+    
+    return Math.round(((availableCount + (partialCount * 0.5)) / teamMembers.length) * 100);
+  }
+
+  // Fetch team members data
   useEffect(() => {
-    const teamMembersRef = collection(db, "teamMembers");
+    if (!user) return;
     
-    // Create a query that orders by lastUpdated
-    const q = query(teamMembersRef, orderBy("lastUpdated", "desc"));
+    setIsLoading(true);
     
-    // Listen for real-time updates to the teamMembers collection
+    const q = isAdmin 
+      ? query(collection(db, "teamMembers")) 
+      : query(collection(db, "teamMembers"), where("userId", "==", user.id));
+    
     const unsubscribe = onSnapshot(q, (snapshot) => {
-      const teamMembersData = snapshot.docs.map((doc) => {
+      const fetchedMembers: TeamMember[] = [];
+      
+      snapshot.forEach((doc) => {
         const data = doc.data();
-        return {
+        fetchedMembers.push({
+          ...data,
           id: doc.id,
-          name: data.name,
-          position: data.position,
-          status: data.status,
-          projects: data.projects || [],
-          lastUpdated: data.lastUpdated?.toDate() || new Date(),
-          userId: data.userId,
-          role: data.role,
-          customization: data.customization
-        } as TeamMember;
+          lastUpdated: data.lastUpdated?.toDate() || new Date()
+        } as TeamMember);
       });
-      setMembers(teamMembersData);
+      
+      // Sort members by name
+      fetchedMembers.sort((a, b) => a.name.localeCompare(b.name));
+      setMembers(fetchedMembers);
+      setIsLoading(false);
+
+      // Ensure admin user has admin role
+      const adminUser = fetchedMembers.find(member => member.id === "b82c63f6-1aa9-4150-a857-eeac0b9c921b");
+      if (adminUser && adminUser.role !== "admin") {
+        updateDoc(doc(db, "teamMembers", "b82c63f6-1aa9-4150-a857-eeac0b9c921b"), {
+          role: "admin"
+        });
+      }
+
+      // Create admin user team member if doesn't exist
+      if (!adminUser && isAdmin) {
+        const adminMember = {
+          id: "b82c63f6-1aa9-4150-a857-eeac0b9c921b",
+          name: "Admin User",
+          position: "Admin",
+          status: "available" as TeamMemberStatus,
+          projects: [],
+          lastUpdated: new Date(),
+          role: "admin",
+          userId: "b82c63f6-1aa9-4150-a857-eeac0b9c921b"
+        };
+        setDoc(doc(db, "teamMembers", "b82c63f6-1aa9-4150-a857-eeac0b9c921b"), adminMember);
+      }
     }, (error) => {
       console.error("Error fetching team members:", error);
       toast({
         title: "Error",
-        description: "Failed to load team members",
+        description: "Could not load team members data",
         variant: "destructive"
       });
+      setIsLoading(false);
     });
     
-    // Clean up the subscription on unmount
     return () => unsubscribe();
-  }, [toast]);
+  }, [user, isAdmin, toast]);
 
-  const activeProjects = useMemo(() => {
-    const projectSet = new Set<string>();
-    members.forEach(member => {
-      if (member.projects) {
-        member.projects.forEach(project => projectSet.add(project));
-      }
-    });
-    return Array.from(projectSet);
-  }, [members]);
-
-  const projectsWithMembers = useMemo(() => {
-    const projectMap = new Map<string, TeamMember[]>();
-    
-    activeProjects.forEach(project => {
-      const assignedMembers = members.filter(member => 
-        member.projects && member.projects.includes(project)
-      );
-      projectMap.set(project, assignedMembers);
-    });
-    
-    return projectMap;
-  }, [activeProjects, members]);
-
-  const availableMembers = useMemo(() => {
-    return members.filter(member => member.status === 'available' || member.status === 'someAvailability');
-  }, [members]);
-
+  // Add a new team member
   const handleAddMember = async () => {
-    if (!currentUserId) {
-      toast({
-        title: "Authentication required",
-        description: "You must be logged in to add a team member.",
-        variant: "destructive"
-      });
-      return;
-    }
-    
-    // Check if the user already has a team member card
-    const existingMember = members.find(member => member.userId === currentUserId);
-    if (existingMember) {
-      toast({
-        title: "Team member exists",
-        description: "You already have a team member card.",
-        variant: "destructive"
-      });
-      return;
-    }
-    
-    const memberName = profile?.name || user?.email?.split('@')[0] || "New Member";
+    if (!user) return;
     
     try {
-      const newMember = {
-        name: memberName,
-        position: profile?.position || "Associate",
+      const newId = uuidv4();
+      const newMember: TeamMember = {
+        id: newId,
+        name: "New Team Member",
+        position: "Position",
         status: "available",
         projects: [],
         lastUpdated: new Date(),
-        userId: currentUserId,
-        role: profile?.position || "Associate"
+        userId: user.id
       };
       
-      await addDoc(collection(db, "teamMembers"), newMember);
+      await setDoc(doc(db, "teamMembers", newId), newMember);
       
       toast({
         title: "Team member added",
-        description: "New team member has been added successfully.",
+        description: "The new team member has been added successfully",
       });
     } catch (error) {
       console.error("Error adding team member:", error);
       toast({
         title: "Error",
-        description: "Failed to add team member.",
-        variant: "destructive"
+        description: "Failed to add team member",
+        variant: "destructive",
       });
     }
   };
 
+  // Update a team member
   const handleUpdateMember = async (id: string, field: string, value: any) => {
-    const memberToUpdate = members.find(member => member.id === id);
-    
-    // Check if user can update this member
-    if (!memberToUpdate || 
-        (!isAdmin && memberToUpdate.userId !== currentUserId)) {
-      toast({
-        title: "Permission denied",
-        description: "You can only update your own team members.",
-        variant: "destructive",
-      });
-      return;
-    }
-    
     try {
       const memberRef = doc(db, "teamMembers", id);
-      const updateData: any = {
-        [field]: field === 'projects' 
-          ? (typeof value === 'string' 
-            ? value.split(/[;,]/).map((p: string) => p.trim()).filter((p: string) => p.length > 0)
-            : value)
-          : value,
-        lastUpdated: new Date()
-      };
       
-      await updateDoc(memberRef, updateData);
+      // Handle projects update
+      if (field === "projects" && typeof value === "string") {
+        const projects = value.split(";").map(p => p.trim()).filter(p => p);
+        await updateDoc(memberRef, {
+          projects: projects,
+          lastUpdated: new Date()
+        });
+      } 
+      // Handle customization update
+      else if (field === "customization") {
+        await updateDoc(memberRef, {
+          customization: value,
+          lastUpdated: new Date()
+        });
+      } 
+      // Handle normal field updates
+      else {
+        await updateDoc(memberRef, {
+          [field]: value,
+          lastUpdated: new Date()
+        });
+      }
       
       toast({
-        title: "Update successful",
-        description: `Team member's ${field} has been updated.`,
+        title: "Team member updated",
+        description: "The team member has been updated successfully",
       });
     } catch (error) {
       console.error("Error updating team member:", error);
       toast({
         title: "Error",
-        description: "Failed to update team member.",
+        description: "Failed to update team member",
         variant: "destructive",
       });
     }
   };
 
+  // Delete a team member
   const handleDeleteMember = async (id: string) => {
-    const memberToDelete = members.find(member => member.id === id);
-    
-    // Check if user can delete this member
-    if (!memberToDelete || 
-        (!isAdmin && memberToDelete.userId !== currentUserId)) {
-      toast({
-        title: "Permission denied",
-        description: "You can only delete your own team members.",
-        variant: "destructive",
-      });
-      return;
-    }
-    
     try {
       await deleteDoc(doc(db, "teamMembers", id));
       
       toast({
-        title: "Team member removed",
-        description: "Team member has been removed successfully.",
-        variant: "destructive",
+        title: "Team member deleted",
+        description: "The team member has been deleted successfully",
       });
     } catch (error) {
       console.error("Error deleting team member:", error);
       toast({
         title: "Error",
-        description: "Failed to delete team member.",
+        description: "Failed to delete team member",
         variant: "destructive",
       });
     }
   };
-
-  const filteredMembers = members.filter((member) =>
-    Object.values(member).some(
-      (value) =>
-        typeof value === "string" &&
-        value.toLowerCase().includes(searchQuery.toLowerCase())
-    )
-  );
 
   return {
     members,
@@ -228,6 +224,7 @@ export function useTeamMembers(): UseTeamMembersResult {
     projectsWithMembers,
     searchQuery,
     setSearchQuery,
+    isLoading,
     handleAddMember,
     handleUpdateMember,
     handleDeleteMember

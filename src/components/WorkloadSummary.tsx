@@ -1,12 +1,20 @@
+
 import React from "react";
 import { TeamMember, TeamMemberStatus } from "@/types/TeamMemberTypes";
 
 interface WorkloadSummaryProps {
   members: TeamMember[];
   showOnlyCapacity?: boolean;
+  showStatusOnly?: boolean;
+  showHistoricalOnly?: boolean;
 }
 
-export default function WorkloadSummary({ members, showOnlyCapacity = false }: WorkloadSummaryProps) {
+export default function WorkloadSummary({ 
+  members, 
+  showOnlyCapacity = false,
+  showStatusOnly = false,
+  showHistoricalOnly = false
+}: WorkloadSummaryProps) {
   // Count members by status
   const statusCounts = {
     available: 0,
@@ -41,6 +49,47 @@ export default function WorkloadSummary({ members, showOnlyCapacity = false }: W
         <div className="font-medium">Team Capacity:</div>
         <div className={`font-bold ${capacityColor}`}>
           {capacityPercentage}%
+        </div>
+      </div>
+    );
+  }
+
+  if (showStatusOnly) {
+    return (
+      <div className="bg-card rounded-lg p-4 shadow-sm">
+        <h3 className="text-lg font-semibold mb-3">Team Status Summary</h3>
+        <div className="space-y-2">
+          <div className="flex justify-between items-center">
+            <span className="text-sm">Available</span>
+            <span className="font-medium text-blue-600">{statusCounts.available}</span>
+          </div>
+          <div className="flex justify-between items-center">
+            <span className="text-sm">Some Availability</span>
+            <span className="font-medium text-green-600">{statusCounts.someAvailability}</span>
+          </div>
+          <div className="flex justify-between items-center">
+            <span className="text-sm">Busy</span>
+            <span className="font-medium text-orange-600">{statusCounts.busy}</span>
+          </div>
+          <div className="flex justify-between items-center">
+            <span className="text-sm">Seriously Busy</span>
+            <span className="font-medium text-red-600">{statusCounts.seriouslyBusy}</span>
+          </div>
+          <div className="flex justify-between items-center">
+            <span className="text-sm">Away</span>
+            <span className="font-medium text-gray-600">{statusCounts.away}</span>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (showHistoricalOnly) {
+    return (
+      <div className="bg-card rounded-lg p-4 shadow-sm">
+        <h3 className="text-lg font-semibold mb-3">Historical Capacity</h3>
+        <div className="h-24 flex items-center justify-center">
+          <p className="text-muted-foreground">Historical data visualization will appear here</p>
         </div>
       </div>
     );

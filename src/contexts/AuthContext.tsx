@@ -1,331 +1,379 @@
-
-import { createContext, useContext, useEffect, useState } from "react";
-import { User, Session } from "@supabase/supabase-js";
+import React, { createContext, useContext, useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { auth, db } from "@/integrations/firebase/client";
 import { supabase } from "@/integrations/supabase/client";
-import { toast } from "sonner";
-import { collection, query, where, getDocs, addDoc, doc, setDoc } from "firebase/firestore";
-import { db } from "@/integrations/firebase/client";
+import { 
+  createUserWithEmailAndPassword, 
+  signInWithEmailAndPassword,
+  signOut as firebaseSignOut,
+  onAuthStateChanged,
+  User as FirebaseUser
+} from "firebase/auth";
+import { collection, doc, getDoc, setDoc, updateDoc } from "firebase/firestore";
+import { useToast } from "@/hooks/use-toast";
 
-interface UserProfile {
+type UserRole = "user" | "admin";
+
+interface User {
   id: string;
   email: string;
-  name?: string;
-  avatar_url?: string;
-  role?: string;
-  seniority?: string;
+  name: string;
+  role: UserRole;
   position?: string;
+  seniority?: string;
+  avatar_url?: string;
 }
 
 interface AuthContextType {
   user: User | null;
-  session: Session | null;
-  profile: UserProfile | null;
+  loading: boolean;
+  error: string | null;
   isAdmin: boolean;
   currentUserId: string | null;
+  signup: (email: string, password: string, name: string, position: string) => Promise<void>;
   login: (email: string, password: string) => Promise<void>;
-  signup: (email: string, password: string) => Promise<any>;
   logout: () => Promise<void>;
-  loading: boolean;
+  updateUser: (data: Partial<User>) => Promise<void>;
+  setAsAdmin: (userId: string) => Promise<void>;
+  getUsers: () => Promise<User[]>;
+  createUser: (email: string, password: string, name: string, position: string, role?: UserRole) => Promise<void>;
 }
 
-interface AuthResult {
-  user: {
-    id: string;
-    email: string;
-    [key: string]: any;
-  };
-}
+const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-const AuthContext = createContext<AuthContextType | null>(null);
-
-// List of admin emails
-const ADMIN_EMAILS = ['aykut.yucel@snellman.com'];
-// Hard-coded admin user ID - this should be the ID of your admin user
-const ADMIN_USER_ID = 'b82c63f6-1aa9-4150-a857-eeac0b9c921b';
-
-export function AuthProvider({ children }: { children: React.ReactNode }) {
+export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
-  const [session, setSession] = useState<Session | null>(null);
-  const [profile, setProfile] = useState<UserProfile | null>(null);
-  const [isAdmin, setIsAdmin] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const navigate = useNavigate();
+  const { toast } = useToast();
 
-  // Fetch user profile data
-  const fetchProfile = async (userId: string) => {
+  // Function to format email as name
+  const formatEmailAsName = (email: string) => {
+    const namePart = email.split('@')[0];
+    return namePart
+      .split('.')
+      .map(part => part.charAt(0).toUpperCase() + part.slice(1))
+      .join(' ');
+  };
+
+  // Get or create user profile
+  const getUserProfile = async (firebaseUser: FirebaseUser): Promise<User | null> => {
     try {
-      // First try Supabase profiles
-      const { data, error } = await supabase
+      // First check Supabase
+      const { data: profile, error } = await supabase
         .from('profiles')
         .select('*')
-        .eq('id', userId)
+        .eq('id', firebaseUser.uid)
         .single();
 
-      if (error || !data) {
-        // If no Supabase profile, check Firebase
-        const usersRef = collection(db, "users");
-        const q = query(usersRef, where("id", "==", userId));
-        const querySnapshot = await getDocs(q);
-        
-        if (!querySnapshot.empty) {
-          const userData = querySnapshot.docs[0].data();
-          return {
-            id: userId,
-            email: userData.email,
-            name: userData.name,
-            role: userData.role,
-            position: userData.position,
-            avatar_url: userData.avatar_url
-          };
-        }
-        return null;
+      if (error && error.code !== 'PGRST116') {
+        console.error("Error fetching Supabase profile:", error);
       }
 
-      return data;
+      // If profile exists in Supabase, return it
+      if (profile) {
+        return {
+          id: profile.id,
+          email: profile.email,
+          name: profile.name,
+          role: profile.role as UserRole,
+          position: profile.position || profile.seniority,
+          seniority: profile.seniority,
+          avatar_url: profile.avatar_url
+        };
+      }
+
+      // Otherwise, check Firestore
+      const docRef = doc(db, "users", firebaseUser.uid);
+      const docSnap = await getDoc(docRef);
+
+      if (docSnap.exists()) {
+        const userData = docSnap.data();
+        return {
+          id: firebaseUser.uid,
+          email: userData.email || firebaseUser.email,
+          name: userData.name || formatEmailAsName(firebaseUser.email || ""),
+          role: userData.role || "user",
+          position: userData.position || "",
+          avatar_url: userData.avatar_url
+        };
+      }
+
+      // If no profile anywhere, create one in Firestore
+      const newUser = {
+        id: firebaseUser.uid,
+        email: firebaseUser.email,
+        name: formatEmailAsName(firebaseUser.email || ""),
+        role: firebaseUser.uid === "b82c63f6-1aa9-4150-a857-eeac0b9c921b" ? "admin" : "user",
+        position: "",
+        createdAt: new Date().toISOString()
+      };
+
+      await setDoc(doc(db, "users", firebaseUser.uid), newUser);
+      
+      // If email contains snellman.com, make them admin by default
+      if (firebaseUser.email?.includes("snellman.com") || firebaseUser.uid === "b82c63f6-1aa9-4150-a857-eeac0b9c921b") {
+        await updateDoc(doc(db, "users", firebaseUser.uid), {
+          role: "admin"
+        });
+        newUser.role = "admin";
+      }
+
+      return newUser;
     } catch (error) {
-      console.error('Error fetching profile:', error);
+      console.error("Error getting user profile:", error);
       return null;
     }
   };
 
-  // Check if user should be admin
-  const checkIfAdmin = (userId: string, email: string | undefined): boolean => {
-    // Check if user ID matches the admin ID
-    if (userId === ADMIN_USER_ID) return true;
-    
-    // Check if email is in the admin list
-    if (email && ADMIN_EMAILS.includes(email)) return true;
-    
-    return false;
-  };
-
-  // Set up auth state listener
   useEffect(() => {
-    setLoading(true);
-
-    // First set up auth state listener
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, currentSession) => {
-        setSession(currentSession);
-        setUser(currentSession?.user ?? null);
-
-        // Fetch user profile after auth state change
-        if (currentSession?.user) {
-          setTimeout(async () => {
-            const profileData = await fetchProfile(currentSession.user.id);
-            setProfile(profileData);
-            
-            // Also check for admin status
-            const shouldBeAdmin = checkIfAdmin(currentSession.user.id, currentSession.user.email);
-            if (shouldBeAdmin) {
-              // Ensure user has admin role in Firebase
-              const usersRef = collection(db, "users");
-              const q = query(usersRef, where("id", "==", currentSession.user.id));
-              const querySnapshot = await getDocs(q);
-              
-              if (!querySnapshot.empty) {
-                const docRef = doc(db, "users", querySnapshot.docs[0].id);
-                await setDoc(docRef, { role: 'admin' }, { merge: true });
-              } else if (currentSession.user.email) {
-                // Create admin user if doesn't exist
-                await setDoc(doc(db, "users", currentSession.user.id), {
-                  id: currentSession.user.id,
-                  email: currentSession.user.email,
-                  role: 'admin',
-                  name: profileData?.name || "Admin User",
-                  position: profileData?.position || "Partner",
-                  lastUpdated: new Date()
-                });
-              }
-              
-              setIsAdmin(true);
-            } else {
-              // Check if user has admin role in Firebase
-              const usersRef = collection(db, "users");
-              const q = query(usersRef, where("id", "==", currentSession.user.id));
-              const querySnapshot = await getDocs(q);
-              
-              const isUserAdmin = !querySnapshot.empty && querySnapshot.docs[0].data().role === 'admin';
-              setIsAdmin(profileData?.role === 'admin' || isUserAdmin);
-            }
-          }, 0);
+    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
+      setLoading(true);
+      try {
+        if (firebaseUser) {
+          const userProfile = await getUserProfile(firebaseUser);
+          setUser(userProfile);
+          
+          // Ensure admin user is set correctly
+          if (firebaseUser.uid === "b82c63f6-1aa9-4150-a857-eeac0b9c921b" && userProfile && userProfile.role !== "admin") {
+            await updateDoc(doc(db, "users", firebaseUser.uid), { role: "admin" });
+            setUser(prev => prev ? { ...prev, role: "admin" } : prev);
+          }
         } else {
-          setProfile(null);
-          setIsAdmin(false);
+          setUser(null);
         }
-
+      } catch (err) {
+        console.error("Auth state change error:", err);
+      } finally {
         setLoading(false);
       }
-    );
+    });
 
-    // Then check for existing session
-    supabase.auth.getSession().then(({ data: { session: currentSession } }) => {
-      setSession(currentSession);
-      setUser(currentSession?.user ?? null);
+    return () => unsubscribe();
+  }, []);
 
-      if (currentSession?.user) {
-        fetchProfile(currentSession.user.id).then((data) => {
-          setProfile(data);
-          
-          // Check if user should be admin
-          const shouldBeAdmin = checkIfAdmin(currentSession.user.id, currentSession.user.email);
-          if (shouldBeAdmin) {
-            // Ensure user has admin role in Firebase
-            const usersRef = collection(db, "users");
-            const q = query(usersRef, where("id", "==", currentSession.user.id));
-            getDocs(q).then(async (querySnapshot) => {
-              if (!querySnapshot.empty) {
-                const docRef = doc(db, "users", querySnapshot.docs[0].id);
-                await setDoc(docRef, { role: 'admin' }, { merge: true });
-              } else if (currentSession.user.email) {
-                // Create admin user if doesn't exist
-                await setDoc(doc(db, "users", currentSession.user.id), {
-                  id: currentSession.user.id,
-                  email: currentSession.user.email,
-                  role: 'admin',
-                  name: data?.name || "Admin User",
-                  position: data?.position || "Partner",
-                  lastUpdated: new Date()
-                });
-              }
-              
-              setIsAdmin(true);
-            });
-          } else {
-            // Check Firebase admin status
-            const usersRef = collection(db, "users");
-            const q = query(usersRef, where("id", "==", currentSession.user.id));
-            getDocs(q).then((querySnapshot) => {
-              const isUserAdmin = !querySnapshot.empty && querySnapshot.docs[0].data().role === 'admin';
-              setIsAdmin(data?.role === 'admin' || isUserAdmin);
-            });
-          }
+  const signup = async (email: string, password: string, name: string, position: string) => {
+    setLoading(true);
+    setError(null);
+    
+    try {
+      const { user: firebaseUser } = await createUserWithEmailAndPassword(auth, email, password);
+      
+      // Create user in Firestore with name and position
+      await setDoc(doc(db, "users", firebaseUser.uid), {
+        id: firebaseUser.uid,
+        email: email,
+        name: name,
+        position: position,
+        role: email.includes("snellman.com") ? "admin" : "user",
+        createdAt: new Date().toISOString()
+      });
+      
+      // Set user state
+      setUser({
+        id: firebaseUser.uid,
+        email: email,
+        name: name,
+        position: position,
+        role: email.includes("snellman.com") ? "admin" : "user"
+      });
+
+      // Create team member card for the new user
+      try {
+        const newMember = {
+          id: firebaseUser.uid,
+          name: name,
+          position: position,
+          status: "available",
+          projects: [],
+          lastUpdated: new Date(),
+          role: email.includes("snellman.com") ? "admin" : "user",
+          userId: firebaseUser.uid
+        };
+        
+        await setDoc(doc(db, "teamMembers", firebaseUser.uid), newMember);
+        toast({
+          title: "Team member card created",
+          description: "Your capacity card has been created successfully."
+        });
+      } catch (err) {
+        console.error("Error creating team member card:", err);
+        toast({
+          title: "Error",
+          description: "Failed to create capacity card",
+          variant: "destructive"
         });
       }
       
+      navigate("/");
+    } catch (err: any) {
+      setError(err.message);
+      console.error("Signup error:", err.message);
+    } finally {
       setLoading(false);
-    });
-
-    return () => {
-      subscription.unsubscribe();
-    };
-  }, []);
-
-  const login = async (email: string, password: string) => {
-    try {
-      const { error } = await supabase.auth.signInWithPassword({
-        email,
-        password
-      });
-
-      if (error) throw error;
-      toast.success("Logged in successfully!");
-    } catch (error: any) {
-      console.error("Login error:", error);
-      toast.error(error.message || "Failed to log in. Please check your credentials.");
-      throw error;
     }
   };
 
-  const signup = async (email: string, password: string) => {
+  const login = async (email: string, password: string) => {
+    setLoading(true);
+    setError(null);
+    
     try {
-      const { data, error } = await supabase.auth.signUp({
-        email,
-        password,
-      });
-
-      if (error) throw error;
-      
-      // Extract name from email
-      const emailParts = email.split('@');
-      let name = "";
-      if (emailParts.length > 0 && emailParts[0].includes('.')) {
-        const nameParts = emailParts[0].split('.');
-        name = nameParts
-          .map(part => part.charAt(0).toUpperCase() + part.slice(1))
-          .join(' ');
-      }
-      
-      // Create user record in Firebase
-      if (data.user) {
-        try {
-          // Check if user already exists in Firebase
-          const usersRef = collection(db, "users");
-          const q = query(usersRef, where("email", "==", email));
-          const querySnapshot = await getDocs(q);
-          
-          if (querySnapshot.empty) {
-            // Create new user record
-            const isAdminEmail = ADMIN_EMAILS.includes(email);
-            
-            await setDoc(doc(db, "users", data.user.id), {
-              id: data.user.id,
-              email: email,
-              name: name,
-              role: isAdminEmail ? "admin" : "user",
-              position: "Associate", // Default position
-              seniority: "Other",
-              lastUpdated: new Date()
-            });
-            
-            // Create team member card for the new user
-            await addDoc(collection(db, "teamMembers"), {
-              name: name,
-              position: "Associate", // Default position
-              status: "available",
-              projects: [],
-              lastUpdated: new Date(),
-              userId: data.user.id,
-              role: "Associate"
-            });
-          }
-        } catch (firebaseError) {
-          console.error("Error creating user in Firebase:", firebaseError);
-          // We don't throw here to avoid blocking the signup process
-        }
-      }
-      
-      toast.success("Account created successfully!");
-      return data;
-    } catch (error: any) {
-      console.error("Signup error:", error);
-      toast.error(error.message || "Failed to create account. Please try again.");
-      throw error;
+      await signInWithEmailAndPassword(auth, email, password);
+      navigate("/");
+    } catch (err: any) {
+      setError(err.message);
+      console.error("Login error:", err.message);
+    } finally {
+      setLoading(false);
     }
   };
 
   const logout = async () => {
+    setLoading(true);
+    setError(null);
+    
     try {
-      const { error } = await supabase.auth.signOut();
-      if (error) throw error;
-      toast.success("Logged out successfully");
-    } catch (error) {
-      console.error("Logout error:", error);
-      toast.error("Failed to log out. Please try again.");
-      throw error;
+      await firebaseSignOut(auth);
+      navigate("/login");
+    } catch (err: any) {
+      setError(err.message);
+      console.error("Logout error:", err.message);
+    } finally {
+      setLoading(false);
     }
   };
 
+  const updateUser = async (data: Partial<User>) => {
+    if (!user) return;
+    
+    try {
+      await updateDoc(doc(db, "users", user.id), data);
+      setUser(prev => prev ? { ...prev, ...data } : prev);
+    } catch (err: any) {
+      console.error("Update user error:", err);
+      throw err;
+    }
+  };
+
+  const setAsAdmin = async (userId: string) => {
+    try {
+      await updateDoc(doc(db, "users", userId), { role: "admin" });
+    } catch (err) {
+      console.error("Set admin error:", err);
+      throw err;
+    }
+  };
+
+  const getUsers = async (): Promise<User[]> => {
+    try {
+      // First, try to get users from Supabase
+      const { data: supabaseUsers, error } = await supabase
+        .from('profiles')
+        .select('*');
+
+      if (error) {
+        console.error("Error fetching Supabase users:", error);
+        throw error;
+      }
+
+      // Convert to our User type
+      const formattedUsers = supabaseUsers.map(user => ({
+        id: user.id,
+        email: user.email,
+        name: user.name,
+        role: user.role as UserRole,
+        position: user.position || user.seniority,
+        seniority: user.seniority,
+        avatar_url: user.avatar_url
+      }));
+
+      return formattedUsers;
+    } catch (err) {
+      console.error("Get users error:", err);
+      // Fallback to Firestore if Supabase fails
+      return [];
+    }
+  };
+
+  const createUser = async (email: string, password: string, name: string, position: string, role: UserRole = "user") => {
+    setLoading(true);
+    setError(null);
+    
+    try {
+      const { user: firebaseUser } = await createUserWithEmailAndPassword(auth, email, password);
+      
+      // Create user in Firestore
+      await setDoc(doc(db, "users", firebaseUser.uid), {
+        id: firebaseUser.uid,
+        email: email,
+        name: name,
+        position: position,
+        role: role,
+        createdAt: new Date().toISOString()
+      });
+      
+      // Create team member card for the new user
+      try {
+        const newMember = {
+          id: firebaseUser.uid,
+          name: name,
+          position: position,
+          status: "available",
+          projects: [],
+          lastUpdated: new Date(),
+          role: role,
+          userId: firebaseUser.uid
+        };
+        
+        await setDoc(doc(db, "teamMembers", firebaseUser.uid), newMember);
+        toast({
+          title: "User created",
+          description: `${name} has been added successfully with a capacity card.`
+        });
+      } catch (err) {
+        console.error("Error creating team member card:", err);
+      }
+      
+    } catch (err: any) {
+      setError(err.message);
+      console.error("Create user error:", err.message);
+      throw err;
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const isAdmin = user?.role === "admin";
   const currentUserId = user?.id || null;
 
   return (
-    <AuthContext.Provider value={{
-      user,
-      session,
-      profile,
-      isAdmin,
-      currentUserId,
-      login,
-      signup,
-      logout,
-      loading
-    }}>
-      {!loading && children}
+    <AuthContext.Provider
+      value={{
+        user,
+        loading,
+        error,
+        isAdmin,
+        currentUserId,
+        signup,
+        login,
+        logout,
+        updateUser,
+        setAsAdmin,
+        getUsers,
+        createUser
+      }}
+    >
+      {children}
     </AuthContext.Provider>
   );
-}
+};
 
 export const useAuth = () => {
   const context = useContext(AuthContext);
-  if (!context) throw new Error("useAuth must be used within an AuthProvider");
+  if (context === undefined) {
+    throw new Error("useAuth must be used within an AuthProvider");
+  }
   return context;
 };

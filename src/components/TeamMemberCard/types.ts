@@ -1,6 +1,8 @@
 
 import { LucideIcon, CheckCircle, User, Clock, XCircle, Coffee } from "lucide-react";
-import { TeamMemberStatus, TeamMemberRole } from "@/types/TeamMemberTypes";
+import { TeamMemberRole } from "@/types/TeamMemberTypes";
+
+export type TeamMemberStatus = 'available' | 'someAvailability' | 'busy' | 'seriouslyBusy' | 'away';
 
 export interface TeamMember {
   id: string;

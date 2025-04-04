@@ -7,7 +7,7 @@ import { ThemeToggle } from "@/components/ThemeToggle";
 import WorkloadSummary from "@/components/WorkloadSummary";
 import { TeamHeader } from "@/components/TeamHeader";
 import { useToast } from "@/hooks/use-toast";
-import { TeamMember, TeamMemberStatus } from "@/types/TeamMemberTypes";
+import { TeamMember } from "@/types/TeamMemberTypes";
 
 interface NavigationHeaderProps {
   isAdmin: boolean;
