@@ -1,7 +1,6 @@
 
 import { LucideIcon, CheckCircle, User, Clock, XCircle, Coffee } from "lucide-react";
-
-export type TeamMemberStatus = 'available' | 'someAvailability' | 'busy' | 'seriouslyBusy' | 'away';
+import { TeamMemberStatus, TeamMemberRole } from "@/types/TeamMemberTypes";
 
 export interface TeamMember {
   id: string;
@@ -10,7 +9,7 @@ export interface TeamMember {
   status: TeamMemberStatus;
   projects: string[];
   lastUpdated: Date;
-  role?: string;
+  role?: TeamMemberRole;
   userId?: string;
   customization?: {
     color?: string;

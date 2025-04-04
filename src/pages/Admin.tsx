@@ -13,11 +13,11 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Users, LogOut, UserPlus } from "lucide-react";
-import { getFirestore, collection, getDocs, doc, setDoc, updateDoc, query, where, deleteDoc, addDoc } from "firebase/firestore";
+import { collection, getDocs, doc, setDoc, updateDoc, query, where, deleteDoc, addDoc } from "firebase/firestore";
 import { useTheme } from "@/contexts/ThemeContext";
 import { UserTable } from "@/components/Admin/UserTable";
 import { UserForm } from "@/components/Admin/UserForm";
-import { db, firebaseApp } from "@/integrations/firebase/client";
+import { db } from "@/integrations/firebase/client";
 import { TeamMemberRole } from "@/types/TeamMemberTypes";
 
 interface User {
@@ -32,6 +32,16 @@ interface User {
 
 type SortField = "lastUpdated" | "seniority" | "name";
 type SortOrder = "asc" | "desc";
+
+// Admin user data
+const ADMIN_USER = {
+  email: "aykut.yucel@snellman.com",
+  role: "admin",
+  name: "Aykut Yucel",
+  position: "Partner",
+  seniority: "Partners",
+  lastUpdated: new Date()
+};
 
 export default function Admin() {
   const [users, setUsers] = useState<User[]>([]);
@@ -50,20 +60,32 @@ export default function Admin() {
 
   const setupInitialAdmin = async () => {
     try {
+      // Admin user ID from current page
+      const adminId = 'b82c63f6-1aa9-4150-a857-eeac0b9c921b';
+      
+      // Check if admin user exists
       const usersRef = collection(db, "users");
-      const q = query(usersRef, where("email", "==", "aykut.yucel@snellman.com"));
+      const q = query(usersRef, where("id", "==", adminId));
       const querySnapshot = await getDocs(q);
       
       if (querySnapshot.empty) {
-        const userId = Math.random().toString(36).substr(2, 9);
-        await setDoc(doc(db, "users", userId), {
-          email: "aykut.yucel@snellman.com",
-          role: "admin",
-          name: "Aykut Yucel",
-          position: "Partner",
-          seniority: "Partners",
-          lastUpdated: new Date()
+        // Create admin user if doesn't exist
+        await setDoc(doc(db, "users", adminId), {
+          id: adminId,
+          ...ADMIN_USER
         });
+        
+        // Create team member card for admin
+        await addDoc(collection(db, "teamMembers"), {
+          name: ADMIN_USER.name,
+          position: ADMIN_USER.position,
+          status: "available",
+          projects: [],
+          lastUpdated: new Date(),
+          userId: adminId,
+          role: ADMIN_USER.position as TeamMemberRole
+        });
+        
         toast({
           title: "Success",
           description: "Admin user created successfully",
@@ -72,16 +94,67 @@ export default function Admin() {
         const userDoc = querySnapshot.docs[0];
         if (userDoc.data().role !== "admin") {
           await updateDoc(doc(db, "users", userDoc.id), {
-            role: "admin"
+            role: "admin",
+            position: userDoc.data().position || "Partner"
           });
           toast({
             title: "Success",
             description: "User role updated to admin successfully",
           });
         }
+        
+        // Check if admin has a team member card
+        const teamMembersRef = collection(db, "teamMembers");
+        const teamQ = query(teamMembersRef, where("userId", "==", adminId));
+        const teamQuerySnapshot = await getDocs(teamQ);
+        
+        if (teamQuerySnapshot.empty) {
+          // Create team member card for admin if it doesn't exist
+          await addDoc(collection(db, "teamMembers"), {
+            name: userDoc.data().name || ADMIN_USER.name,
+            position: userDoc.data().position || ADMIN_USER.position,
+            status: "available",
+            projects: [],
+            lastUpdated: new Date(),
+            userId: adminId,
+            role: userDoc.data().position || ADMIN_USER.position
+          });
+          
+          toast({
+            title: "Success",
+            description: "Admin team member card created successfully",
+          });
+        }
       }
+      
+      // Check for Aykut's email
+      const emailQ = query(usersRef, where("email", "==", ADMIN_USER.email));
+      const emailQuerySnapshot = await getDocs(emailQ);
+      
+      if (emailQuerySnapshot.empty) {
+        // Create second admin entry with Aykut's email if it doesn't exist
+        const newAdminId = Math.random().toString(36).substr(2, 9);
+        await setDoc(doc(db, "users", newAdminId), {
+          id: newAdminId,
+          ...ADMIN_USER,
+          lastUpdated: new Date()
+        });
+        
+        // Create team member card
+        await addDoc(collection(db, "teamMembers"), {
+          name: ADMIN_USER.name,
+          position: ADMIN_USER.position,
+          status: "available",
+          projects: [],
+          lastUpdated: new Date(),
+          userId: newAdminId,
+          role: ADMIN_USER.position as TeamMemberRole
+        });
+      }
+      
       fetchUsers(); // Refresh the users list
     } catch (error) {
+      console.error("Error setting up admin:", error);
       toast({
         title: "Error",
         description: "Failed to setup admin user",
@@ -131,16 +204,23 @@ export default function Admin() {
           lastUpdated: new Date()
         });
         
-        // Create a team member card for the new user
-        await addDoc(collection(db, "teamMembers"), {
-          name: name,
-          position: position,
-          status: "available",
-          projects: [],
-          lastUpdated: new Date(),
-          userId: userId,
-          role: position
-        });
+        // Check if user already has a team member card
+        const teamMembersRef = collection(db, "teamMembers");
+        const teamQ = query(teamMembersRef, where("userId", "==", userId));
+        const teamQuerySnapshot = await getDocs(teamQ);
+        
+        if (teamQuerySnapshot.empty) {
+          // Create a team member card for the new user if one doesn't exist
+          await addDoc(collection(db, "teamMembers"), {
+            name: name,
+            position: position,
+            status: "available",
+            projects: [],
+            lastUpdated: new Date(),
+            userId: userId,
+            role: position as TeamMemberRole
+          });
+        }
       }
       
       fetchUsers(); // Refresh the users list
@@ -175,7 +255,7 @@ export default function Admin() {
           projects: [],
           lastUpdated: new Date(),
           userId: userId,
-          role: userData.position || "Associate"
+          role: userData.position as TeamMemberRole || "Associate"
         });
         
         toast({

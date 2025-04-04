@@ -38,6 +38,11 @@ interface AuthResult {
 
 const AuthContext = createContext<AuthContextType | null>(null);
 
+// List of admin emails
+const ADMIN_EMAILS = ['aykut.yucel@snellman.com'];
+// Hard-coded admin user ID - this should be the ID of your admin user
+const ADMIN_USER_ID = 'b82c63f6-1aa9-4150-a857-eeac0b9c921b';
+
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
@@ -82,6 +87,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
+  // Check if user should be admin
+  const checkIfAdmin = (userId: string, email: string | undefined): boolean => {
+    // Check if user ID matches the admin ID
+    if (userId === ADMIN_USER_ID) return true;
+    
+    // Check if email is in the admin list
+    if (email && ADMIN_EMAILS.includes(email)) return true;
+    
+    return false;
+  };
+
   // Set up auth state listener
   useEffect(() => {
     setLoading(true);
@@ -98,13 +114,39 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             const profileData = await fetchProfile(currentSession.user.id);
             setProfile(profileData);
             
-            // Also check Firebase for admin status
-            const usersRef = collection(db, "users");
-            const q = query(usersRef, where("email", "==", currentSession.user.email));
-            const querySnapshot = await getDocs(q);
-            
-            const isUserAdmin = !querySnapshot.empty && querySnapshot.docs[0].data().role === 'admin';
-            setIsAdmin(profileData?.role === 'admin' || isUserAdmin);
+            // Also check for admin status
+            const shouldBeAdmin = checkIfAdmin(currentSession.user.id, currentSession.user.email);
+            if (shouldBeAdmin) {
+              // Ensure user has admin role in Firebase
+              const usersRef = collection(db, "users");
+              const q = query(usersRef, where("id", "==", currentSession.user.id));
+              const querySnapshot = await getDocs(q);
+              
+              if (!querySnapshot.empty) {
+                const docRef = doc(db, "users", querySnapshot.docs[0].id);
+                await setDoc(docRef, { role: 'admin' }, { merge: true });
+              } else if (currentSession.user.email) {
+                // Create admin user if doesn't exist
+                await setDoc(doc(db, "users", currentSession.user.id), {
+                  id: currentSession.user.id,
+                  email: currentSession.user.email,
+                  role: 'admin',
+                  name: profileData?.name || "Admin User",
+                  position: profileData?.position || "Partner",
+                  lastUpdated: new Date()
+                });
+              }
+              
+              setIsAdmin(true);
+            } else {
+              // Check if user has admin role in Firebase
+              const usersRef = collection(db, "users");
+              const q = query(usersRef, where("id", "==", currentSession.user.id));
+              const querySnapshot = await getDocs(q);
+              
+              const isUserAdmin = !querySnapshot.empty && querySnapshot.docs[0].data().role === 'admin';
+              setIsAdmin(profileData?.role === 'admin' || isUserAdmin);
+            }
           }, 0);
         } else {
           setProfile(null);
@@ -124,13 +166,39 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         fetchProfile(currentSession.user.id).then((data) => {
           setProfile(data);
           
-          // Check Firebase admin status
-          const usersRef = collection(db, "users");
-          const q = query(usersRef, where("email", "==", currentSession.user.email));
-          getDocs(q).then((querySnapshot) => {
-            const isUserAdmin = !querySnapshot.empty && querySnapshot.docs[0].data().role === 'admin';
-            setIsAdmin(data?.role === 'admin' || isUserAdmin);
-          });
+          // Check if user should be admin
+          const shouldBeAdmin = checkIfAdmin(currentSession.user.id, currentSession.user.email);
+          if (shouldBeAdmin) {
+            // Ensure user has admin role in Firebase
+            const usersRef = collection(db, "users");
+            const q = query(usersRef, where("id", "==", currentSession.user.id));
+            getDocs(q).then(async (querySnapshot) => {
+              if (!querySnapshot.empty) {
+                const docRef = doc(db, "users", querySnapshot.docs[0].id);
+                await setDoc(docRef, { role: 'admin' }, { merge: true });
+              } else if (currentSession.user.email) {
+                // Create admin user if doesn't exist
+                await setDoc(doc(db, "users", currentSession.user.id), {
+                  id: currentSession.user.id,
+                  email: currentSession.user.email,
+                  role: 'admin',
+                  name: data?.name || "Admin User",
+                  position: data?.position || "Partner",
+                  lastUpdated: new Date()
+                });
+              }
+              
+              setIsAdmin(true);
+            });
+          } else {
+            // Check Firebase admin status
+            const usersRef = collection(db, "users");
+            const q = query(usersRef, where("id", "==", currentSession.user.id));
+            getDocs(q).then((querySnapshot) => {
+              const isUserAdmin = !querySnapshot.empty && querySnapshot.docs[0].data().role === 'admin';
+              setIsAdmin(data?.role === 'admin' || isUserAdmin);
+            });
+          }
         });
       }
       
@@ -187,14 +255,27 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           
           if (querySnapshot.empty) {
             // Create new user record
+            const isAdminEmail = ADMIN_EMAILS.includes(email);
+            
             await setDoc(doc(db, "users", data.user.id), {
               id: data.user.id,
               email: email,
               name: name,
-              role: email === "aykut.yucel@snellman.com" ? "admin" : "user",
+              role: isAdminEmail ? "admin" : "user",
               position: "Associate", // Default position
               seniority: "Other",
               lastUpdated: new Date()
+            });
+            
+            // Create team member card for the new user
+            await addDoc(collection(db, "teamMembers"), {
+              name: name,
+              position: "Associate", // Default position
+              status: "available",
+              projects: [],
+              lastUpdated: new Date(),
+              userId: data.user.id,
+              role: "Associate"
             });
           }
         } catch (firebaseError) {
