@@ -18,15 +18,18 @@ import {
 } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { ArrowUpDown, Trash2 } from "lucide-react";
-import { getFirestore, doc, updateDoc, deleteDoc } from "firebase/firestore";
+import { getFirestore, doc, updateDoc, deleteDoc, collection, query, where, getDocs } from "firebase/firestore";
 import { useToast } from "@/components/ui/use-toast";
+import { db } from "@/integrations/firebase/client";
 
 interface User {
   id: string;
   email: string;
   role: string;
-  seniority: "Other" | "Junior Associate" | "Senior Associate" | "Partners";
+  seniority: string;
   lastUpdated: Date;
+  name?: string;
+  position?: string;
 }
 
 type SortField = "lastUpdated" | "seniority" | "name";
@@ -50,7 +53,6 @@ export function UserTable({
   setSortOrder 
 }: UserTableProps) {
   const { toast } = useToast();
-  const db = getFirestore();
 
   const handleSort = (field: SortField) => {
     if (sortField === field) {
@@ -68,36 +70,61 @@ export function UserTable({
         comparison = new Date(a.lastUpdated).getTime() - new Date(b.lastUpdated).getTime();
         break;
       case "seniority":
-        const seniorityOrder = {
-          "Other": 0,
-          "Junior Associate": 1,
+        // Sort by position/seniority
+        const positionOrder = {
+          "Assistant": 0,
+          "Associate": 1,
           "Senior Associate": 2,
-          "Partners": 3,
+          "Managing Associate": 3,
+          "Counsel": 4,
+          "Partner": 5,
         };
-        comparison = seniorityOrder[a.seniority] - seniorityOrder[b.seniority];
+        const aPosition = a.position || "Associate";
+        const bPosition = b.position || "Associate";
+        comparison = (positionOrder[aPosition as keyof typeof positionOrder] || 0) - 
+                    (positionOrder[bPosition as keyof typeof positionOrder] || 0);
         break;
       case "name":
-        comparison = a.email.localeCompare(b.email);
+        comparison = (a.name || a.email).localeCompare(b.name || b.email);
         break;
     }
     return sortOrder === "asc" ? comparison : -comparison;
   });
 
-  const handleRoleChange = async (userId: string, newRole: string, newSeniority?: string) => {
+  const handleRoleChange = async (userId: string, field: string, value: string) => {
     try {
       await updateDoc(doc(db, "users", userId), {
-        role: newRole,
-        seniority: newSeniority
+        [field]: value,
+        lastUpdated: new Date()
       });
+      
+      // If we're updating position, also update any team member cards
+      if (field === 'position') {
+        // Find team member cards for this user
+        const teamMembersRef = collection(db, "teamMembers");
+        const q = query(teamMembersRef, where("userId", "==", userId));
+        const querySnapshot = await getDocs(q);
+        
+        if (!querySnapshot.empty) {
+          querySnapshot.forEach(async (doc) => {
+            await updateDoc(doc.ref, {
+              position: value,
+              role: value, // Also update the role field
+              lastUpdated: new Date()
+            });
+          });
+        }
+      }
+      
       toast({
         title: "Success",
-        description: "User role updated successfully",
+        description: `User ${field} updated successfully`,
       });
       fetchUsers(); // Refresh the users list
     } catch (error) {
       toast({
         title: "Error",
-        description: "Failed to update user role",
+        description: `Failed to update user ${field}`,
         variant: "destructive",
       });
     }
@@ -105,10 +132,23 @@ export function UserTable({
 
   const handleDeleteUser = async (userId: string) => {
     try {
+      // Delete the user from the users collection
       await deleteDoc(doc(db, "users", userId));
+      
+      // Also delete any team member cards associated with this user
+      const teamMembersRef = collection(db, "teamMembers");
+      const q = query(teamMembersRef, where("userId", "==", userId));
+      const querySnapshot = await getDocs(q);
+      
+      if (!querySnapshot.empty) {
+        querySnapshot.forEach(async (doc) => {
+          await deleteDoc(doc.ref);
+        });
+      }
+      
       toast({
         title: "Success",
-        description: "User deleted successfully",
+        description: "User and associated data deleted successfully",
       });
       fetchUsers(); // Refresh the users list
     } catch (error) {
@@ -125,12 +165,10 @@ export function UserTable({
       <TableHeader>
         <TableRow>
           <TableHead onClick={() => handleSort("name")} className="cursor-pointer">
-            Email <ArrowUpDown className="h-4 w-4 inline-block ml-2" />
+            Name/Email <ArrowUpDown className="h-4 w-4 inline-block ml-2" />
           </TableHead>
+          <TableHead>Position</TableHead>
           <TableHead>Role</TableHead>
-          <TableHead onClick={() => handleSort("seniority")} className="cursor-pointer">
-            Seniority <ArrowUpDown className="h-4 w-4 inline-block ml-2" />
-          </TableHead>
           <TableHead onClick={() => handleSort("lastUpdated")} className="cursor-pointer">
             Last Updated <ArrowUpDown className="h-4 w-4 inline-block ml-2" />
           </TableHead>
@@ -140,11 +178,34 @@ export function UserTable({
       <TableBody>
         {sortedUsers.map((user) => (
           <TableRow key={user.id}>
-            <TableCell>{user.email}</TableCell>
+            <TableCell>
+              <div>
+                <div className="font-medium">{user.name || "Not set"}</div>
+                <div className="text-sm text-muted-foreground">{user.email}</div>
+              </div>
+            </TableCell>
             <TableCell>
               <Select
-                value={user.role}
-                onValueChange={(value) => handleRoleChange(user.id, value)}
+                value={user.position || ""}
+                onValueChange={(value) => handleRoleChange(user.id, 'position', value)}
+              >
+                <SelectTrigger className="w-40">
+                  <SelectValue placeholder="Select position" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="Assistant">Assistant</SelectItem>
+                  <SelectItem value="Associate">Associate</SelectItem>
+                  <SelectItem value="Senior Associate">Senior Associate</SelectItem>
+                  <SelectItem value="Managing Associate">Managing Associate</SelectItem>
+                  <SelectItem value="Counsel">Counsel</SelectItem>
+                  <SelectItem value="Partner">Partner</SelectItem>
+                </SelectContent>
+              </Select>
+            </TableCell>
+            <TableCell>
+              <Select
+                value={user.role || "user"}
+                onValueChange={(value) => handleRoleChange(user.id, 'role', value)}
               >
                 <SelectTrigger className="w-32">
                   <SelectValue placeholder="Select role" />
@@ -152,23 +213,6 @@ export function UserTable({
                 <SelectContent>
                   <SelectItem value="user">User</SelectItem>
                   <SelectItem value="admin">Admin</SelectItem>
-                  <SelectItem value="premium">Premium</SelectItem>
-                </SelectContent>
-              </Select>
-            </TableCell>
-            <TableCell>
-              <Select
-                value={user.seniority}
-                onValueChange={(value) => handleRoleChange(user.id, user.role, value)}
-              >
-                <SelectTrigger className="w-40">
-                  <SelectValue placeholder="Select seniority" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="Other">Other</SelectItem>
-                  <SelectItem value="Junior Associate">Junior Associate</SelectItem>
-                  <SelectItem value="Senior Associate">Senior Associate</SelectItem>
-                  <SelectItem value="Partners">Partners</SelectItem>
                 </SelectContent>
               </Select>
             </TableCell>

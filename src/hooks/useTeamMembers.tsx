@@ -1,6 +1,6 @@
 
 import { useState, useEffect, useMemo } from "react";
-import { collection, query, where, onSnapshot, addDoc, updateDoc, doc, deleteDoc } from "firebase/firestore";
+import { collection, query, where, onSnapshot, addDoc, updateDoc, doc, deleteDoc, orderBy } from "firebase/firestore";
 import { TeamMember, Announcement } from "@/types/TeamMemberTypes";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
@@ -29,8 +29,11 @@ export function useTeamMembers(): UseTeamMembersResult {
   useEffect(() => {
     const teamMembersRef = collection(db, "teamMembers");
     
+    // Create a query that orders by lastUpdated
+    const q = query(teamMembersRef, orderBy("lastUpdated", "desc"));
+    
     // Listen for real-time updates to the teamMembers collection
-    const unsubscribe = onSnapshot(teamMembersRef, (snapshot) => {
+    const unsubscribe = onSnapshot(q, (snapshot) => {
       const teamMembersData = snapshot.docs.map((doc) => {
         const data = doc.data();
         return {
@@ -38,7 +41,7 @@ export function useTeamMembers(): UseTeamMembersResult {
           name: data.name,
           position: data.position,
           status: data.status,
-          projects: data.projects,
+          projects: data.projects || [],
           lastUpdated: data.lastUpdated?.toDate() || new Date(),
           userId: data.userId,
           role: data.role,
@@ -62,7 +65,9 @@ export function useTeamMembers(): UseTeamMembersResult {
   const activeProjects = useMemo(() => {
     const projectSet = new Set<string>();
     members.forEach(member => {
-      member.projects.forEach(project => projectSet.add(project));
+      if (member.projects) {
+        member.projects.forEach(project => projectSet.add(project));
+      }
     });
     return Array.from(projectSet);
   }, [members]);
@@ -72,7 +77,7 @@ export function useTeamMembers(): UseTeamMembersResult {
     
     activeProjects.forEach(project => {
       const assignedMembers = members.filter(member => 
-        member.projects.includes(project)
+        member.projects && member.projects.includes(project)
       );
       projectMap.set(project, assignedMembers);
     });
@@ -94,17 +99,28 @@ export function useTeamMembers(): UseTeamMembersResult {
       return;
     }
     
+    // Check if the user already has a team member card
+    const existingMember = members.find(member => member.userId === currentUserId);
+    if (existingMember) {
+      toast({
+        title: "Team member exists",
+        description: "You already have a team member card.",
+        variant: "destructive"
+      });
+      return;
+    }
+    
     const memberName = profile?.name || user?.email?.split('@')[0] || "New Member";
     
     try {
       const newMember = {
         name: memberName,
-        position: "Team Member",
+        position: profile?.position || "Associate",
         status: "available",
         projects: [],
         lastUpdated: new Date(),
         userId: currentUserId,
-        role: profile?.role || "user"
+        role: profile?.position || "Associate"
       };
       
       await addDoc(collection(db, "teamMembers"), newMember);
@@ -150,12 +166,10 @@ export function useTeamMembers(): UseTeamMembersResult {
       
       await updateDoc(memberRef, updateData);
       
-      if (field === 'projects') {
-        toast({
-          title: "Projects updated",
-          description: "Team member's projects have been updated successfully.",
-        });
-      }
+      toast({
+        title: "Update successful",
+        description: `Team member's ${field} has been updated.`,
+      });
     } catch (error) {
       console.error("Error updating team member:", error);
       toast({

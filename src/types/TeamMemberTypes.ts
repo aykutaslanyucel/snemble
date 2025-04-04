@@ -1,5 +1,6 @@
 
 export type TeamMemberStatus = 'available' | 'someAvailability' | 'busy' | 'seriouslyBusy' | 'away';
+export type TeamMemberRole = 'Assistant' | 'Associate' | 'Senior Associate' | 'Managing Associate' | 'Counsel' | 'Partner';
 
 export interface TeamMember {
   id: string;
@@ -15,7 +16,7 @@ export interface TeamMember {
     hat?: string;
     emoji?: string;
   };
-  role?: string;
+  role?: TeamMemberRole;
 }
 
 export interface Announcement {

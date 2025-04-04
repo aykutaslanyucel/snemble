@@ -18,14 +18,16 @@ import { useTheme } from "@/contexts/ThemeContext";
 import { UserTable } from "@/components/Admin/UserTable";
 import { UserForm } from "@/components/Admin/UserForm";
 import { db, firebaseApp } from "@/integrations/firebase/client";
+import { TeamMemberRole } from "@/types/TeamMemberTypes";
 
 interface User {
   id: string;
   email: string;
   role: string;
-  seniority: "Other" | "Junior Associate" | "Senior Associate" | "Partners";
+  seniority: string;
   lastUpdated: Date;
   name?: string;
+  position?: string;
 }
 
 type SortField = "lastUpdated" | "seniority" | "name";
@@ -44,38 +46,6 @@ export default function Admin() {
   useEffect(() => {
     fetchUsers();
     setupInitialAdmin();
-    
-    const createKlaraAccount = async () => {
-      try {
-        const usersRef = collection(db, "users");
-        const q = query(usersRef, where("email", "==", "klara.hasselberg@snellman.com"));
-        const querySnapshot = await getDocs(q);
-        
-        if (querySnapshot.empty) {
-          await signup("klara.hasselberg@snellman.com", "test123");
-          console.log("Created account for Klara");
-          toast({
-            title: "Success",
-            description: "Created account for Klara",
-          });
-        } else {
-          console.log("Klara's account already exists");
-        }
-      } catch (error) {
-        console.error("Error creating Klara's account:", error);
-        if (error instanceof Error && error.message.includes("already")) {
-          console.log("Klara's account already exists");
-        } else {
-          toast({
-            title: "Error",
-            description: "Failed to create Klara's account",
-            variant: "destructive",
-          });
-        }
-      }
-    };
-    
-    createKlaraAccount();
   }, []);
 
   const setupInitialAdmin = async () => {
@@ -90,7 +60,7 @@ export default function Admin() {
           email: "aykut.yucel@snellman.com",
           role: "admin",
           name: "Aykut Yucel",
-          position: "Administrator",
+          position: "Partner",
           seniority: "Partners",
           lastUpdated: new Date()
         });
@@ -138,7 +108,7 @@ export default function Admin() {
     }
   };
 
-  const handleAddUser = async (email: string, password: string, name: string = "", position: string = "") => {
+  const handleAddUser = async (email: string, password: string, name: string, position: string, role: string = "user") => {
     setLoading(true);
     try {
       // Create the user account
@@ -155,19 +125,21 @@ export default function Admin() {
         
         // Update user with additional details
         await updateDoc(doc(db, "users", userId), {
-          name: name || email.split('@')[0],
-          position: position || "Team Member",
+          name: name,
+          position: position,
+          role: role,
           lastUpdated: new Date()
         });
         
         // Create a team member card for the new user
         await addDoc(collection(db, "teamMembers"), {
-          name: name || email.split('@')[0],
-          position: position || "Team Member",
+          name: name,
+          position: position,
           status: "available",
           projects: [],
           lastUpdated: new Date(),
-          userId: userId
+          userId: userId,
+          role: position
         });
       }
       
@@ -198,11 +170,12 @@ export default function Admin() {
         // Create a new team member card
         await addDoc(collection(db, "teamMembers"), {
           name: userData.name || userData.email.split('@')[0],
-          position: userData.position || "Team Member",
+          position: userData.position || "Associate",
           status: "available",
           projects: [],
           lastUpdated: new Date(),
-          userId: userId
+          userId: userId,
+          role: userData.position || "Associate"
         });
         
         toast({
