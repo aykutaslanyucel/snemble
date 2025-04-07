@@ -1,11 +1,22 @@
 
 import { useState, useEffect } from "react";
-import { collection, doc, onSnapshot, setDoc, updateDoc, deleteDoc, query, where } from "firebase/firestore";
+import { collection, doc, onSnapshot, query, where } from "firebase/firestore";
 import { db } from "@/integrations/firebase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
-import { v4 as uuidv4 } from "uuid";
-import { TeamMember, TeamMemberStatus, TeamMemberRole } from "@/types/TeamMemberTypes";
+import { TeamMember } from "@/types/TeamMemberTypes";
+import { 
+  createTeamMember, 
+  updateTeamMember, 
+  deleteTeamMember,
+  ensureAdminUser
+} from "@/utils/teamMemberUtils";
+import {
+  filterMembersBySearch,
+  getAvailableMembers,
+  getActiveProjects,
+  getProjectsWithMembers
+} from "@/utils/teamMemberFilters";
 
 export function useTeamMembers() {
   const [members, setMembers] = useState<TeamMember[]>([]);
@@ -14,52 +25,11 @@ export function useTeamMembers() {
   const { toast } = useToast();
   const { user, isAdmin } = useAuth();
 
-  // Filter members based on search query
-  const filteredMembers = members.filter((member) => {
-    const query = searchQuery.toLowerCase();
-    return (
-      member.name.toLowerCase().includes(query) ||
-      member.position.toLowerCase().includes(query) ||
-      member.projects.some((project) => project.toLowerCase().includes(query))
-    );
-  });
-
-  // Get available members (available or some availability)
-  const availableMembers = members.filter((member) => 
-    member.status === "available" || member.status === "someAvailability"
-  );
-
-  // Get all active projects
-  const activeProjects = [...new Set(members.flatMap((member) => member.projects))].sort();
-
-  // Map projects to members
-  const projectsWithMembers = activeProjects.map((project) => {
-    const assignedMembers = members.filter((member) => 
-      member.projects.includes(project)
-    );
-    return {
-      name: project,
-      members: assignedMembers,
-      capacity: calculateCapacity(assignedMembers)
-    };
-  });
-
-  function calculateCapacity(teamMembers: TeamMember[]) {
-    if (teamMembers.length === 0) return 0;
-    
-    let availableCount = 0;
-    let partialCount = 0;
-    
-    teamMembers.forEach(member => {
-      if (member.status === "available") {
-        availableCount++;
-      } else if (member.status === "someAvailability") {
-        partialCount++;
-      }
-    });
-    
-    return Math.round(((availableCount + (partialCount * 0.5)) / teamMembers.length) * 100);
-  }
+  // Derived state using the filter utilities
+  const filteredMembers = filterMembersBySearch(members, searchQuery);
+  const availableMembers = getAvailableMembers(members);
+  const activeProjects = getActiveProjects(members);
+  const projectsWithMembers = getProjectsWithMembers(members, activeProjects);
 
   // Fetch team members data
   useEffect(() => {
@@ -71,7 +41,7 @@ export function useTeamMembers() {
       ? query(collection(db, "teamMembers")) 
       : query(collection(db, "teamMembers"), where("userId", "==", user.id));
     
-    const unsubscribe = onSnapshot(q, (snapshot) => {
+    const unsubscribe = onSnapshot(q, async (snapshot) => {
       const fetchedMembers: TeamMember[] = [];
       
       snapshot.forEach((doc) => {
@@ -88,28 +58,8 @@ export function useTeamMembers() {
       setMembers(fetchedMembers);
       setIsLoading(false);
 
-      // Ensure admin user has admin role
-      const adminUser = fetchedMembers.find(member => member.id === "b82c63f6-1aa9-4150-a857-eeac0b9c921b");
-      if (adminUser && adminUser.role !== "admin" as TeamMemberRole) {
-        updateDoc(doc(db, "teamMembers", "b82c63f6-1aa9-4150-a857-eeac0b9c921b"), {
-          role: "admin"
-        });
-      }
-
-      // Create admin user team member if doesn't exist
-      if (!adminUser && isAdmin) {
-        const adminMember: TeamMember = {
-          id: "b82c63f6-1aa9-4150-a857-eeac0b9c921b",
-          name: "Admin User",
-          position: "Admin",
-          status: "available" as TeamMemberStatus,
-          projects: [],
-          lastUpdated: new Date(),
-          role: "admin" as TeamMemberRole,
-          userId: "b82c63f6-1aa9-4150-a857-eeac0b9c921b"
-        };
-        setDoc(doc(db, "teamMembers", "b82c63f6-1aa9-4150-a857-eeac0b9c921b"), adminMember);
-      }
+      // Ensure admin user exists with correct role
+      await ensureAdminUser(fetchedMembers, isAdmin);
     }, (error) => {
       console.error("Error fetching team members:", error);
       toast({
@@ -128,18 +78,7 @@ export function useTeamMembers() {
     if (!user) return;
     
     try {
-      const newId = uuidv4();
-      const newMember: TeamMember = {
-        id: newId,
-        name: "New Team Member",
-        position: "Position",
-        status: "available",
-        projects: [],
-        lastUpdated: new Date(),
-        userId: user.id
-      };
-      
-      await setDoc(doc(db, "teamMembers", newId), newMember);
+      await createTeamMember(user.id);
       
       toast({
         title: "Team member added",
@@ -158,30 +97,7 @@ export function useTeamMembers() {
   // Update a team member
   const handleUpdateMember = async (id: string, field: string, value: any) => {
     try {
-      const memberRef = doc(db, "teamMembers", id);
-      
-      // Handle projects update
-      if (field === "projects" && typeof value === "string") {
-        const projects = value.split(";").map(p => p.trim()).filter(p => p);
-        await updateDoc(memberRef, {
-          projects: projects,
-          lastUpdated: new Date()
-        });
-      } 
-      // Handle customization update
-      else if (field === "customization") {
-        await updateDoc(memberRef, {
-          customization: value,
-          lastUpdated: new Date()
-        });
-      } 
-      // Handle normal field updates
-      else {
-        await updateDoc(memberRef, {
-          [field]: value,
-          lastUpdated: new Date()
-        });
-      }
+      await updateTeamMember(id, field, value);
       
       toast({
         title: "Team member updated",
@@ -200,7 +116,7 @@ export function useTeamMembers() {
   // Delete a team member
   const handleDeleteMember = async (id: string) => {
     try {
-      await deleteDoc(doc(db, "teamMembers", id));
+      await deleteTeamMember(id);
       
       toast({
         title: "Team member deleted",
