@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
@@ -18,7 +17,6 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
-import { toast } from "sonner";
 
 export default function Admin() {
   const [selectedTab, setSelectedTab] = useState("users");
@@ -74,7 +72,6 @@ export default function Admin() {
     try {
       await createUser(email, password, name, position);
       
-      // Refresh the user list
       const userData = await getUsers();
       setUsers(userData);
       
@@ -238,14 +235,14 @@ export default function Admin() {
                                   if (email && name && position && password) {
                                     const success = await handleCreateUser(email, password, name, position);
                                     if (success && role === "admin") {
-                                      // Find the newly created user by email and promote them
                                       const newUsers = await getUsers();
                                       const newUser = newUsers.find(u => u.email === email);
                                       if (newUser) {
                                         await setAsAdmin(newUser.id);
                                       }
                                     }
-                                    toast.dismiss();
+                                    const { dismiss } = useToast();
+                                    dismiss();
                                   } else {
                                     toast({
                                       title: "Missing information",
