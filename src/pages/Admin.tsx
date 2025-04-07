@@ -20,12 +20,16 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 
+// Define SortField and SortOrder types to match the UserTable requirements
+type SortField = "lastUpdated" | "seniority" | "name";
+type SortOrder = "asc" | "desc";
+
 export default function Admin() {
   const [selectedTab, setSelectedTab] = useState("users");
   const [users, setUsers] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [sortField, setSortField] = useState("name");
-  const [sortOrder, setSortOrder] = useState("asc");
+  const [sortField, setSortField] = useState<SortField>("name");
+  const [sortOrder, setSortOrder] = useState<SortOrder>("asc");
   const { isAdmin } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
