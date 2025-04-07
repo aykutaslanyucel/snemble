@@ -87,8 +87,8 @@ export const ensureAdminUser = async (members: TeamMember[], isUserAdmin: boolea
   const ADMIN_ID = "b82c63f6-1aa9-4150-a857-eeac0b9c921b";
   const adminUser = members.find(member => member.id === ADMIN_ID);
   
-  // Ensure admin user has admin role
-  if (adminUser && adminUser.role !== "admin") {
+  // Ensure admin user has admin role if role exists
+  if (adminUser && adminUser.role && adminUser.role !== "admin") {
     await updateDoc(doc(db, "teamMembers", ADMIN_ID), {
       role: "admin"
     });

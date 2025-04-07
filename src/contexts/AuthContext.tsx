@@ -1,44 +1,19 @@
+
 import React, { createContext, useContext, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useToast } from "@/hooks/use-toast";
+import { User, UserRole, AuthContextType } from "@/types/AuthTypes";
 import { db } from "@/integrations/firebase/client";
 import { supabase } from "@/integrations/supabase/client";
+import { getUserProfile, formatEmailAsName, createTeamMemberCard } from "@/utils/authUtils";
 import { 
   createUserWithEmailAndPassword, 
   signInWithEmailAndPassword,
   signOut as firebaseSignOut,
   onAuthStateChanged,
-  User as FirebaseUser,
   getAuth
 } from "firebase/auth";
 import { collection, doc, getDoc, setDoc, updateDoc } from "firebase/firestore";
-import { useToast } from "@/hooks/use-toast";
-
-type UserRole = "user" | "admin";
-
-interface User {
-  id: string;
-  email: string;
-  name: string;
-  role: UserRole;
-  position?: string;
-  seniority?: string;
-  avatar_url?: string;
-}
-
-interface AuthContextType {
-  user: User | null;
-  loading: boolean;
-  error: string | null;
-  isAdmin: boolean;
-  currentUserId: string | null;
-  signup: (email: string, password: string, name: string, position: string) => Promise<void>;
-  login: (email: string, password: string) => Promise<void>;
-  logout: () => Promise<void>;
-  updateUser: (data: Partial<User>) => Promise<void>;
-  setAsAdmin: (userId: string) => Promise<void>;
-  getUsers: () => Promise<User[]>;
-  createUser: (email: string, password: string, name: string, position: string, role?: UserRole) => Promise<void>;
-}
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 const auth = getAuth();
@@ -49,85 +24,6 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [error, setError] = useState<string | null>(null);
   const navigate = useNavigate();
   const { toast } = useToast();
-
-  // Function to format email as name
-  const formatEmailAsName = (email: string) => {
-    const namePart = email.split('@')[0];
-    return namePart
-      .split('.')
-      .map(part => part.charAt(0).toUpperCase() + part.slice(1))
-      .join(' ');
-  };
-
-  // Get or create user profile
-  const getUserProfile = async (firebaseUser: FirebaseUser): Promise<User | null> => {
-    try {
-      // First check Supabase
-      const { data: profile, error } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', firebaseUser.uid)
-        .single();
-
-      if (error && error.code !== 'PGRST116') {
-        console.error("Error fetching Supabase profile:", error);
-      }
-
-      // If profile exists in Supabase, return it
-      if (profile) {
-        return {
-          id: profile.id,
-          email: profile.email,
-          name: profile.name || "",
-          role: (profile.role as UserRole) || "user",
-          position: profile.seniority || "",
-          seniority: profile.seniority,
-          avatar_url: profile.avatar_url
-        };
-      }
-
-      // Otherwise, check Firestore
-      const docRef = doc(db, "users", firebaseUser.uid);
-      const docSnap = await getDoc(docRef);
-
-      if (docSnap.exists()) {
-        const userData = docSnap.data();
-        return {
-          id: firebaseUser.uid,
-          email: userData.email || firebaseUser.email || "",
-          name: userData.name || formatEmailAsName(firebaseUser.email || ""),
-          role: (userData.role as UserRole) || "user",
-          position: userData.position || "",
-          avatar_url: userData.avatar_url
-        };
-      }
-
-      // If no profile anywhere, create one in Firestore
-      const newUser: User = {
-        id: firebaseUser.uid,
-        email: firebaseUser.email || "",
-        name: formatEmailAsName(firebaseUser.email || ""),
-        role: firebaseUser.uid === "b82c63f6-1aa9-4150-a857-eeac0b9c921b" ? "admin" : "user",
-        position: "",
-      };
-
-      await setDoc(doc(db, "users", firebaseUser.uid), newUser);
-      
-      // If email contains snellman.com, make them admin by default
-      if ((firebaseUser.email?.includes("snellman.com") || firebaseUser.uid === "b82c63f6-1aa9-4150-a857-eeac0b9c921b") 
-          && newUser.role !== "admin") {
-        await updateDoc(doc(db, "users", firebaseUser.uid), {
-          role: "admin"
-        });
-        newUser.role = "admin";
-      }
-
-      return newUser;
-    } catch (error) {
-      console.error("Error getting user profile:", error);
-      return null;
-    }
-  };
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
@@ -181,22 +77,19 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
       // Create team member card for the new user
       try {
-        const newMember = {
-          id: firebaseUser.uid,
-          name: name,
-          position: position,
-          status: "available",
-          projects: [],
-          lastUpdated: new Date(),
-          role: email.includes("snellman.com") ? "admin" : "user",
-          userId: firebaseUser.uid
-        };
+        const success = await createTeamMemberCard(
+          firebaseUser.uid, 
+          name, 
+          position, 
+          email.includes("snellman.com") ? "admin" : "user"
+        );
         
-        await setDoc(doc(db, "teamMembers", firebaseUser.uid), newMember);
-        toast({
-          title: "Team member card created",
-          description: "Your capacity card has been created successfully."
-        });
+        if (success) {
+          toast({
+            title: "Team member card created",
+            description: "Your capacity card has been created successfully."
+          });
+        }
       } catch (err) {
         console.error("Error creating team member card:", err);
         toast({
@@ -320,18 +213,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       
       // Create team member card for the new user
       try {
-        const newMember = {
-          id: firebaseUser.uid,
-          name: name,
-          position: position,
-          status: "available",
-          projects: [],
-          lastUpdated: new Date(),
-          role: role,
-          userId: firebaseUser.uid
-        };
-        
-        await setDoc(doc(db, "teamMembers", firebaseUser.uid), newMember);
+        await createTeamMemberCard(firebaseUser.uid, name, position, role);
         toast({
           title: "User created",
           description: `${name} has been added successfully with a capacity card.`
