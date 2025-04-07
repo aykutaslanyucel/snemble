@@ -1,7 +1,7 @@
 
 import { doc, setDoc, updateDoc, deleteDoc } from "firebase/firestore";
 import { db } from "@/integrations/firebase/client";
-import { TeamMember, TeamMemberStatus } from "@/types/TeamMemberTypes";
+import { TeamMember, TeamMemberStatus, TeamMemberRole } from "@/types/TeamMemberTypes";
 import { v4 as uuidv4 } from "uuid";
 
 /**
@@ -88,9 +88,9 @@ export const ensureAdminUser = async (members: TeamMember[], isUserAdmin: boolea
   const adminUser = members.find(member => member.id === ADMIN_ID);
   
   // Ensure admin user has admin role if role exists
-  if (adminUser && adminUser.role && adminUser.role !== "admin") {
+  if (adminUser && adminUser.role && adminUser.role !== "admin" as TeamMemberRole) {
     await updateDoc(doc(db, "teamMembers", ADMIN_ID), {
-      role: "admin"
+      role: "admin" as TeamMemberRole
     });
   }
 
@@ -103,7 +103,7 @@ export const ensureAdminUser = async (members: TeamMember[], isUserAdmin: boolea
       status: "available" as TeamMemberStatus,
       projects: [],
       lastUpdated: new Date(),
-      role: "admin",
+      role: "admin" as TeamMemberRole,
       userId: ADMIN_ID
     };
     await setDoc(doc(db, "teamMembers", ADMIN_ID), adminMember);

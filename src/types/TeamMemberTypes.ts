@@ -1,6 +1,6 @@
 
 export type TeamMemberStatus = 'available' | 'someAvailability' | 'busy' | 'seriouslyBusy' | 'away';
-export type TeamMemberRole = 'Assistant' | 'Associate' | 'Senior Associate' | 'Managing Associate' | 'Counsel' | 'Partner';
+export type TeamMemberRole = 'Assistant' | 'Associate' | 'Senior Associate' | 'Managing Associate' | 'Counsel' | 'Partner' | 'admin' | 'user';
 
 export interface TeamMember {
   id: string;
