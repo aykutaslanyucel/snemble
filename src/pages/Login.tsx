@@ -12,6 +12,7 @@ export default function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [loginError, setLoginError] = useState<string | null>(null);
   const { login } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
@@ -19,6 +20,7 @@ export default function Login() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
+    setLoginError(null);
     
     try {
       await login(email, password);
@@ -27,8 +29,13 @@ export default function Login() {
         description: "Successfully logged in",
       });
       navigate("/");
-    } catch (error) {
-      // Error is handled in the auth context
+    } catch (error: any) {
+      setLoginError(error.message || "Failed to login");
+      toast({
+        title: "Login failed",
+        description: error.message || "Invalid credentials",
+        variant: "destructive"
+      });
     } finally {
       setIsLoading(false);
     }
@@ -66,8 +73,11 @@ export default function Login() {
                 onChange={(e) => setPassword(e.target.value)}
               />
             </div>
+            {loginError && (
+              <div className="text-destructive text-sm">{loginError}</div>
+            )}
             <Button type="submit" className="w-full" disabled={isLoading}>
-              Login
+              {isLoading ? "Logging in..." : "Login"}
             </Button>
           </form>
 

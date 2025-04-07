@@ -1,6 +1,4 @@
-
 import React, { createContext, useContext, useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
 import { User, UserRole, AuthContextType } from "@/types/AuthTypes";
 import { db } from "@/integrations/firebase/client";
@@ -22,7 +20,6 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const navigate = useNavigate();
   const { toast } = useToast();
 
   useEffect(() => {
@@ -98,11 +95,10 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
           variant: "destructive"
         });
       }
-      
-      navigate("/");
     } catch (err: any) {
       setError(err.message);
       console.error("Signup error:", err.message);
+      throw err;
     } finally {
       setLoading(false);
     }
@@ -114,10 +110,10 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     
     try {
       await signInWithEmailAndPassword(auth, email, password);
-      navigate("/");
     } catch (err: any) {
       setError(err.message);
       console.error("Login error:", err.message);
+      throw err;
     } finally {
       setLoading(false);
     }
@@ -129,10 +125,10 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     
     try {
       await firebaseSignOut(auth);
-      navigate("/login");
     } catch (err: any) {
       setError(err.message);
       console.error("Logout error:", err.message);
+      throw err;
     } finally {
       setLoading(false);
     }

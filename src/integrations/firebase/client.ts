@@ -5,7 +5,7 @@ import { getAuth } from 'firebase/auth';
 
 // Firebase configuration
 const firebaseConfig = {
-  apiKey: "AIzaSyCr8rfdzwGYlkZW9tBf0dAj8hTq7JOvKFA",
+  apiKey: "AIzaSyBgm7HF2_x04fDHUdClAv8LeMahrGp1RU8",
   authDomain: "snellman-team-manager.firebaseapp.com",
   projectId: "snellman-team-manager",
   storageBucket: "snellman-team-manager.appspot.com",
