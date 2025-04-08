@@ -44,32 +44,56 @@ export const getUserProfile = async (userId: string): Promise<User | null> => {
   }
 };
 
-// Create a team member card
+// Create a team member card (profile entry)
 export const createTeamMemberCard = async (userId: string, name: string, position: string, role: UserRole = "user") => {
   try {
-    const newMember = {
-      id: userId,
-      name: name,
-      position: position,
-      status: "available",
-      projects: [],
-      lastUpdated: new Date(),
-      role: role,
-      userId: userId
-    };
+    // First, check if the profile already exists
+    const { data: existingProfile } = await supabase
+      .from('profiles')
+      .select('*')
+      .eq('id', userId)
+      .single();
+      
+    if (existingProfile) {
+      // Profile exists, update it
+      const { error: updateError } = await supabase
+        .from('profiles')
+        .update({
+          name: name,
+          seniority: position,
+          role: role,
+          updated_at: new Date()
+        })
+        .eq('id', userId);
+        
+      if (updateError) {
+        console.error("Error updating profile:", updateError);
+        return false;
+      }
+      
+      return true;
+    }
     
+    // Profile doesn't exist, create it
     const { error } = await supabase
-      .from('teamMembers')
-      .insert(newMember);
+      .from('profiles')
+      .insert({
+        id: userId,
+        name: name,
+        seniority: position,
+        role: role,
+        created_at: new Date(),
+        updated_at: new Date()
+      });
       
     if (error) {
-      console.error("Error inserting team member:", error);
+      console.error("Error inserting profile:", error);
       return false;
     }
     
     return true;
   } catch (error) {
-    console.error("Error creating team member card:", error);
+    console.error("Error creating/updating profile:", error);
     return false;
   }
 };

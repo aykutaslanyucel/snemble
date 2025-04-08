@@ -4,6 +4,7 @@ import { useToast } from "@/hooks/use-toast";
 import { User, UserRole, AuthContextType } from "@/types/AuthTypes";
 import { supabase } from "@/integrations/supabase/client";
 import { Session, User as SupabaseUser } from "@supabase/supabase-js";
+import { createTeamMemberCard, getUserProfile } from "@/utils/authUtils";
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
@@ -107,30 +108,9 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       
       if (error) throw error;
       
-      // Create team member card if signup is successful and we have a user
+      // Create profile entry if it doesn't exist
       if (data.user) {
-        try {
-          const teamMemberData = {
-            id: data.user.id,
-            name,
-            position,
-            status: "available",
-            projects: [],
-            lastUpdated: new Date(),
-            role: email.includes("snellman.com") ? "admin" : "user",
-            userId: data.user.id
-          };
-          
-          const { error: insertError } = await supabase
-            .from('teamMembers')
-            .insert(teamMemberData);
-            
-          if (insertError) {
-            console.error("Error creating team member card:", insertError);
-          }
-        } catch (err) {
-          console.error("Error in team member creation:", err);
-        }
+        await createTeamMemberCard(data.user.id, name, position, email.includes("snellman.com") ? "admin" : "user");
       }
     } catch (err: any) {
       setError(err.message);
@@ -276,25 +256,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       if (error) throw error;
       
       if (data.user) {
-        // Create team member card
-        const teamMemberData = {
-          id: data.user.id,
-          name,
-          position,
-          status: "available",
-          projects: [],
-          lastUpdated: new Date(),
-          role,
-          userId: data.user.id
-        };
-        
-        const { error: insertError } = await supabase
-          .from('teamMembers')
-          .insert(teamMemberData);
-          
-        if (insertError) {
-          console.error("Error creating team member card:", insertError);
-        }
+        // Create a profile entry for the new user
+        await createTeamMemberCard(data.user.id, name, position, role);
       }
     } catch (err: any) {
       setError(err.message);
