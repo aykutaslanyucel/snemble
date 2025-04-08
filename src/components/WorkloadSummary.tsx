@@ -42,6 +42,9 @@ export function WorkloadSummary({ members, showOnlyCapacity, showStatusOnly, sho
     (member) => member.status === "available"
   ).length;
   const busyMembers = members.filter((member) => member.status === "busy").length;
+  const seriouslyBusyMembers = members.filter(
+    (member) => member.status === "seriouslyBusy"
+  ).length;
   const awayMembers = members.filter((member) => member.status === "away").length;
   const someAvailabilityMembers = members.filter(
     (member) => member.status === "someAvailability"
@@ -55,51 +58,80 @@ export function WorkloadSummary({ members, showOnlyCapacity, showStatusOnly, sho
   const avgProjectsPerMember =
     totalMembers > 0 ? members.reduce((acc, member) => acc + member.projects.length, 0) / totalMembers : 0;
 
+  // Return simple version if showOnlyCapacity is true
+  if (showOnlyCapacity) {
+    return (
+      <div className="flex items-center space-x-2">
+        <Badge variant="secondary">
+          <UserCheck className="h-4 w-4 mr-1" />
+          {totalMembers} Members
+        </Badge>
+        <Badge variant="outline" className={statusColors["available"]}>
+          <CircleDot className="h-4 w-4 mr-1" />
+          {availableMembers} Available
+        </Badge>
+        <Badge variant="outline" className={statusColors["busy"]}>
+          <CircleDot className="h-4 w-4 mr-1" />
+          {busyMembers + seriouslyBusyMembers} Busy
+        </Badge>
+      </div>
+    );
+  }
+
   return (
     <Card>
       <CardHeader>
         <CardTitle>Team Workload Summary</CardTitle>
       </CardHeader>
       <CardContent className="grid gap-4">
-        <div className="space-y-1">
-          <p className="text-sm font-medium">Team Status</p>
-          <div className="flex items-center space-x-2">
-            <Badge variant="secondary">
-              <UserCheck className="h-4 w-4 mr-1" />
-              {totalMembers} Members
-            </Badge>
-            <Badge variant="outline" className={statusColors["available"]}>
-              <CircleDot className="h-4 w-4 mr-1" />
-              {availableMembers} Available
-            </Badge>
-            <Badge variant="outline" className={statusColors["busy"]}>
-              <CircleDot className="h-4 w-4 mr-1" />
-              {busyMembers} Busy
-            </Badge>
-            <Badge variant="outline" className={statusColors["away"]}>
-              <CircleDot className="h-4 w-4 mr-1" />
-              {awayMembers} Away
-            </Badge>
-            <Badge variant="outline" className={statusColors["someAvailability"]}>
-              <CircleDot className="h-4 w-4 mr-1" />
-              {someAvailabilityMembers} Some Availability
-            </Badge>
+        {!showHistoricalOnly && (
+          <div className="space-y-1">
+            <p className="text-sm font-medium">Team Status</p>
+            <div className="flex items-center space-x-2 flex-wrap gap-2">
+              <Badge variant="secondary">
+                <UserCheck className="h-4 w-4 mr-1" />
+                {totalMembers} Members
+              </Badge>
+              <Badge variant="outline" className={statusColors["available"]}>
+                <CircleDot className="h-4 w-4 mr-1" />
+                {availableMembers} Available
+              </Badge>
+              <Badge variant="outline" className={statusColors["busy"]}>
+                <CircleDot className="h-4 w-4 mr-1" />
+                {busyMembers} Busy
+              </Badge>
+              <Badge variant="outline" className={statusColors["seriouslyBusy"]}>
+                <CircleDot className="h-4 w-4 mr-1" />
+                {seriouslyBusyMembers} Seriously Busy
+              </Badge>
+              <Badge variant="outline" className={statusColors["away"]}>
+                <CircleDot className="h-4 w-4 mr-1" />
+                {awayMembers} Away
+              </Badge>
+              <Badge variant="outline" className={statusColors["someAvailability"]}>
+                <CircleDot className="h-4 w-4 mr-1" />
+                {someAvailabilityMembers} Some Availability
+              </Badge>
+            </div>
           </div>
-        </div>
-        <div className="space-y-2">
-          <p className="text-sm font-medium">Workload Distribution</p>
-          <ResponsiveContainer width="100%" height={200}>
-            <BarChart data={workloadData}>
-              <XAxis dataKey="name" />
-              <YAxis />
-              <Tooltip />
-              <Bar dataKey="projects" fill="#8884d8" />
-            </BarChart>
-          </ResponsiveContainer>
-          <p className="text-sm text-muted-foreground">
-            Average projects per member: {avgProjectsPerMember.toFixed(1)}
-          </p>
-        </div>
+        )}
+        
+        {!showStatusOnly && (
+          <div className="space-y-2">
+            <p className="text-sm font-medium">Workload Distribution</p>
+            <ResponsiveContainer width="100%" height={200}>
+              <BarChart data={workloadData}>
+                <XAxis dataKey="name" />
+                <YAxis />
+                <Tooltip />
+                <Bar dataKey="projects" fill="#8884d8" />
+              </BarChart>
+            </ResponsiveContainer>
+            <p className="text-sm text-muted-foreground">
+              Average projects per member: {avgProjectsPerMember.toFixed(1)}
+            </p>
+          </div>
+        )}
       </CardContent>
     </Card>
   );
