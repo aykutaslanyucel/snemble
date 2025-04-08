@@ -1,3 +1,4 @@
+
 import React from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -14,11 +15,15 @@ import { TeamMember as TeamMemberType, TeamMemberStatus } from "@/types/TeamMemb
 
 interface WorkloadSummaryProps {
   members: TeamMemberType[];
+  showOnlyCapacity?: boolean;
+  showStatusOnly?: boolean;
+  showHistoricalOnly?: boolean;
 }
 
 const statusColors: { [key in TeamMemberStatus]: string } = {
   available: "text-green-500",
   busy: "text-red-500",
+  seriouslyBusy: "text-red-700",
   away: "text-yellow-500",
   someAvailability: "text-blue-500",
 };
@@ -26,11 +31,12 @@ const statusColors: { [key in TeamMemberStatus]: string } = {
 const statusLabels: { [key in TeamMemberStatus]: string } = {
   available: "Available",
   busy: "Busy",
+  seriouslyBusy: "Seriously Busy",
   away: "Away",
   someAvailability: "Some Availability",
 };
 
-export function WorkloadSummary({ members }: WorkloadSummaryProps) {
+export function WorkloadSummary({ members, showOnlyCapacity, showStatusOnly, showHistoricalOnly }: WorkloadSummaryProps) {
   const totalMembers = members.length;
   const availableMembers = members.filter(
     (member) => member.status === "available"

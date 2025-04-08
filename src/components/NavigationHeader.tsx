@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Shield, LogOut } from "lucide-react";
 import { Link } from "react-router-dom";
 import { ThemeToggle } from "@/components/ThemeToggle";
-import WorkloadSummary from "@/components/WorkloadSummary";
+import { WorkloadSummary } from "@/components/WorkloadSummary";
 import { TeamHeader } from "@/components/TeamHeader";
 import { useToast } from "@/hooks/use-toast";
 

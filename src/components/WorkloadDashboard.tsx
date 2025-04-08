@@ -1,7 +1,7 @@
 
 import React, { useEffect } from "react";
 import { Card } from "@/components/ui/card";
-import WorkloadSummary from "@/components/WorkloadSummary";
+import { WorkloadSummary } from "@/components/WorkloadSummary";
 import { TeamMember } from "@/types/TeamMemberTypes";
 import { exportCapacityReport } from "@/utils/pptxExport";
 
