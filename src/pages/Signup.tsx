@@ -12,6 +12,7 @@ import { ArrowLeft } from "lucide-react";
 export default function Signup() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
   const { signup } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
@@ -27,6 +28,8 @@ export default function Signup() {
       });
       return;
     }
+    
+    setIsLoading(true);
 
     try {
       await signup(email, password);
@@ -41,6 +44,8 @@ export default function Signup() {
         description: error instanceof Error ? error.message : "An error occurred",
         variant: "destructive",
       });
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -56,6 +61,7 @@ export default function Signup() {
             variant="ghost"
             className="absolute top-4 left-4"
             onClick={() => navigate("/login")}
+            disabled={isLoading}
           >
             <ArrowLeft className="h-4 w-4 mr-2" />
             Back to Login
@@ -75,6 +81,7 @@ export default function Signup() {
                 placeholder="yourname@snellman.com"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
+                disabled={isLoading}
               />
             </div>
             <div className="space-y-2">
@@ -83,10 +90,11 @@ export default function Signup() {
                 placeholder="Password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
+                disabled={isLoading}
               />
             </div>
-            <Button type="submit" className="w-full">
-              Sign Up
+            <Button type="submit" className="w-full" disabled={isLoading}>
+              {isLoading ? "Creating account..." : "Sign Up"}
             </Button>
           </form>
         </Card>

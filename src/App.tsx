@@ -17,7 +17,7 @@ const queryClient = new QueryClient();
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth();
   
-  if (loading) return null;
+  if (loading) return <div className="h-screen w-screen flex items-center justify-center">Loading...</div>;
   
   if (!user) {
     return <Navigate to="/login" />;
@@ -29,7 +29,7 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
 function AdminRoute({ children }: { children: React.ReactNode }) {
   const { user, isAdmin, loading } = useAuth();
   
-  if (loading) return null;
+  if (loading) return <div className="h-screen w-screen flex items-center justify-center">Loading...</div>;
   
   if (!user || !isAdmin) {
     return <Navigate to="/" />;

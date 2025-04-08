@@ -26,7 +26,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       async (event, session) => {
         const currentUser = session?.user || null;
         setUser(currentUser);
-        setLoading(false);
         
         if (currentUser) {
           const { data } = await supabase
@@ -41,6 +40,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         } else {
           setIsAdmin(false);
         }
+        
+        setLoading(false);
       }
     );
 
@@ -144,7 +145,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   return (
     <AuthContext.Provider value={{ user, isAdmin, login, signup, logout, loading }}>
-      {!loading && children}
+      {children}
     </AuthContext.Provider>
   );
 }
