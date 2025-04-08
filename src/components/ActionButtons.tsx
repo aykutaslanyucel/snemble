@@ -11,6 +11,7 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { useAuth } from "@/contexts/AuthContext";
 import { Announcement, TeamMember } from "@/types/TeamMemberTypes";
 import {
   DropdownMenu,
@@ -26,7 +27,6 @@ interface ActionButtonsProps {
   onAnnouncementChange: (value: string) => void;
   onAddAnnouncement: () => void;
   members?: TeamMember[];
-  isAdmin?: boolean;
 }
 
 export function ActionButtons({
@@ -36,8 +36,9 @@ export function ActionButtons({
   onAnnouncementChange,
   onAddAnnouncement,
   members = [],
-  isAdmin = false,
 }: ActionButtonsProps) {
+  const { isAdmin } = useAuth();
+
   return (
     <div className="flex gap-2">
       {isAdmin && (

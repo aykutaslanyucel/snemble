@@ -2,7 +2,6 @@
 import { motion, AnimatePresence } from "framer-motion";
 import TeamMemberCard from "@/components/TeamMemberCard";
 import { TeamMember } from "@/types/TeamMemberTypes";
-import { useAuth } from "@/contexts/AuthContext";
 
 interface TeamMembersProps {
   members: TeamMember[];
@@ -11,29 +10,6 @@ interface TeamMembersProps {
 }
 
 export function TeamMembers({ members, onUpdate, onDelete }: TeamMembersProps) {
-  const { isAdmin, currentUserId } = useAuth();
-
-  // Enhanced onUpdate and onDelete handlers that respect permissions
-  const handleUpdate = (id: string, field: string, value: any) => {
-    const member = members.find(m => m.id === id);
-    if (!member) return;
-    
-    // Only allow editing if the user is the owner or an admin
-    if (isAdmin || member.userId === currentUserId) {
-      onUpdate(id, field, value);
-    }
-  };
-  
-  const handleDelete = (id: string) => {
-    const member = members.find(m => m.id === id);
-    if (!member) return;
-    
-    // Only allow deletion if the user is the owner or an admin
-    if (isAdmin || member.userId === currentUserId) {
-      onDelete(id);
-    }
-  };
-
   return (
     <motion.div 
       layout
@@ -51,8 +27,8 @@ export function TeamMembers({ members, onUpdate, onDelete }: TeamMembersProps) {
           >
             <TeamMemberCard
               member={member}
-              onUpdate={handleUpdate}
-              onDelete={handleDelete}
+              onUpdate={onUpdate}
+              onDelete={onDelete}
             />
           </motion.div>
         ))}

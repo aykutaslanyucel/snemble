@@ -1,9 +1,8 @@
-
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { formatDistanceToNow } from "date-fns";
+import { format, formatDistanceToNow } from "date-fns";
 import { Card } from "@/components/ui/card";
-import { MoreVertical, Trash2, Edit, CheckCircle, XCircle, User, Clock, Coffee, Plus, Crown, Palette, Brush, Settings, Lock } from "lucide-react";
+import { MoreVertical, Trash2, Edit, CheckCircle, XCircle, User, Clock, Coffee, Plus, Crown, Palette, Brush, Settings } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
@@ -12,8 +11,6 @@ import { Input } from "@/components/ui/input";
 import { Toggle } from "@/components/ui/toggle";
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
-import { useAuth } from "@/contexts/AuthContext";
-
 type TeamMemberStatus = 'available' | 'someAvailability' | 'busy' | 'seriouslyBusy' | 'away';
 interface TeamMember {
   id: string;
@@ -23,7 +20,6 @@ interface TeamMember {
   projects: string[];
   lastUpdated: Date;
   role?: string;
-  userId?: string;
   customization?: {
     color?: string;
     texture?: string;
@@ -68,7 +64,6 @@ const statusConfig = {
     label: "Away"
   }
 } as const;
-
 export default function TeamMemberCard({
   member,
   onUpdate,
@@ -82,56 +77,37 @@ export default function TeamMemberCard({
   const [isProjectDialogOpen, setIsProjectDialogOpen] = useState(false);
   const [isCustomizationOpen, setIsCustomizationOpen] = useState(false);
   const statusSound = new Audio("/status-change.mp3");
-  const { isAdmin, currentUserId } = useAuth();
-
-  const canEdit = isAdmin || member.userId === currentUserId;
-
   const handleSave = () => {
-    if (!canEdit) return;
-    
     onUpdate(member.id, "name", editedName);
     onUpdate(member.id, "position", editedPosition);
     setIsEditing(false);
   };
-  
   const handleStatusChange = (newStatus: TeamMemberStatus) => {
-    if (!canEdit) return;
-    
     statusSound.play().catch(() => {});
     onUpdate(member.id, "status", newStatus);
   };
-  
   const handleAddProject = () => {
-    if (!canEdit || !newProject.trim()) return;
-    
-    onUpdate(member.id, "projects", newProject);
-    setNewProject("");
-    setIsProjectDialogOpen(false);
+    if (newProject.trim()) {
+      onUpdate(member.id, "projects", newProject);
+      setNewProject("");
+      setIsProjectDialogOpen(false);
+    }
   };
-  
   const handleRemoveProject = (projectToRemove: string) => {
-    if (!canEdit) return;
-    
     onUpdate(member.id, "projects", member.projects.filter(project => project !== projectToRemove));
   };
-  
   const getTimeAgo = (date: Date) => {
     return formatDistanceToNow(date, {
       addSuffix: true
     });
   };
-  
   const openProjectDialog = () => {
-    if (!canEdit) return;
-    
     setNewProject(member.projects.join('; '));
     setIsProjectDialogOpen(true);
   };
-  
   const currentStatus = statusConfig[member.status] || statusConfig.available;
   const premiumCustomization = member.customization || {};
   const isPremium = member.role?.toLowerCase() === 'premium';
-  
   return <Card className={cn("team-member-card overflow-hidden border-none shadow-lg transition-all duration-300", currentStatus.color, isPremium && "border-2 border-yellow-400/50", premiumCustomization.color)}>
       <motion.div initial={false} animate={{
       opacity: 1,
@@ -156,140 +132,126 @@ export default function TeamMemberCard({
                     <Crown className="h-3 w-3 mr-1 text-yellow-600" />
                     Premium
                   </Badge>}
-                {!canEdit && (
-                  <Badge variant="outline" className="bg-gray-100/50">
-                    <span className="h-3 w-3 mr-1 flex items-center">
-                      <Lock className="h-3 w-3 text-gray-600" />
-                    </span>
-                    Locked
-                  </Badge>
-                )}
               </div>}
           </div>
 
-          {canEdit && (
-            <Dialog open={isCustomizationOpen} onOpenChange={setIsCustomizationOpen}>
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" size="icon">
-                    <MoreVertical className="h-4 w-4" />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
-                  {isEditing ? <>
-                      <DropdownMenuItem onClick={handleSave}>
-                        <CheckCircle className="h-4 w-4 mr-2" />
-                        Save
-                      </DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => setIsEditing(false)}>
-                        <XCircle className="h-4 w-4 mr-2" />
-                        Cancel
-                      </DropdownMenuItem>
-                    </> : <>
-                      <DropdownMenuItem onClick={() => setIsEditing(true)}>
-                        <Edit className="h-4 w-4 mr-2" />
-                        Edit
-                      </DropdownMenuItem>
-                      {isPremium && <>
-                          <DropdownMenuSeparator />
-                          <DialogTrigger asChild>
-                            <DropdownMenuItem>
-                              <Settings className="h-4 w-4 mr-2" />
-                              Customize
-                            </DropdownMenuItem>
-                          </DialogTrigger>
-                        </>}
-                      <DropdownMenuSeparator />
-                      <DropdownMenuItem className="text-destructive" onClick={() => onDelete(member.id)}>
-                        <Trash2 className="h-4 w-4 mr-2" />
-                        Delete
-                      </DropdownMenuItem>
-                    </>}
-                </DropdownMenuContent>
-              </DropdownMenu>
+          <Dialog open={isCustomizationOpen} onOpenChange={setIsCustomizationOpen}>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="icon">
+                  <MoreVertical className="h-4 w-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                {isEditing ? <>
+                    <DropdownMenuItem onClick={handleSave}>
+                      <CheckCircle className="h-4 w-4 mr-2" />
+                      Save
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => setIsEditing(false)}>
+                      <XCircle className="h-4 w-4 mr-2" />
+                      Cancel
+                    </DropdownMenuItem>
+                  </> : <>
+                    <DropdownMenuItem onClick={() => setIsEditing(true)}>
+                      <Edit className="h-4 w-4 mr-2" />
+                      Edit
+                    </DropdownMenuItem>
+                    {isPremium && <>
+                        <DropdownMenuSeparator />
+                        <DialogTrigger asChild>
+                          <DropdownMenuItem>
+                            <Settings className="h-4 w-4 mr-2" />
+                            Customize
+                          </DropdownMenuItem>
+                        </DialogTrigger>
+                      </>}
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem className="text-destructive" onClick={() => onDelete(member.id)}>
+                      <Trash2 className="h-4 w-4 mr-2" />
+                      Delete
+                    </DropdownMenuItem>
+                  </>}
+              </DropdownMenuContent>
+            </DropdownMenu>
 
-              <DialogContent>
-                <DialogHeader>
-                  <DialogTitle>Premium Customization</DialogTitle>
-                </DialogHeader>
-                <div className="grid gap-4">
-                  <div>
-                    <label className="text-sm font-medium mb-2 block">Card Color</label>
-                    <div className="grid grid-cols-5 gap-2">
-                      {["bg-purple-100", "bg-blue-100", "bg-green-100", "bg-pink-100", "bg-yellow-100"].map(color => <button key={color} className={cn("w-8 h-8 rounded-full", color, premiumCustomization.color === color && "ring-2 ring-offset-2 ring-primary")} onClick={() => onUpdate(member.id, "customization", {
-                      ...premiumCustomization,
-                      color
-                    })} />)}
-                    </div>
-                  </div>
-                  <div>
-                    <label className="text-sm font-medium mb-2 block">Hat Style</label>
-                    <div className="flex gap-2">
-                      {["🎩", "👑", "🎓", "⛑️", "🪖"].map(hat => <button key={hat} className={cn("p-2 rounded hover:bg-secondary", premiumCustomization.hat === hat && "bg-secondary")} onClick={() => onUpdate(member.id, "customization", {
-                      ...premiumCustomization,
-                      hat
-                    })}>
-                          {hat}
-                        </button>)}
-                    </div>
-                  </div>
-                  <div>
-                    <label className="text-sm font-medium mb-2 block">Status Emoji</label>
-                    <div className="flex gap-2">
-                      {["😊", "🚀", "💪", "✨", "🌟"].map(emoji => <button key={emoji} className={cn("p-2 rounded hover:bg-secondary", premiumCustomization.emoji === emoji && "bg-secondary")} onClick={() => onUpdate(member.id, "customization", {
-                      ...premiumCustomization,
-                      emoji
-                    })}>
-                          {emoji}
-                        </button>)}
-                    </div>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Premium Customization</DialogTitle>
+              </DialogHeader>
+              <div className="grid gap-4">
+                <div>
+                  <label className="text-sm font-medium mb-2 block">Card Color</label>
+                  <div className="grid grid-cols-5 gap-2">
+                    {["bg-purple-100", "bg-blue-100", "bg-green-100", "bg-pink-100", "bg-yellow-100"].map(color => <button key={color} className={cn("w-8 h-8 rounded-full", color, premiumCustomization.color === color && "ring-2 ring-offset-2 ring-primary")} onClick={() => onUpdate(member.id, "customization", {
+                    ...premiumCustomization,
+                    color
+                  })} />)}
                   </div>
                 </div>
-              </DialogContent>
-            </Dialog>
-          )}
+                <div>
+                  <label className="text-sm font-medium mb-2 block">Hat Style</label>
+                  <div className="flex gap-2">
+                    {["🎩", "👑", "🎓", "⛑️", "🪖"].map(hat => <button key={hat} className={cn("p-2 rounded hover:bg-secondary", premiumCustomization.hat === hat && "bg-secondary")} onClick={() => onUpdate(member.id, "customization", {
+                    ...premiumCustomization,
+                    hat
+                  })}>
+                        {hat}
+                      </button>)}
+                  </div>
+                </div>
+                <div>
+                  <label className="text-sm font-medium mb-2 block">Status Emoji</label>
+                  <div className="flex gap-2">
+                    {["😊", "🚀", "💪", "✨", "🌟"].map(emoji => <button key={emoji} className={cn("p-2 rounded hover:bg-secondary", premiumCustomization.emoji === emoji && "bg-secondary")} onClick={() => onUpdate(member.id, "customization", {
+                    ...premiumCustomization,
+                    emoji
+                  })}>
+                        {emoji}
+                      </button>)}
+                  </div>
+                </div>
+              </div>
+            </DialogContent>
+          </Dialog>
         </div>
 
         <div className="space-y-4">
           <div>
             <div className="flex items-center justify-between mb-2">
               <label className="text-sm font-medium bg-transparent">Projects</label>
-              {canEdit && (
-                <Dialog open={isProjectDialogOpen} onOpenChange={setIsProjectDialogOpen}>
-                  <DialogTrigger asChild>
-                    <Button variant="outline" size="sm" onClick={openProjectDialog}>
-                      <Plus className="h-4 w-4 mr-1" />
-                      Add Project
-                    </Button>
-                  </DialogTrigger>
-                  <DialogContent>
-                    <DialogHeader>
-                      <DialogTitle>Manage Projects</DialogTitle>
-                    </DialogHeader>
-                    <div className="space-y-4">
-                      <div className="text-sm text-muted-foreground">
-                        Add or edit projects, separated by semicolons (;)
-                      </div>
-                      <Textarea placeholder="Project names (separate with semicolons)" value={newProject} onChange={e => setNewProject(e.target.value)} className="min-h-[100px]" />
-                      <div className="flex justify-end gap-2">
-                        <Button variant="outline" onClick={() => setIsProjectDialogOpen(false)}>
-                          Cancel
-                        </Button>
-                        <Button onClick={handleAddProject}>Save Projects</Button>
-                      </div>
+              <Dialog open={isProjectDialogOpen} onOpenChange={setIsProjectDialogOpen}>
+                <DialogTrigger asChild>
+                  <Button variant="outline" size="sm" onClick={openProjectDialog}>
+                    <Plus className="h-4 w-4 mr-1" />
+                    Add Project
+                  </Button>
+                </DialogTrigger>
+                <DialogContent>
+                  <DialogHeader>
+                    <DialogTitle>Manage Projects</DialogTitle>
+                  </DialogHeader>
+                  <div className="space-y-4">
+                    <div className="text-sm text-muted-foreground">
+                      Add or edit projects, separated by semicolons (;)
                     </div>
-                  </DialogContent>
-                </Dialog>
-              )}
+                    <Textarea placeholder="Project names (separate with semicolons)" value={newProject} onChange={e => setNewProject(e.target.value)} className="min-h-[100px]" />
+                    <div className="flex justify-end gap-2">
+                      <Button variant="outline" onClick={() => setIsProjectDialogOpen(false)}>
+                        Cancel
+                      </Button>
+                      <Button onClick={handleAddProject}>Save Projects</Button>
+                    </div>
+                  </div>
+                </DialogContent>
+              </Dialog>
             </div>
             <div className="flex flex-wrap gap-2">
               {member.projects.map((project, index) => <Badge key={index} variant="secondary" className="group relative">
                   {project}
-                  {canEdit && (
-                    <button onClick={() => handleRemoveProject(project)} className="ml-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                      ×
-                    </button>
-                  )}
+                  <button onClick={() => handleRemoveProject(project)} className="ml-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                    ×
+                  </button>
                 </Badge>)}
             </div>
           </div>
@@ -301,20 +263,11 @@ export default function TeamMemberCard({
               const config = statusConfig[status];
               const Icon = config.icon;
               return <motion.div key={status} whileHover={{
-                scale: canEdit ? 1.1 : 1
+                scale: 1.1
               }} whileTap={{
-                scale: canEdit ? 0.95 : 1
+                scale: 0.95
               }}>
-                    <Toggle 
-                      pressed={member.status === status} 
-                      onPressedChange={() => handleStatusChange(status)} 
-                      className={cn(
-                        "w-10 h-10 p-0 rounded-full", 
-                        member.status === status ? config.iconColor : "text-gray-400",
-                        !canEdit && "opacity-70 cursor-not-allowed"
-                      )}
-                      disabled={!canEdit}
-                    >
+                    <Toggle pressed={member.status === status} onPressedChange={() => handleStatusChange(status)} className={cn("w-10 h-10 p-0 rounded-full data-[state=on]:bg-white/80", member.status === status ? config.iconColor : "text-gray-400")}>
                       <Icon className="h-5 w-5" />
                     </Toggle>
                   </motion.div>;

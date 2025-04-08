@@ -20,7 +20,6 @@ interface SearchAndActionsProps {
   onAnnouncementChange: (value: string) => void;
   onAddAnnouncement: () => void;
   members?: TeamMember[];
-  isAdmin?: boolean;
 }
 
 export function SearchAndActions({
@@ -31,8 +30,7 @@ export function SearchAndActions({
   newAnnouncement,
   onAnnouncementChange,
   onAddAnnouncement,
-  members,
-  isAdmin = false
+  members
 }: SearchAndActionsProps) {
   return (
     <Card className="p-6">
@@ -48,7 +46,6 @@ export function SearchAndActions({
           onAnnouncementChange={onAnnouncementChange}
           onAddAnnouncement={onAddAnnouncement}
           members={members}
-          isAdmin={isAdmin}
         />
       </div>
     </Card>

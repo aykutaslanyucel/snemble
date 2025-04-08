@@ -7,7 +7,17 @@ import { ThemeToggle } from "@/components/ThemeToggle";
 import WorkloadSummary from "@/components/WorkloadSummary";
 import { TeamHeader } from "@/components/TeamHeader";
 import { useToast } from "@/hooks/use-toast";
-import { TeamMember } from "@/types/TeamMemberTypes";
+
+type TeamMemberStatus = 'available' | 'someAvailability' | 'busy' | 'seriouslyBusy' | 'away';
+
+interface TeamMember {
+  id: string;
+  name: string;
+  position: string;
+  status: TeamMemberStatus;
+  projects: string[];
+  lastUpdated: Date;
+}
 
 interface NavigationHeaderProps {
   isAdmin: boolean;

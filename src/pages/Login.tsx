@@ -11,51 +11,25 @@ import { Card } from "@/components/ui/card";
 export default function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
-  const [loginError, setLoginError] = useState<string | null>(null);
   const { login } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setIsLoading(true);
-    setLoginError(null);
-    
     try {
       await login(email, password);
-      
       toast({
         title: "Welcome back!",
         description: "Successfully logged in",
       });
-      
       navigate("/");
-    } catch (error: any) {
-      console.error("Login error:", error);
-      
-      // Get user-friendly error message
-      let errorMessage = "Invalid email or password";
-      
-      if (error.message) {
-        if (error.message.includes("Invalid login credentials")) {
-          errorMessage = "Invalid email or password";
-        } else if (error.message.includes("Email not confirmed")) {
-          errorMessage = "Please confirm your email before logging in";
-        } else {
-          errorMessage = error.message;
-        }
-      }
-      
-      setLoginError(errorMessage);
-      
+    } catch (error) {
       toast({
-        title: "Login failed",
-        description: errorMessage,
-        variant: "destructive"
+        title: "Error",
+        description: error instanceof Error ? error.message : "An error occurred",
+        variant: "destructive",
       });
-    } finally {
-      setIsLoading(false);
     }
   };
 
@@ -81,7 +55,6 @@ export default function Login() {
                 placeholder="Email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                required
               />
             </div>
             <div className="space-y-2">
@@ -90,14 +63,10 @@ export default function Login() {
                 placeholder="Password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                required
               />
             </div>
-            {loginError && (
-              <div className="text-destructive text-sm">{loginError}</div>
-            )}
-            <Button type="submit" className="w-full" disabled={isLoading}>
-              {isLoading ? "Logging in..." : "Login"}
+            <Button type="submit" className="w-full">
+              Login
             </Button>
           </form>
 

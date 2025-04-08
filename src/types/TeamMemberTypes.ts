@@ -1,6 +1,5 @@
 
 export type TeamMemberStatus = 'available' | 'someAvailability' | 'busy' | 'seriouslyBusy' | 'away';
-export type TeamMemberRole = 'Assistant' | 'Associate' | 'Senior Associate' | 'Managing Associate' | 'Counsel' | 'Partner' | 'admin' | 'user';
 
 export interface TeamMember {
   id: string;
@@ -9,14 +8,6 @@ export interface TeamMember {
   status: TeamMemberStatus;
   projects: string[];
   lastUpdated: Date;
-  userId?: string; // Added to track the user who owns this team member
-  customization?: {
-    color?: string;
-    texture?: string;
-    hat?: string;
-    emoji?: string;
-  };
-  role?: TeamMemberRole;
 }
 
 export interface Announcement {

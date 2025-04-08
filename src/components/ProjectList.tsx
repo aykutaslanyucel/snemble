@@ -2,17 +2,21 @@
 import React from "react";
 import { Card } from "@/components/ui/card";
 import { Folder } from "lucide-react";
-import { TeamMember } from "@/types/TeamMemberTypes";
 
-interface ProjectWithMembers {
+type TeamMemberStatus = 'available' | 'someAvailability' | 'busy' | 'seriouslyBusy' | 'away';
+
+interface TeamMember {
+  id: string;
   name: string;
-  members: TeamMember[];
-  capacity: number;
+  position: string;
+  status: TeamMemberStatus;
+  projects: string[];
+  lastUpdated: Date;
 }
 
 interface ProjectListProps {
   activeProjects: string[];
-  projectsWithMembers: ProjectWithMembers[];
+  projectsWithMembers: Map<string, TeamMember[]>;
 }
 
 export function ProjectList({ activeProjects, projectsWithMembers }: ProjectListProps) {
@@ -26,8 +30,8 @@ export function ProjectList({ activeProjects, projectsWithMembers }: ProjectList
         </span>
       </h2>
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 max-h-[220px] overflow-y-auto pr-1 custom-scrollbar">
-        {projectsWithMembers.map((project, index) => {
-          const assignedMembers = project.members || [];
+        {activeProjects.map((project, index) => {
+          const assignedMembers = projectsWithMembers.get(project) || [];
           return (
             <div 
               key={index} 
@@ -36,7 +40,7 @@ export function ProjectList({ activeProjects, projectsWithMembers }: ProjectList
               <div className="flex items-center">
                 <Folder className="w-4 h-4 text-[#E5DEFF] mr-2 flex-shrink-0" />
                 <p className="font-medium text-sm truncate group-hover:text-[#E5DEFF]">
-                  {project.name}
+                  {project}
                 </p>
               </div>
               {assignedMembers.length > 0 && (
