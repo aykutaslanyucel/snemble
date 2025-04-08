@@ -32,9 +32,9 @@ export default function Signup() {
       await signup(email, password);
       toast({
         title: "Account created!",
-        description: "Welcome to Snemble",
+        description: "Please check your email to verify your account",
       });
-      navigate("/");
+      navigate("/login");
     } catch (error) {
       toast({
         title: "Error",
