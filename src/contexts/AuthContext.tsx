@@ -1,51 +1,91 @@
+
 import React, { createContext, useContext, useEffect, useState } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { User, UserRole, AuthContextType } from "@/types/AuthTypes";
-import { db } from "@/integrations/firebase/client";
 import { supabase } from "@/integrations/supabase/client";
-import { getUserProfile, formatEmailAsName, createTeamMemberCard } from "@/utils/authUtils";
-import { 
-  createUserWithEmailAndPassword, 
-  signInWithEmailAndPassword,
-  signOut as firebaseSignOut,
-  onAuthStateChanged,
-  getAuth
-} from "firebase/auth";
-import { collection, doc, getDoc, setDoc, updateDoc } from "firebase/firestore";
+import { Session, User as SupabaseUser } from "@supabase/supabase-js";
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
-const auth = getAuth();
 
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
+  const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const { toast } = useToast();
 
+  // Helper function to format user data from Supabase
+  const formatUserData = (supabaseUser: SupabaseUser | null): User | null => {
+    if (!supabaseUser) return null;
+    
+    return {
+      id: supabaseUser.id,
+      email: supabaseUser.email || "",
+      name: supabaseUser.user_metadata?.name || supabaseUser.email?.split("@")[0] || "",
+      role: (supabaseUser.user_metadata?.role as UserRole) || "user",
+      position: supabaseUser.user_metadata?.position || "",
+    };
+  };
+
+  // Initialize auth state
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
-      setLoading(true);
-      try {
-        if (firebaseUser) {
-          const userProfile = await getUserProfile(firebaseUser);
-          setUser(userProfile);
+    // Set up auth state listener first
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      async (event, currentSession) => {
+        setSession(currentSession);
+        
+        if (currentSession) {
+          const formattedUser = formatUserData(currentSession.user);
+          setUser(formattedUser);
           
-          // Ensure admin user is set correctly
-          if (firebaseUser.uid === "b82c63f6-1aa9-4150-a857-eeac0b9c921b" && userProfile && userProfile.role !== "admin") {
-            await updateDoc(doc(db, "users", firebaseUser.uid), { role: "admin" });
-            setUser(prev => prev ? { ...prev, role: "admin" } : prev);
-          }
+          // Check if user exists in profiles table
+          setTimeout(async () => {
+            try {
+              const { data, error } = await supabase
+                .from('profiles')
+                .select('*')
+                .eq('id', currentSession.user.id)
+                .single();
+                
+              if (error && error.code !== 'PGRST116') {
+                console.error("Error fetching profile:", error);
+              }
+              
+              if (data) {
+                // Update user with profile data
+                setUser(prev => prev ? {
+                  ...prev,
+                  name: data.name || prev.name,
+                  role: (data.role as UserRole) || prev.role,
+                  position: data.seniority || prev.position,
+                  avatar_url: data.avatar_url
+                } : prev);
+              }
+            } catch (err) {
+              console.error("Error checking profile:", err);
+            }
+          }, 0);
         } else {
           setUser(null);
         }
-      } catch (err) {
-        console.error("Auth state change error:", err);
-      } finally {
-        setLoading(false);
       }
+    );
+
+    // Check for existing session
+    supabase.auth.getSession().then(({ data: { session: currentSession } }) => {
+      setSession(currentSession);
+      
+      if (currentSession) {
+        const formattedUser = formatUserData(currentSession.user);
+        setUser(formattedUser);
+      }
+      
+      setLoading(false);
     });
 
-    return () => unsubscribe();
+    return () => {
+      subscription.unsubscribe();
+    };
   }, []);
 
   const signup = async (email: string, password: string, name: string, position: string) => {
@@ -53,47 +93,44 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     setError(null);
     
     try {
-      const { user: firebaseUser } = await createUserWithEmailAndPassword(auth, email, password);
-      
-      // Create user in Firestore with name and position
-      const userData: User = {
-        id: firebaseUser.uid,
-        email: email,
-        name: name,
-        position: position,
-        role: email.includes("snellman.com") ? "admin" : "user",
-      };
-      
-      await setDoc(doc(db, "users", firebaseUser.uid), {
-        ...userData,
-        createdAt: new Date().toISOString()
+      const { data, error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          data: {
+            name,
+            position,
+            role: email.includes("snellman.com") ? "admin" : "user",
+          }
+        }
       });
       
-      // Set user state
-      setUser(userData);
-
-      // Create team member card for the new user
-      try {
-        const success = await createTeamMemberCard(
-          firebaseUser.uid, 
-          name, 
-          position, 
-          email.includes("snellman.com") ? "admin" : "user"
-        );
-        
-        if (success) {
-          toast({
-            title: "Team member card created",
-            description: "Your capacity card has been created successfully."
-          });
+      if (error) throw error;
+      
+      // Create team member card if signup is successful and we have a user
+      if (data.user) {
+        try {
+          const teamMemberData = {
+            id: data.user.id,
+            name,
+            position,
+            status: "available",
+            projects: [],
+            lastUpdated: new Date(),
+            role: email.includes("snellman.com") ? "admin" : "user",
+            userId: data.user.id
+          };
+          
+          const { error: insertError } = await supabase
+            .from('teamMembers')
+            .insert(teamMemberData);
+            
+          if (insertError) {
+            console.error("Error creating team member card:", insertError);
+          }
+        } catch (err) {
+          console.error("Error in team member creation:", err);
         }
-      } catch (err) {
-        console.error("Error creating team member card:", err);
-        toast({
-          title: "Error",
-          description: "Failed to create capacity card",
-          variant: "destructive"
-        });
       }
     } catch (err: any) {
       setError(err.message);
@@ -109,7 +146,12 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     setError(null);
     
     try {
-      await signInWithEmailAndPassword(auth, email, password);
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password
+      });
+      
+      if (error) throw error;
     } catch (err: any) {
       setError(err.message);
       console.error("Login error:", err.message);
@@ -124,7 +166,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     setError(null);
     
     try {
-      await firebaseSignOut(auth);
+      const { error } = await supabase.auth.signOut();
+      if (error) throw error;
     } catch (err: any) {
       setError(err.message);
       console.error("Logout error:", err.message);
@@ -138,7 +181,29 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     if (!user) return;
     
     try {
-      await updateDoc(doc(db, "users", user.id), data);
+      // Update user metadata in Supabase
+      const { error } = await supabase.auth.updateUser({
+        data: {
+          name: data.name,
+          position: data.position,
+          role: data.role
+        }
+      });
+      
+      if (error) throw error;
+      
+      // Also update the profile in the profiles table
+      const { error: profileError } = await supabase
+        .from('profiles')
+        .update({
+          name: data.name,
+          seniority: data.position,
+          role: data.role
+        })
+        .eq('id', user.id);
+        
+      if (profileError) throw profileError;
+      
       setUser(prev => prev ? { ...prev, ...data } : prev);
     } catch (err: any) {
       console.error("Update user error:", err);
@@ -148,7 +213,12 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
   const setAsAdmin = async (userId: string) => {
     try {
-      await updateDoc(doc(db, "users", userId), { role: "admin" });
+      const { error } = await supabase
+        .from('profiles')
+        .update({ role: 'admin' })
+        .eq('id', userId);
+        
+      if (error) throw error;
     } catch (err) {
       console.error("Set admin error:", err);
       throw err;
@@ -157,18 +227,17 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
   const getUsers = async (): Promise<User[]> => {
     try {
-      // First, try to get users from Supabase
-      const { data: supabaseUsers, error } = await supabase
+      const { data, error } = await supabase
         .from('profiles')
         .select('*');
 
       if (error) {
-        console.error("Error fetching Supabase users:", error);
+        console.error("Error fetching users:", error);
         throw error;
       }
 
       // Convert to our User type
-      const formattedUsers = supabaseUsers.map(user => ({
+      const formattedUsers = data.map(user => ({
         id: user.id,
         email: user.email,
         name: user.name || "",
@@ -181,7 +250,6 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       return formattedUsers;
     } catch (err) {
       console.error("Get users error:", err);
-      // Fallback to Firestore if Supabase fails
       return [];
     }
   };
@@ -191,33 +259,43 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     setError(null);
     
     try {
-      const { user: firebaseUser } = await createUserWithEmailAndPassword(auth, email, password);
-      
-      // Create user in Firestore
-      const userData: User = {
-        id: firebaseUser.uid,
-        email: email,
-        name: name,
-        position: position,
-        role: role,
-      };
-      
-      await setDoc(doc(db, "users", firebaseUser.uid), {
-        ...userData,
-        createdAt: new Date().toISOString()
+      // Admin creating a user - need to use admin functions through the backend
+      // For now, just create via signup
+      const { data, error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          data: {
+            name,
+            position,
+            role
+          }
+        }
       });
       
-      // Create team member card for the new user
-      try {
-        await createTeamMemberCard(firebaseUser.uid, name, position, role);
-        toast({
-          title: "User created",
-          description: `${name} has been added successfully with a capacity card.`
-        });
-      } catch (err) {
-        console.error("Error creating team member card:", err);
-      }
+      if (error) throw error;
       
+      if (data.user) {
+        // Create team member card
+        const teamMemberData = {
+          id: data.user.id,
+          name,
+          position,
+          status: "available",
+          projects: [],
+          lastUpdated: new Date(),
+          role,
+          userId: data.user.id
+        };
+        
+        const { error: insertError } = await supabase
+          .from('teamMembers')
+          .insert(teamMemberData);
+          
+        if (insertError) {
+          console.error("Error creating team member card:", insertError);
+        }
+      }
     } catch (err: any) {
       setError(err.message);
       console.error("Create user error:", err.message);

@@ -1,6 +1,6 @@
 
 import { useState, useEffect } from "react";
-import { useNavigate, Link } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
@@ -16,6 +16,7 @@ export default function Signup() {
   const [name, setName] = useState("");
   const [position, setPosition] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [signupError, setSignupError] = useState<string | null>(null);
   const { signup } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
@@ -38,6 +39,7 @@ export default function Signup() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setSignupError(null);
     
     if (!email.endsWith("@snellman.com")) {
       toast({
@@ -67,11 +69,25 @@ export default function Signup() {
         description: "Welcome to Snemble",
       });
       navigate("/");
-    } catch (error) {
+    } catch (error: any) {
       console.error("Signup error:", error);
+      
+      // Get user-friendly error message
+      let errorMessage = "An error occurred during signup";
+      
+      if (error.message) {
+        if (error.message.includes("User already registered")) {
+          errorMessage = "This email is already registered";
+        } else {
+          errorMessage = error.message;
+        }
+      }
+      
+      setSignupError(errorMessage);
+      
       toast({
         title: "Signup failed",
-        description: error instanceof Error ? error.message : "An error occurred during signup",
+        description: errorMessage,
         variant: "destructive",
       });
     } finally {
@@ -161,6 +177,10 @@ export default function Signup() {
               />
             </div>
             
+            {signupError && (
+              <div className="text-destructive text-sm">{signupError}</div>
+            )}
+            
             <Button type="submit" className="w-full" disabled={isLoading}>
               {isLoading ? "Creating Account..." : "Sign Up"}
             </Button>
@@ -169,4 +189,4 @@ export default function Signup() {
       </motion.div>
     </div>
   );
-}
+};

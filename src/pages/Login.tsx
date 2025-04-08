@@ -24,16 +24,34 @@ export default function Login() {
     
     try {
       await login(email, password);
+      
       toast({
         title: "Welcome back!",
         description: "Successfully logged in",
       });
+      
       navigate("/");
     } catch (error: any) {
-      setLoginError(error.message || "Failed to login");
+      console.error("Login error:", error);
+      
+      // Get user-friendly error message
+      let errorMessage = "Invalid email or password";
+      
+      if (error.message) {
+        if (error.message.includes("Invalid login credentials")) {
+          errorMessage = "Invalid email or password";
+        } else if (error.message.includes("Email not confirmed")) {
+          errorMessage = "Please confirm your email before logging in";
+        } else {
+          errorMessage = error.message;
+        }
+      }
+      
+      setLoginError(errorMessage);
+      
       toast({
         title: "Login failed",
-        description: error.message || "Invalid credentials",
+        description: errorMessage,
         variant: "destructive"
       });
     } finally {
@@ -63,6 +81,7 @@ export default function Login() {
                 placeholder="Email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
+                required
               />
             </div>
             <div className="space-y-2">
@@ -71,6 +90,7 @@ export default function Login() {
                 placeholder="Password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
+                required
               />
             </div>
             {loginError && (
