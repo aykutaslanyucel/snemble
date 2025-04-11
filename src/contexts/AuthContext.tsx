@@ -27,7 +27,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const checkUser = async () => {
       try {
         console.log("Checking user session");
-        const { data: { session }, error } = await supabase.auth.getSession();
+        const { data, error } = await supabase.auth.getSession();
         
         if (error) {
           console.error("Session error:", error);
@@ -35,13 +35,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           return;
         }
         
-        const currentUser = session?.user || null;
-        console.log("Current user from session:", currentUser);
+        if (!data.session) {
+          console.log("No session found");
+          setUser(null);
+          setIsAdmin(false);
+          setLoading(false);
+          return;
+        }
+
+        const currentUser = data.session.user;
+        console.log("Current user from session:", currentUser?.id);
         setUser(currentUser);
         
         if (currentUser) {
           try {
-            const { data, error: profileError } = await supabase
+            const { data: profileData, error: profileError } = await supabase
               .from('profiles')
               .select('role')
               .eq('id', currentUser.id)
@@ -51,15 +59,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
               console.error("Profile fetch error:", profileError);
               setIsAdmin(false);
             } else {
-              console.log("User profile data:", data);
-              setIsAdmin(data?.role === 'admin');
+              console.log("User profile data:", profileData);
+              setIsAdmin(profileData?.role === 'admin');
             }
           } catch (profileErr) {
             console.error("Profile fetch exception:", profileErr);
             setIsAdmin(false);
           }
-        } else {
-          setIsAdmin(false);
         }
       } catch (error) {
         console.error("Error checking auth state:", error);
@@ -71,45 +77,39 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
     };
 
+    // Immediately run the check
     checkUser();
 
     // Set up Supabase auth state listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
         console.log("Auth state changed:", event, session?.user?.id);
+        setUser(session?.user || null);
         
-        try {
-          const currentUser = session?.user || null;
-          setUser(currentUser);
-          
-          if (currentUser) {
-            try {
-              const { data, error: profileError } = await supabase
-                .from('profiles')
-                .select('role')
-                .eq('id', currentUser.id)
-                .single();
-              
-              if (profileError) {
-                console.error("Profile fetch error on auth change:", profileError);
-                setIsAdmin(false);
-              } else {
-                console.log("User profile on auth change:", data);
-                setIsAdmin(data?.role === 'admin');
-              }
-            } catch (profileErr) {
-              console.error("Profile fetch exception on auth change:", profileErr);
+        if (session?.user) {
+          try {
+            const { data, error: profileError } = await supabase
+              .from('profiles')
+              .select('role')
+              .eq('id', session.user.id)
+              .single();
+            
+            if (profileError) {
+              console.error("Profile fetch error on auth change:", profileError);
               setIsAdmin(false);
+            } else {
+              console.log("User profile on auth change:", data);
+              setIsAdmin(data?.role === 'admin');
             }
-          } else {
+          } catch (profileErr) {
+            console.error("Profile fetch exception on auth change:", profileErr);
             setIsAdmin(false);
           }
-        } catch (error) {
-          console.error("Error during auth state change:", error);
+        } else {
           setIsAdmin(false);
-        } finally {
-          setLoading(false);
         }
+        
+        setLoading(false);
       }
     );
 

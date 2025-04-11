@@ -12,6 +12,7 @@ import Signup from "./pages/Signup";
 import Admin from "./pages/Admin";
 import NotFound from "./pages/NotFound";
 import { useEffect } from "react";
+import { Skeleton } from "@/components/ui/skeleton";
 
 const queryClient = new QueryClient();
 
@@ -19,7 +20,7 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth();
   
   useEffect(() => {
-    console.log("Protected route state:", { loading, userExists: !!user, userId: user?.id });
+    console.log("Protected route check:", { loading, userExists: !!user, userId: user?.id });
   }, [loading, user]);
   
   if (loading) {
@@ -33,7 +34,7 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
   
   if (!user) {
     console.log("Protected route redirecting to login (no user)");
-    return <Navigate to="/login" />;
+    return <Navigate to="/login" replace />;
   }
 
   return <>{children}</>;
@@ -43,7 +44,7 @@ function AdminRoute({ children }: { children: React.ReactNode }) {
   const { user, isAdmin, loading } = useAuth();
   
   useEffect(() => {
-    console.log("Admin route state:", { loading, userExists: !!user, userId: user?.id, isAdmin });
+    console.log("Admin route check:", { loading, userExists: !!user, userId: user?.id, isAdmin });
   }, [loading, user, isAdmin]);
   
   if (loading) {
@@ -57,7 +58,7 @@ function AdminRoute({ children }: { children: React.ReactNode }) {
   
   if (!user || !isAdmin) {
     console.log("Admin route redirecting - not authorized");
-    return <Navigate to="/" />;
+    return <Navigate to="/" replace />;
   }
 
   return <>{children}</>;
@@ -67,7 +68,7 @@ function AppContent() {
   const { loading } = useAuth();
   
   useEffect(() => {
-    console.log("App content auth state:", { loading });
+    console.log("App content rendering - auth loading state:", loading);
   }, [loading]);
   
   return (
