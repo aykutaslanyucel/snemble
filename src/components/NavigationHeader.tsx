@@ -6,18 +6,7 @@ import { Link } from "react-router-dom";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { WorkloadSummary } from "@/components/WorkloadSummary";
 import { TeamHeader } from "@/components/TeamHeader";
-import { useToast } from "@/hooks/use-toast";
-
-type TeamMemberStatus = 'available' | 'someAvailability' | 'busy' | 'seriouslyBusy' | 'away';
-
-interface TeamMember {
-  id: string;
-  name: string;
-  position: string;
-  status: TeamMemberStatus;
-  projects: string[];
-  lastUpdated: Date;
-}
+import { TeamMember } from "@/types/TeamMemberTypes";
 
 interface NavigationHeaderProps {
   isAdmin: boolean;
@@ -27,19 +16,19 @@ interface NavigationHeaderProps {
 
 export function NavigationHeader({ isAdmin, members, handleLogout }: NavigationHeaderProps) {
   return (
-    <div className="flex items-start justify-between">
+    <div className="flex flex-col md:flex-row md:items-start justify-between gap-4">
       <TeamHeader />
       <div className="space-y-4">
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           {isAdmin && (
             <Link to="/admin">
-              <Button variant="outline" className="gap-2">
+              <Button variant="outline" size="sm" className="gap-2">
                 <Shield className="h-4 w-4" />
                 Admin Dashboard
               </Button>
             </Link>
           )}
-          <Button variant="outline" onClick={handleLogout} className="gap-2">
+          <Button variant="outline" size="sm" onClick={handleLogout} className="gap-2">
             <LogOut className="h-4 w-4" />
             Logout
           </Button>

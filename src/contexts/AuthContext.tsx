@@ -21,21 +21,43 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    console.log("Auth provider initializing");
+    
     // Check initial session
     const checkUser = async () => {
       try {
-        const { data: { session } } = await supabase.auth.getSession();
+        console.log("Checking user session");
+        const { data: { session }, error } = await supabase.auth.getSession();
+        
+        if (error) {
+          console.error("Session error:", error);
+          setLoading(false);
+          return;
+        }
+        
         const currentUser = session?.user || null;
+        console.log("Current user from session:", currentUser);
         setUser(currentUser);
         
         if (currentUser) {
-          const { data } = await supabase
-            .from('profiles')
-            .select('role')
-            .eq('id', currentUser.id)
-            .single();
-          
-          setIsAdmin(data?.role === 'admin');
+          try {
+            const { data, error: profileError } = await supabase
+              .from('profiles')
+              .select('role')
+              .eq('id', currentUser.id)
+              .single();
+            
+            if (profileError) {
+              console.error("Profile fetch error:", profileError);
+              setIsAdmin(false);
+            } else {
+              console.log("User profile data:", data);
+              setIsAdmin(data?.role === 'admin');
+            }
+          } catch (profileErr) {
+            console.error("Profile fetch exception:", profileErr);
+            setIsAdmin(false);
+          }
         } else {
           setIsAdmin(false);
         }
@@ -44,6 +66,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setUser(null);
         setIsAdmin(false);
       } finally {
+        console.log("Setting loading to false");
         setLoading(false);
       }
     };
@@ -52,19 +75,32 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     // Set up Supabase auth state listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (_event, session) => {
+      async (event, session) => {
+        console.log("Auth state changed:", event, session?.user?.id);
+        
         try {
           const currentUser = session?.user || null;
           setUser(currentUser);
           
           if (currentUser) {
-            const { data } = await supabase
-              .from('profiles')
-              .select('role')
-              .eq('id', currentUser.id)
-              .single();
-            
-            setIsAdmin(data?.role === 'admin');
+            try {
+              const { data, error: profileError } = await supabase
+                .from('profiles')
+                .select('role')
+                .eq('id', currentUser.id)
+                .single();
+              
+              if (profileError) {
+                console.error("Profile fetch error on auth change:", profileError);
+                setIsAdmin(false);
+              } else {
+                console.log("User profile on auth change:", data);
+                setIsAdmin(data?.role === 'admin');
+              }
+            } catch (profileErr) {
+              console.error("Profile fetch exception on auth change:", profileErr);
+              setIsAdmin(false);
+            }
           } else {
             setIsAdmin(false);
           }
@@ -84,6 +120,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const login = async (email: string, password: string) => {
     try {
+      setLoading(true);
       const { error } = await supabase.auth.signInWithPassword({
         email,
         password,
@@ -96,11 +133,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       console.error("Login error:", error);
       toast.error(error.message || "Failed to log in. Please check your credentials.");
       throw error;
+    } finally {
+      setLoading(false);
     }
   };
 
   const signup = async (email: string, password: string) => {
     try {
+      setLoading(true);
       // Check if email is allowed (only @snellman.com emails)
       if (!email.endsWith("@snellman.com")) {
         throw new Error("Only @snellman.com email addresses are allowed");
@@ -139,16 +179,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       console.error("Signup error:", error);
       toast.error(error.message || "Failed to create account. Please try again.");
       throw error;
+    } finally {
+      setLoading(false);
     }
   };
 
   const logout = async () => {
     try {
+      setLoading(true);
       const { error } = await supabase.auth.signOut();
       if (error) throw error;
     } catch (error) {
       console.error("Logout error:", error);
       throw error;
+    } finally {
+      setLoading(false);
     }
   };
 
