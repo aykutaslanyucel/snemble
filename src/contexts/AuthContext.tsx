@@ -21,9 +21,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Set up Supabase auth state listener
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
+    // Check initial session
+    const checkUser = async () => {
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
         const currentUser = session?.user || null;
         setUser(currentUser);
         
@@ -34,39 +35,47 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             .eq('id', currentUser.id)
             .single();
           
-          if (data) {
-            setIsAdmin(data.role === 'admin');
-          }
+          setIsAdmin(data?.role === 'admin');
         } else {
           setIsAdmin(false);
         }
-        
+      } catch (error) {
+        console.error("Error checking auth state:", error);
+        setUser(null);
+        setIsAdmin(false);
+      } finally {
         setLoading(false);
       }
-    );
-
-    // Check initial session
-    const checkUser = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      const currentUser = session?.user || null;
-      setUser(currentUser);
-      
-      if (currentUser) {
-        const { data } = await supabase
-          .from('profiles')
-          .select('role')
-          .eq('id', currentUser.id)
-          .single();
-        
-        if (data) {
-          setIsAdmin(data.role === 'admin');
-        }
-      }
-      
-      setLoading(false);
     };
 
     checkUser();
+
+    // Set up Supabase auth state listener
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      async (_event, session) => {
+        try {
+          const currentUser = session?.user || null;
+          setUser(currentUser);
+          
+          if (currentUser) {
+            const { data } = await supabase
+              .from('profiles')
+              .select('role')
+              .eq('id', currentUser.id)
+              .single();
+            
+            setIsAdmin(data?.role === 'admin');
+          } else {
+            setIsAdmin(false);
+          }
+        } catch (error) {
+          console.error("Error during auth state change:", error);
+          setIsAdmin(false);
+        } finally {
+          setLoading(false);
+        }
+      }
+    );
 
     return () => {
       subscription.unsubscribe();

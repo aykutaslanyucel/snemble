@@ -37,23 +37,23 @@ const statusLabels: { [key in TeamMemberStatus]: string } = {
 };
 
 export function WorkloadSummary({ members, showOnlyCapacity, showStatusOnly, showHistoricalOnly }: WorkloadSummaryProps) {
-  const totalMembers = members.length;
-  const availableMembers = members.filter(
+  const totalMembers = members?.length || 0;
+  const availableMembers = members?.filter(
     (member) => member.status === "available"
-  ).length;
-  const busyMembers = members.filter((member) => member.status === "busy").length;
-  const seriouslyBusyMembers = members.filter(
+  ).length || 0;
+  const busyMembers = members?.filter((member) => member.status === "busy").length || 0;
+  const seriouslyBusyMembers = members?.filter(
     (member) => member.status === "seriouslyBusy"
-  ).length;
-  const awayMembers = members.filter((member) => member.status === "away").length;
-  const someAvailabilityMembers = members.filter(
+  ).length || 0;
+  const awayMembers = members?.filter((member) => member.status === "away").length || 0;
+  const someAvailabilityMembers = members?.filter(
     (member) => member.status === "someAvailability"
-  ).length;
+  ).length || 0;
 
-  const workloadData = members.map((member) => ({
+  const workloadData = members?.map((member) => ({
     name: member.name,
     projects: member.projects.length,
-  }));
+  })) || [];
 
   const avgProjectsPerMember =
     totalMembers > 0 ? members.reduce((acc, member) => acc + member.projects.length, 0) / totalMembers : 0;
