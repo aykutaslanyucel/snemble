@@ -6,7 +6,7 @@ import { Link } from "react-router-dom";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import WorkloadSummary from "@/components/WorkloadSummary";
 import { TeamHeader } from "@/components/TeamHeader";
-import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/contexts/AuthContext";
 
 type TeamMemberStatus = 'available' | 'someAvailability' | 'busy' | 'seriouslyBusy' | 'away';
 
@@ -22,10 +22,19 @@ interface TeamMember {
 interface NavigationHeaderProps {
   isAdmin: boolean;
   members: TeamMember[];
-  handleLogout: () => Promise<void>;
 }
 
-export function NavigationHeader({ isAdmin, members, handleLogout }: NavigationHeaderProps) {
+export function NavigationHeader({ isAdmin, members }: NavigationHeaderProps) {
+  const { logout } = useAuth();
+
+  const handleLogout = async () => {
+    try {
+      await logout();
+    } catch (error) {
+      console.error("Logout failed:", error);
+    }
+  };
+
   return (
     <div className="flex items-start justify-between">
       <TeamHeader />

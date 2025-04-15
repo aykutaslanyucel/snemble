@@ -1,23 +1,14 @@
 
-import { createContext, useContext, useEffect, useState } from "react";
-import { getAuth, onAuthStateChanged, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, User } from "firebase/auth";
-import { getFirestore, doc, getDoc, collection, query, where, getDocs, setDoc } from "firebase/firestore";
-import { initializeApp } from "firebase/app";
-import { toast } from "sonner";
+import { createContext, useContext, useState, useEffect } from "react";
 
-const firebaseConfig = {
-  apiKey: "AIzaSyApcg3_eIT5Dj_Z97238VTjFWj8-CqVJT0",
-  authDomain: "aelion-94120.firebaseapp.com",
-  projectId: "aelion-94120",
-  storageBucket: "aelion-94120.appspot.com",
-  messagingSenderId: "562716040878",
-  appId: "1:562716040878:web:8a398f504c40010527d73f"
-};
+// Define the User type
+interface User {
+  id: string;
+  email: string;
+  role: string;
+}
 
-const app = initializeApp(firebaseConfig);
-const auth = getAuth(app);
-const db = getFirestore(app);
-
+// Define the AuthContext type
 interface AuthContextType {
   user: User | null;
   isAdmin: boolean;
@@ -27,138 +18,120 @@ interface AuthContextType {
   loading: boolean;
 }
 
+// Create the context
 const AuthContext = createContext<AuthContextType | null>(null);
 
+// Auth provider component
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
 
-  const ensureAdminUser = async (email: string) => {
-    if (email === "aykut.yucel@snellman.com") {
-      const usersRef = collection(db, "users");
-      const q = query(usersRef, where("email", "==", email));
-      const querySnapshot = await getDocs(q);
-      
-      if (querySnapshot.empty) {
-        await signup(email, "admin123", "admin"); // Create admin with default password
-        console.log("Created admin user:", email);
-        return true;
-      } else {
-        const userData = querySnapshot.docs[0].data();
-        if (userData.role !== "admin") {
-          await setDoc(doc(db, "users", querySnapshot.docs[0].id), {
-            ...userData,
-            role: "admin",
-          });
-          console.log("Updated user to admin:", email);
-        }
-        return true;
-      }
-    }
-    return false;
-  };
-
-  const checkAdminStatus = async (email: string) => {
-    console.log("Checking admin status for:", email);
-    try {
-      if (email === "aykut.yucel@snellman.com") {
-        await ensureAdminUser(email);
-      }
-
-      const usersRef = collection(db, "users");
-      const q = query(usersRef, where("email", "==", email));
-      const querySnapshot = await getDocs(q);
-      
-      console.log("User document exists:", !querySnapshot.empty);
-      
-      if (!querySnapshot.empty) {
-        const userData = querySnapshot.docs[0].data();
-        console.log("User role:", userData.role);
-        return userData.role === "admin";
-      }
-      return false;
-    } catch (error) {
-      console.error("Error checking admin status:", error);
-      return false;
-    }
-  };
-
-  useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (user) => {
-      setUser(user);
-      if (user) {
-        const adminStatus = await checkAdminStatus(user.email!);
-        console.log("Setting admin status to:", adminStatus);
-        setIsAdmin(adminStatus);
-      } else {
-        setIsAdmin(false);
-      }
-      setLoading(false);
-    });
-
-    return unsubscribe;
-  }, []);
-
+  // Simulate authentication functionality
   const login = async (email: string, password: string) => {
+    setLoading(true);
     try {
-      const userCredential = await signInWithEmailAndPassword(auth, email, password);
-      await ensureAdminUser(email);
-      const adminStatus = await checkAdminStatus(email);
-      setIsAdmin(adminStatus);
-      toast.success("Logged in successfully!");
+      // Simulate login delay
+      await new Promise(resolve => setTimeout(resolve, 500));
+      
+      // For demo purposes, we'll consider any email ending with @snellman.com as valid
+      if (!email.endsWith('@snellman.com')) {
+        throw new Error('Invalid email domain');
+      }
+      
+      // Create a user object
+      const newUser = {
+        id: Math.random().toString(36).substring(2, 15),
+        email,
+        role: email === 'aykut.yucel@snellman.com' ? 'admin' : 'user'
+      };
+      
+      setUser(newUser);
+      setIsAdmin(newUser.role === 'admin');
+      
+      // Store in localStorage for persistence
+      localStorage.setItem('user', JSON.stringify(newUser));
     } catch (error) {
-      console.error("Login error:", error);
-      toast.error("Failed to log in. Please check your credentials.");
+      console.error('Login error:', error);
       throw error;
+    } finally {
+      setLoading(false);
     }
   };
 
-  const signup = async (email: string, password: string, role: string = "user") => {
+  const signup = async (email: string, password: string, role: string = 'user') => {
+    setLoading(true);
     try {
-      // First check if the user already exists in Firestore
-      const usersRef = collection(db, "users");
-      const q = query(usersRef, where("email", "==", email));
-      const querySnapshot = await getDocs(q);
+      // Simulate signup delay
+      await new Promise(resolve => setTimeout(resolve, 500));
       
-      if (!querySnapshot.empty) {
-        console.log("User document already exists for:", email);
-        throw new Error("User already exists");
+      // For demo purposes, we'll consider any email ending with @snellman.com as valid
+      if (!email.endsWith('@snellman.com')) {
+        throw new Error('Invalid email domain');
       }
-
-      // Create the user in Firebase Auth
-      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
       
-      // Create the user document in Firestore using the auth UID
-      await setDoc(doc(db, "users", userCredential.user.uid), {
-        email: email,
-        role: role,
-        seniority: role === "admin" ? "Partners" : "Other", // Default seniority
-        createdAt: new Date().toISOString(),
-        lastUpdated: new Date().toISOString()
-      });
+      // Create a user object
+      const newUser = {
+        id: Math.random().toString(36).substring(2, 15),
+        email,
+        role: email === 'aykut.yucel@snellman.com' ? 'admin' : role
+      };
       
-      toast.success("Account created successfully!");
-    } catch (error: any) {
-      console.error("Signup error:", error);
-      if (error.code === "auth/email-already-in-use") {
-        toast.error("This email is already registered. Please try logging in instead.");
-      } else {
-        toast.error("Failed to create account. Please try again.");
-      }
+      setUser(newUser);
+      setIsAdmin(newUser.role === 'admin');
+      
+      // Store in localStorage for persistence
+      localStorage.setItem('user', JSON.stringify(newUser));
+    } catch (error) {
+      console.error('Signup error:', error);
       throw error;
+    } finally {
+      setLoading(false);
     }
   };
 
-  const logout = () => signOut(auth);
+  const logout = async () => {
+    setLoading(true);
+    try {
+      // Simulate logout delay
+      await new Promise(resolve => setTimeout(resolve, 300));
+      
+      // Clear user data
+      setUser(null);
+      setIsAdmin(false);
+      localStorage.removeItem('user');
+    } catch (error) {
+      console.error('Logout error:', error);
+      throw error;
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Check for existing user session on app load
+  useEffect(() => {
+    const storedUser = localStorage.getItem('user');
+    if (storedUser) {
+      try {
+        const parsedUser = JSON.parse(storedUser);
+        setUser(parsedUser);
+        setIsAdmin(parsedUser.role === 'admin');
+      } catch (error) {
+        console.error('Error parsing stored user:', error);
+        localStorage.removeItem('user');
+      }
+    }
+    setLoading(false);
+  }, []);
 
   return (
     <AuthContext.Provider value={{ user, isAdmin, login, signup, logout, loading }}>
-      {!loading && children}
+      {children}
     </AuthContext.Provider>
   );
 }
 
+// Hook for using auth context
 export const useAuth = () => {
   const context = useContext(AuthContext);
   if (!context) throw new Error("useAuth must be used within an AuthProvider");

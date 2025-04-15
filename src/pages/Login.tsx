@@ -7,25 +7,25 @@ import { useToast } from "@/components/ui/use-toast";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
+import { toast } from "sonner";
 
 export default function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const { login } = useAuth();
-  const { toast } = useToast();
+  const { toast: uiToast } = useToast();
   const navigate = useNavigate();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
       await login(email, password);
-      toast({
-        title: "Welcome back!",
+      toast("Welcome back!", {
         description: "Successfully logged in",
       });
       navigate("/");
     } catch (error) {
-      toast({
+      uiToast({
         title: "Error",
         description: error instanceof Error ? error.message : "An error occurred",
         variant: "destructive",

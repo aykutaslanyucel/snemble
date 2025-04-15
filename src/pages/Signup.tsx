@@ -8,19 +8,20 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
 import { ArrowLeft } from "lucide-react";
+import { toast } from "sonner";
 
 export default function Signup() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const { signup } = useAuth();
-  const { toast } = useToast();
+  const { toast: uiToast } = useToast();
   const navigate = useNavigate();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
     if (!email.endsWith("@snellman.com")) {
-      toast({
+      uiToast({
         title: "Invalid email domain",
         description: "Only @snellman.com email addresses are allowed",
         variant: "destructive",
@@ -30,13 +31,12 @@ export default function Signup() {
 
     try {
       await signup(email, password);
-      toast({
-        title: "Account created!",
+      toast("Account created!", {
         description: "Welcome to Snemble",
       });
       navigate("/");
     } catch (error) {
-      toast({
+      uiToast({
         title: "Error",
         description: error instanceof Error ? error.message : "An error occurred",
         variant: "destructive",

@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
@@ -21,16 +22,16 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { UserPlus, Users, LogOut, ArrowUpDown, Trash2, Lock } from "lucide-react";
-import { getFirestore, collection, getDocs, doc, setDoc, updateDoc, query, where, deleteDoc } from "firebase/firestore";
+import { UserPlus, Users, LogOut, ArrowUpDown, Trash2 } from "lucide-react";
 import { useTheme } from "@/contexts/ThemeContext";
+import { toast } from "sonner";
 
 interface User {
   id: string;
   email: string;
   role: string;
   seniority: "Other" | "Junior Associate" | "Senior Associate" | "Partners";
-  lastUpdated: Date;
+  lastUpdated?: Date;
 }
 
 type SortField = "lastUpdated" | "seniority" | "name";
@@ -44,10 +45,37 @@ export default function Admin() {
   const [sortField, setSortField] = useState<SortField>("lastUpdated");
   const [sortOrder, setSortOrder] = useState<SortOrder>("desc");
   const { user, isAdmin, signup } = useAuth();
-  const { toast } = useToast();
-  const db = getFirestore();
+  const { toast: uiToast } = useToast();
   const { theme, setTheme } = useTheme();
   const navigate = useNavigate();
+
+  // Mock data for demo purposes
+  useEffect(() => {
+    const mockUsers = [
+      {
+        id: '1',
+        email: 'aykut.yucel@snellman.com',
+        role: 'admin',
+        seniority: 'Partners' as const,
+        lastUpdated: new Date(2023, 1, 15)
+      },
+      {
+        id: '2',
+        email: 'klara.hasselberg@snellman.com',
+        role: 'user',
+        seniority: 'Senior Associate' as const,
+        lastUpdated: new Date(2023, 2, 10)
+      },
+      {
+        id: '3',
+        email: 'test@snellman.com',
+        role: 'user',
+        seniority: 'Junior Associate' as const,
+        lastUpdated: new Date(2023, 3, 5)
+      }
+    ];
+    setUsers(mockUsers);
+  }, []);
 
   const handleSort = (field: SortField) => {
     if (sortField === field) {
@@ -62,7 +90,7 @@ export default function Admin() {
     let comparison = 0;
     switch (sortField) {
       case "lastUpdated":
-        comparison = new Date(a.lastUpdated).getTime() - new Date(b.lastUpdated).getTime();
+        comparison = new Date(a.lastUpdated || 0).getTime() - new Date(b.lastUpdated || 0).getTime();
         break;
       case "seniority":
         const seniorityOrder = {
@@ -80,111 +108,23 @@ export default function Admin() {
     return sortOrder === "asc" ? comparison : -comparison;
   });
 
-  useEffect(() => {
-    fetchUsers();
-    setupInitialAdmin();
-    
-    const createKlaraAccount = async () => {
-      try {
-        const usersRef = collection(db, "users");
-        const q = query(usersRef, where("email", "==", "klara.hasselberg@snellman.com"));
-        const querySnapshot = await getDocs(q);
-        
-        if (querySnapshot.empty) {
-          await signup("klara.hasselberg@snellman.com", "test123");
-          console.log("Created account for Klara");
-          toast({
-            title: "Success",
-            description: "Created account for Klara",
-          });
-        } else {
-          console.log("Klara's account already exists");
-        }
-      } catch (error) {
-        console.error("Error creating Klara's account:", error);
-        if (error instanceof Error && error.message.includes("already")) {
-          console.log("Klara's account already exists");
-        } else {
-          toast({
-            title: "Error",
-            description: "Failed to create Klara's account",
-            variant: "destructive",
-          });
-        }
-      }
-    };
-    
-    createKlaraAccount();
-  }, []);
-
-  const setupInitialAdmin = async () => {
-    try {
-      const usersRef = collection(db, "users");
-      const q = query(usersRef, where("email", "==", "aykut.yucel@snellman.com"));
-      const querySnapshot = await getDocs(q);
-      
-      if (querySnapshot.empty) {
-        const userId = Math.random().toString(36).substr(2, 9);
-        await setDoc(doc(db, "users", userId), {
-          email: "aykut.yucel@snellman.com",
-          role: "admin",
-        });
-        toast({
-          title: "Success",
-          description: "Admin user created successfully",
-        });
-      } else {
-        const userDoc = querySnapshot.docs[0];
-        if (userDoc.data().role !== "admin") {
-          await updateDoc(doc(db, "users", userDoc.id), {
-            role: "admin"
-          });
-          toast({
-            title: "Success",
-            description: "User role updated to admin successfully",
-          });
-        }
-      }
-      fetchUsers(); // Refresh the users list
-    } catch (error) {
-      toast({
-        title: "Error",
-        description: "Failed to setup admin user",
-        variant: "destructive",
-      });
-    }
-  };
-
-  const fetchUsers = async () => {
-    try {
-      const usersSnapshot = await getDocs(collection(db, "users"));
-      const usersData = usersSnapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data()
-      } as User));
-      setUsers(usersData);
-    } catch (error) {
-      toast({
-        title: "Error",
-        description: "Failed to fetch users",
-        variant: "destructive",
-      });
-    }
-  };
-
   const handleRoleChange = async (userId: string, newRole: string, newSeniority?: string) => {
     try {
-      await updateDoc(doc(db, "users", userId), {
-        role: newRole,
-        seniority: newSeniority
-      });
-      toast({
-        title: "Success",
+      // Update the user in our mock data
+      setUsers(users.map(u => 
+        u.id === userId ? { 
+          ...u, 
+          role: newRole, 
+          seniority: (newSeniority as any) || u.seniority,
+          lastUpdated: new Date() 
+        } : u
+      ));
+      
+      toast("Success", {
         description: "User role updated successfully",
       });
-      fetchUsers(); // Refresh the users list
     } catch (error) {
-      toast({
+      uiToast({
         title: "Error",
         description: "Failed to update user role",
         variant: "destructive",
@@ -194,14 +134,14 @@ export default function Admin() {
 
   const handleDeleteUser = async (userId: string) => {
     try {
-      await deleteDoc(doc(db, "users", userId));
-      toast({
-        title: "Success",
+      // Remove the user from our mock data
+      setUsers(users.filter(u => u.id !== userId));
+      
+      toast("Success", {
         description: "User deleted successfully",
       });
-      fetchUsers(); // Refresh the users list
     } catch (error) {
-      toast({
+      uiToast({
         title: "Error",
         description: "Failed to delete user",
         variant: "destructive",
@@ -212,7 +152,7 @@ export default function Admin() {
   const handleAddUser = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newUserEmail.endsWith("@snellman.com")) {
-      toast({
+      uiToast({
         title: "Invalid email domain",
         description: "Only @snellman.com email addresses are allowed",
         variant: "destructive",
@@ -221,7 +161,7 @@ export default function Admin() {
     }
 
     if (!newUserPassword || newUserPassword.length < 6) {
-      toast({
+      uiToast({
         title: "Invalid password",
         description: "Password must be at least 6 characters long",
         variant: "destructive",
@@ -231,12 +171,29 @@ export default function Admin() {
 
     setLoading(true);
     try {
-      await signup(newUserEmail, newUserPassword);
+      // Add the user to our mock data
+      const newUser = {
+        id: Math.random().toString(36).substring(2, 15),
+        email: newUserEmail,
+        role: 'user',
+        seniority: 'Other' as const,
+        lastUpdated: new Date()
+      };
+      
+      setUsers([...users, newUser]);
       setNewUserEmail("");
       setNewUserPassword("");
-      fetchUsers(); // Refresh the users list
+      
+      toast("Success", {
+        description: "User added successfully",
+      });
     } catch (error) {
       console.error("Error adding user:", error);
+      uiToast({
+        title: "Error",
+        description: "Failed to add user",
+        variant: "destructive",
+      });
     }
     setLoading(false);
   };
@@ -359,7 +316,7 @@ export default function Admin() {
                     </SelectContent>
                   </Select>
                 </TableCell>
-                <TableCell>{new Date(user.lastUpdated).toLocaleDateString()}</TableCell>
+                <TableCell>{user.lastUpdated ? new Date(user.lastUpdated).toLocaleDateString() : 'N/A'}</TableCell>
                 <TableCell>
                   <div className="flex gap-2">
                     <Button 
