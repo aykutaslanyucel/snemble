@@ -7,31 +7,30 @@ import { ThemeToggle } from "@/components/ThemeToggle";
 import WorkloadSummary from "@/components/WorkloadSummary";
 import { TeamHeader } from "@/components/TeamHeader";
 import { useAuth } from "@/contexts/AuthContext";
-
-type TeamMemberStatus = 'available' | 'someAvailability' | 'busy' | 'seriouslyBusy' | 'away';
-
-interface TeamMember {
-  id: string;
-  name: string;
-  position: string;
-  status: TeamMemberStatus;
-  projects: string[];
-  lastUpdated: Date;
-}
+import { TeamMember } from "@/types/TeamMemberTypes";
 
 interface NavigationHeaderProps {
   isAdmin: boolean;
   members: TeamMember[];
+  handleLogout?: () => Promise<void>;
 }
 
-export function NavigationHeader({ isAdmin, members }: NavigationHeaderProps) {
+export function NavigationHeader({ isAdmin, members, handleLogout }: NavigationHeaderProps) {
   const { logout } = useAuth();
 
-  const handleLogout = async () => {
-    try {
-      await logout();
-    } catch (error) {
-      console.error("Logout failed:", error);
+  const handleLogoutClick = async () => {
+    if (handleLogout) {
+      try {
+        await handleLogout();
+      } catch (error) {
+        console.error("Logout failed:", error);
+      }
+    } else {
+      try {
+        await logout();
+      } catch (error) {
+        console.error("Logout failed:", error);
+      }
     }
   };
 
@@ -48,7 +47,7 @@ export function NavigationHeader({ isAdmin, members }: NavigationHeaderProps) {
               </Button>
             </Link>
           )}
-          <Button variant="outline" onClick={handleLogout} className="gap-2">
+          <Button variant="outline" onClick={handleLogoutClick} className="gap-2">
             <LogOut className="h-4 w-4" />
             Logout
           </Button>

@@ -1,4 +1,5 @@
-import { useState, useMemo } from "react";
+
+import { useState, useMemo, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import { AnnouncementBanner } from "@/components/AnnouncementBanner";
@@ -10,41 +11,38 @@ import { SearchAndActions } from "@/components/SearchAndActions";
 import { WorkloadDashboard } from "@/components/WorkloadDashboard";
 import { ProjectList } from "@/components/ProjectList";
 import { AvailableMembersList } from "@/components/AvailableMembersList";
-
-const initialMembers: TeamMember[] = [
-  {
-    id: "1",
-    name: "Alex Johnson",
-    position: "Senior Developer",
-    status: "available",
-    projects: ["Project Alpha", "Project Beta"],
-    lastUpdated: new Date(),
-  },
-  {
-    id: "2",
-    name: "Sarah Smith",
-    position: "UX Designer",
-    status: "busy",
-    projects: ["Project Gamma"],
-    lastUpdated: new Date(),
-  },
-  {
-    id: "3",
-    name: "Mike Brown",
-    position: "Product Manager",
-    status: "away",
-    projects: ["Project Delta", "Project Epsilon"],
-    lastUpdated: new Date(),
-  },
-];
+import { 
+  fetchTeamMembers, 
+  updateTeamMember, 
+  deleteTeamMember, 
+  addTeamMember, 
+  subscribeToTeamMembers,
+  canEditTeamMember 
+} from "@/lib/teamMemberUtils";
 
 export default function Index() {
-  const [members, setMembers] = useState<TeamMember[]>(initialMembers);
+  const [members, setMembers] = useState<TeamMember[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [announcements, setAnnouncements] = useState<Announcement[]>([]);
   const [newAnnouncement, setNewAnnouncement] = useState("");
+  const [loading, setLoading] = useState(true);
   const { toast } = useToast();
-  const { isAdmin, logout } = useAuth();
+  const { user, isAdmin, logout } = useAuth();
+
+  // Fetch members and set up subscription
+  useEffect(() => {
+    setLoading(true);
+    
+    const unsubscribe = subscribeToTeamMembers(updatedMembers => {
+      setMembers(updatedMembers);
+      setLoading(false);
+    });
+    
+    // Cleanup subscription on component unmount
+    return () => {
+      unsubscribe();
+    };
+  }, []);
 
   const activeProjects = useMemo(() => {
     const projectSet = new Set<string>();
@@ -71,54 +69,109 @@ export default function Index() {
     return members.filter(member => member.status === 'available' || member.status === 'someAvailability');
   }, [members]);
 
-  const handleAddMember = () => {
-    const newMember: TeamMember = {
-      id: Date.now().toString(),
-      name: "New Member",
-      position: "Position",
-      status: "available",
-      projects: [],
-      lastUpdated: new Date(),
-    };
-    setMembers([newMember, ...members]);
-    toast({
-      title: "Team member added",
-      description: "New team member has been added successfully.",
-    });
-  };
-
-  const handleUpdateMember = (id: string, field: string, value: any) => {
-    setMembers(
-      members.map((member) =>
-        member.id === id
-          ? { 
-              ...member, 
-              [field]: field === 'projects' 
-                ? (typeof value === 'string' 
-                  ? value.split(/[;,]/).map((p: string) => p.trim()).filter((p: string) => p.length > 0)
-                  : value)
-                : value,
-              lastUpdated: new Date() 
-            }
-          : member
-      )
-    );
+  const handleAddMember = async () => {
+    if (!user) return;
     
-    if (field === 'projects') {
+    try {
+      const newMember = {
+        name: "New Team Member",
+        position: "Position",
+        status: "available" as const,
+        projects: [],
+        lastUpdated: new Date(),
+        user_id: user.id,
+      };
+      
+      await addTeamMember(newMember);
+      
       toast({
-        title: "Projects updated",
-        description: "Team member's projects have been updated successfully.",
+        title: "Team member added",
+        description: "New team member has been added successfully.",
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to add team member. Please try again.",
+        variant: "destructive",
       });
     }
   };
 
-  const handleDeleteMember = (id: string) => {
-    setMembers(members.filter((member) => member.id !== id));
-    toast({
-      title: "Team member removed",
-      description: "Team member has been removed successfully.",
-      variant: "destructive",
-    });
+  const handleUpdateMember = async (id: string, field: string, value: any) => {
+    try {
+      const memberToUpdate = members.find(m => m.id === id);
+      
+      if (!memberToUpdate) {
+        throw new Error("Member not found");
+      }
+      
+      // Check if user has permission to update this member
+      if (!canEditTeamMember(memberToUpdate, user?.id, isAdmin)) {
+        toast({
+          title: "Permission denied",
+          description: "You can only update your own profile unless you're an admin.",
+          variant: "destructive",
+        });
+        return;
+      }
+      
+      const updates: { [key: string]: any } = {};
+      
+      if (field === 'projects' && typeof value === 'string') {
+        updates.projects = value.split(/[;,]/).map(p => p.trim()).filter(p => p.length > 0);
+      } else {
+        updates[field] = value;
+      }
+      
+      await updateTeamMember(id, updates);
+      
+      if (field === 'projects') {
+        toast({
+          title: "Projects updated",
+          description: "Team member's projects have been updated successfully.",
+        });
+      }
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to update team member. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleDeleteMember = async (id: string) => {
+    try {
+      const memberToDelete = members.find(m => m.id === id);
+      
+      if (!memberToDelete) {
+        throw new Error("Member not found");
+      }
+      
+      // Check if user has permission to delete this member
+      if (!canEditTeamMember(memberToDelete, user?.id, isAdmin)) {
+        toast({
+          title: "Permission denied",
+          description: "You can only delete your own profile unless you're an admin.",
+          variant: "destructive",
+        });
+        return;
+      }
+      
+      await deleteTeamMember(id);
+      
+      toast({
+        title: "Team member removed",
+        description: "Team member has been removed successfully.",
+        variant: "destructive",
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to delete team member. Please try again.",
+        variant: "destructive",
+      });
+    }
   };
 
   const handleAddAnnouncement = () => {
@@ -164,6 +217,17 @@ export default function Index() {
 
   const latestAnnouncement = announcements[0];
 
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-b from-background to-secondary/20 flex items-center justify-center">
+        <div className="text-center space-y-4">
+          <div className="animate-spin h-10 w-10 border-4 border-primary border-t-transparent rounded-full mx-auto"></div>
+          <p className="text-lg">Loading team data...</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-gradient-to-b from-background to-secondary/20">
       {latestAnnouncement && <AnnouncementBanner announcement={latestAnnouncement} />}
@@ -172,7 +236,6 @@ export default function Index() {
         <NavigationHeader 
           isAdmin={isAdmin} 
           members={members} 
-          handleLogout={handleLogout} 
         />
         
         <SearchAndActions
@@ -190,6 +253,8 @@ export default function Index() {
           members={filteredMembers}
           onUpdate={handleUpdateMember}
           onDelete={handleDeleteMember}
+          currentUserId={user?.id}
+          isAdmin={isAdmin}
         />
 
         <WorkloadDashboard members={members} />

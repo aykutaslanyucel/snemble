@@ -1,6 +1,8 @@
 
 export type TeamMemberStatus = 'available' | 'someAvailability' | 'busy' | 'seriouslyBusy' | 'away';
 
+export type TeamMemberRole = 'Associate' | 'Senior Associate' | 'Managing Associate' | 'Partner' | 'Assistant' | 'admin' | 'user' | 'premium' | string;
+
 export interface TeamMember {
   id: string;
   name: string;
@@ -9,7 +11,7 @@ export interface TeamMember {
   projects: string[];
   lastUpdated: Date;
   user_id?: string;
-  role?: string;
+  role?: TeamMemberRole;
   customization?: {
     color?: string;
     texture?: string;

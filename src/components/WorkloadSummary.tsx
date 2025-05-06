@@ -256,10 +256,7 @@ export default function WorkloadSummary({
   showOnlyCapacity = false, 
   showStatusOnly = false,
   showHistoricalOnly = false
-}: Props & { 
-  showStatusOnly?: boolean, 
-  showHistoricalOnly?: boolean 
-}) {
+}: Props) {
   const [timeRange, setTimeRange] = React.useState<'month' | 'year'>('month');
   const [showRoleMetrics, setShowRoleMetrics] = React.useState<boolean>(true);
   const historicalData = React.useMemo(() => generateMockHistoricalData(timeRange), [timeRange]);
