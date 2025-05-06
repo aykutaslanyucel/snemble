@@ -2,17 +2,7 @@
 import React from "react";
 import { Card } from "@/components/ui/card";
 import { Folder } from "lucide-react";
-
-type TeamMemberStatus = 'available' | 'someAvailability' | 'busy' | 'seriouslyBusy' | 'away';
-
-interface TeamMember {
-  id: string;
-  name: string;
-  position: string;
-  status: TeamMemberStatus;
-  projects: string[];
-  lastUpdated: Date;
-}
+import { TeamMember } from "@/types/TeamMemberTypes";
 
 interface ProjectListProps {
   activeProjects: string[];

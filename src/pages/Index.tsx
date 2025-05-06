@@ -1,4 +1,3 @@
-
 import { useState, useMemo, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
@@ -33,6 +32,7 @@ export default function Index() {
   useEffect(() => {
     setLoading(true);
     
+    // Set up a real-time subscription to team members
     const unsubscribe = subscribeToTeamMembers(updatedMembers => {
       setMembers(updatedMembers);
       setLoading(false);
@@ -236,6 +236,7 @@ export default function Index() {
         <NavigationHeader 
           isAdmin={isAdmin} 
           members={members} 
+          handleLogout={handleLogout}
         />
         
         <SearchAndActions

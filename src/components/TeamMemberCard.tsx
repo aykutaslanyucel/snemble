@@ -1,12 +1,9 @@
 
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { formatDistanceToNow } from "date-fns";
+import { format, formatDistanceToNow } from "date-fns";
 import { Card } from "@/components/ui/card";
-import { 
-  MoreVertical, Trash2, Edit, CheckCircle, XCircle, 
-  User, Clock, Coffee, Plus, Crown, Settings, Lock 
-} from "lucide-react";
+import { MoreVertical, Trash2, Edit, CheckCircle, XCircle, User, Clock, Coffee, Plus, Crown, Palette, Brush, Settings, Lock } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
@@ -21,39 +18,39 @@ interface Props {
   member: TeamMember;
   onUpdate: (id: string, field: string, value: any) => void;
   onDelete: (id: string) => void;
-  canEdit?: boolean;
+  canEdit: boolean;
 }
 
 const statusConfig = {
   available: {
-    color: "bg-[#D6E4FF]/90 hover:bg-[#D6E4FF]",
-    iconColor: "text-blue-600",
+    label: "Available",
+    color: "bg-blue-50",
     icon: CheckCircle,
-    label: "Available"
+    iconColor: "text-blue-500"
   },
   someAvailability: {
-    color: "bg-[#C8EAD7]/90 hover:bg-[#C8EAD7]",
-    iconColor: "text-green-600",
-    icon: User,
-    label: "Some Availability"
+    label: "Some Availability",
+    color: "bg-green-50",
+    icon: Clock,
+    iconColor: "text-green-500"
   },
   busy: {
-    color: "bg-[#FFD8A8]/90 hover:bg-[#FFD8A8]",
-    iconColor: "text-orange-600",
-    icon: Clock,
-    label: "Busy"
+    label: "Busy",
+    color: "bg-yellow-50",
+    icon: User,
+    iconColor: "text-yellow-500"
   },
   seriouslyBusy: {
-    color: "bg-[#FFA3A3]/90 hover:bg-[#FFA3A3]",
-    iconColor: "text-red-600",
+    label: "Seriously Busy",
+    color: "bg-red-50",
     icon: XCircle,
-    label: "Seriously Busy"
+    iconColor: "text-red-500"
   },
   away: {
-    color: "bg-[#C4C4C4]/90 hover:bg-[#C4C4C4]",
-    iconColor: "text-gray-600",
+    label: "Away",
+    color: "bg-gray-50",
     icon: Coffee,
-    label: "Away"
+    iconColor: "text-gray-500"
   }
 } as const;
 
@@ -61,12 +58,13 @@ export default function TeamMemberCard({
   member,
   onUpdate,
   onDelete,
-  canEdit = true
+  canEdit
 }: Props) {
   const [isEditing, setIsEditing] = useState(false);
   const [editedName, setEditedName] = useState(member.name);
   const [editedPosition, setEditedPosition] = useState(member.position);
   const [newProject, setNewProject] = useState("");
+  const [editingProjects, setEditingProjects] = useState("");
   const [isProjectDialogOpen, setIsProjectDialogOpen] = useState(false);
   const [isCustomizationOpen, setIsCustomizationOpen] = useState(false);
   
@@ -89,7 +87,11 @@ export default function TeamMemberCard({
   };
   
   const handleRemoveProject = (projectToRemove: string) => {
-    onUpdate(member.id, "projects", member.projects.filter(project => project !== projectToRemove));
+    onUpdate(
+      member.id, 
+      "projects", 
+      member.projects.filter(project => project !== projectToRemove)
+    );
   };
   
   const getTimeAgo = (date: Date) => {
@@ -211,9 +213,9 @@ export default function TeamMemberCard({
   // Editable view
   return (
     <Card className={cn(
-      "team-member-card overflow-hidden border-none shadow-lg transition-all duration-300", 
-      currentStatus.color, 
-      isPremium && "border-2 border-yellow-400/50", 
+      "team-member-card overflow-hidden border-none shadow-lg transition-all duration-300",
+      isEditing ? "ring-2 ring-primary" : currentStatus.color,
+      isPremium && "border-2 border-yellow-400/50",
       premiumCustomization.color
     )}>
       <motion.div 
@@ -235,13 +237,15 @@ export default function TeamMemberCard({
               <div className="space-y-2">
                 <Input 
                   value={editedName} 
-                  onChange={e => setEditedName(e.target.value)} 
-                  className="text-lg font-semibold" 
+                  onChange={(e) => setEditedName(e.target.value)}
+                  placeholder="Name"
+                  className="font-semibold"
                 />
                 <Input 
                   value={editedPosition} 
-                  onChange={e => setEditedPosition(e.target.value)} 
-                  className="text-sm text-muted-foreground" 
+                  onChange={(e) => setEditedPosition(e.target.value)}
+                  placeholder="Position"
+                  className="text-sm"
                 />
               </div>
             ) : (
@@ -259,208 +263,122 @@ export default function TeamMemberCard({
               </div>
             )}
           </div>
-
-          <Dialog open={isCustomizationOpen} onOpenChange={setIsCustomizationOpen}>
+          {isEditing ? (
+            <div className="flex space-x-2">
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={() => setIsEditing(false)}
+              >
+                Cancel
+              </Button>
+              <Button 
+                variant="default" 
+                size="sm" 
+                onClick={handleSave}
+              >
+                Save
+              </Button>
+            </div>
+          ) : (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="icon">
+                <Button variant="ghost" size="sm">
                   <MoreVertical className="h-4 w-4" />
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
-                {isEditing ? (
-                  <>
-                    <DropdownMenuItem onClick={handleSave}>
-                      <CheckCircle className="h-4 w-4 mr-2" />
-                      Save
-                    </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => setIsEditing(false)}>
-                      <XCircle className="h-4 w-4 mr-2" />
-                      Cancel
-                    </DropdownMenuItem>
-                  </>
-                ) : (
-                  <>
-                    <DropdownMenuItem onClick={() => setIsEditing(true)}>
-                      <Edit className="h-4 w-4 mr-2" />
-                      Edit
-                    </DropdownMenuItem>
-                    {isPremium && (
-                      <>
-                        <DropdownMenuSeparator />
-                        <DialogTrigger asChild>
-                          <DropdownMenuItem>
-                            <Settings className="h-4 w-4 mr-2" />
-                            Customize
-                          </DropdownMenuItem>
-                        </DialogTrigger>
-                      </>
-                    )}
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem 
-                      className="text-destructive" 
-                      onClick={() => onDelete(member.id)}
-                    >
-                      <Trash2 className="h-4 w-4 mr-2" />
-                      Delete
-                    </DropdownMenuItem>
-                  </>
+                <DropdownMenuItem onClick={() => setIsEditing(true)}>
+                  <Edit className="mr-2 h-4 w-4" />
+                  Edit
+                </DropdownMenuItem>
+                {isPremium && (
+                  <DropdownMenuItem onClick={() => setIsCustomizationOpen(true)}>
+                    <Palette className="mr-2 h-4 w-4" />
+                    Customize
+                  </DropdownMenuItem>
                 )}
+                <DropdownMenuSeparator />
+                <DropdownMenuItem 
+                  className="text-red-600"
+                  onClick={() => onDelete(member.id)}
+                >
+                  <Trash2 className="mr-2 h-4 w-4" />
+                  Delete
+                </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
-
-            <DialogContent>
-              <DialogHeader>
-                <DialogTitle>Premium Customization</DialogTitle>
-              </DialogHeader>
-              <div className="grid gap-4">
-                <div>
-                  <label className="text-sm font-medium mb-2 block">Card Color</label>
-                  <div className="grid grid-cols-5 gap-2">
-                    {["bg-purple-100", "bg-blue-100", "bg-green-100", "bg-pink-100", "bg-yellow-100"].map(color => (
-                      <button 
-                        key={color} 
-                        className={cn(
-                          "w-8 h-8 rounded-full", 
-                          color, 
-                          premiumCustomization.color === color && "ring-2 ring-offset-2 ring-primary"
-                        )} 
-                        onClick={() => onUpdate(member.id, "customization", {
-                          ...premiumCustomization,
-                          color
-                        })} 
-                      />
-                    ))}
-                  </div>
-                </div>
-                <div>
-                  <label className="text-sm font-medium mb-2 block">Hat Style</label>
-                  <div className="flex gap-2">
-                    {["🎩", "👑", "🎓", "⛑️", "🪖"].map(hat => (
-                      <button 
-                        key={hat} 
-                        className={cn(
-                          "p-2 rounded hover:bg-secondary", 
-                          premiumCustomization.hat === hat && "bg-secondary"
-                        )} 
-                        onClick={() => onUpdate(member.id, "customization", {
-                          ...premiumCustomization,
-                          hat
-                        })}
-                      >
-                        {hat}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-                <div>
-                  <label className="text-sm font-medium mb-2 block">Status Emoji</label>
-                  <div className="flex gap-2">
-                    {["😊", "🚀", "💪", "✨", "🌟"].map(emoji => (
-                      <button 
-                        key={emoji} 
-                        className={cn(
-                          "p-2 rounded hover:bg-secondary", 
-                          premiumCustomization.emoji === emoji && "bg-secondary"
-                        )} 
-                        onClick={() => onUpdate(member.id, "customization", {
-                          ...premiumCustomization,
-                          emoji
-                        })}
-                      >
-                        {emoji}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              </div>
-            </DialogContent>
-          </Dialog>
+          )}
         </div>
 
         <div className="space-y-4">
           <div>
             <div className="flex items-center justify-between mb-2">
               <label className="text-sm font-medium bg-transparent">Projects</label>
-              <Dialog open={isProjectDialogOpen} onOpenChange={setIsProjectDialogOpen}>
-                <DialogTrigger asChild>
-                  <Button variant="outline" size="sm" onClick={openProjectDialog}>
-                    <Plus className="h-4 w-4 mr-1" />
-                    Add Project
-                  </Button>
-                </DialogTrigger>
-                <DialogContent>
-                  <DialogHeader>
-                    <DialogTitle>Manage Projects</DialogTitle>
-                  </DialogHeader>
-                  <div className="space-y-4">
-                    <div className="text-sm text-muted-foreground">
-                      Add or edit projects, separated by semicolons (;)
-                    </div>
-                    <Textarea 
-                      placeholder="Project names (separate with semicolons)" 
-                      value={newProject} 
-                      onChange={e => setNewProject(e.target.value)} 
-                      className="min-h-[100px]" 
-                    />
-                    <div className="flex justify-end gap-2">
-                      <Button variant="outline" onClick={() => setIsProjectDialogOpen(false)}>
-                        Cancel
-                      </Button>
-                      <Button onClick={handleAddProject}>Save Projects</Button>
-                    </div>
-                  </div>
-                </DialogContent>
-              </Dialog>
+              {!isEditing && (
+                <Button 
+                  variant="ghost" 
+                  size="sm"
+                  onClick={openProjectDialog}
+                >
+                  <Plus className="h-3.5 w-3.5" />
+                </Button>
+              )}
             </div>
             <div className="flex flex-wrap gap-2">
               {member.projects.map((project, index) => (
-                <Badge key={index} variant="secondary" className="group relative">
+                <Badge key={index} variant="secondary" className="group">
                   {project}
-                  <button 
-                    onClick={() => handleRemoveProject(project)} 
-                    className="ml-1 opacity-0 group-hover:opacity-100 transition-opacity"
-                  >
-                    ×
-                  </button>
+                  {!isEditing && (
+                    <button 
+                      className="ml-1 opacity-0 group-hover:opacity-100 transition-opacity" 
+                      onClick={() => handleRemoveProject(project)}
+                    >
+                      <XCircle className="h-3 w-3 text-red-500" />
+                    </button>
+                  )}
                 </Badge>
               ))}
+              {member.projects.length === 0 && (
+                <span className="text-sm text-gray-500">No projects assigned</span>
+              )}
             </div>
           </div>
 
-          <div className="space-y-2">
-            <label className="text-sm font-medium block">Status</label>
-            <div className="flex flex-wrap gap-2">
-              {(Object.keys(statusConfig) as TeamMemberStatus[]).map(status => {
-                const config = statusConfig[status];
-                const Icon = config.icon;
-                return (
-                  <motion.div 
-                    key={status} 
-                    whileHover={{ scale: 1.1 }} 
-                    whileTap={{ scale: 0.95 }}
+          {!isEditing && (
+            <div className="space-y-2">
+              <label className="text-sm font-medium block">Status</label>
+              <div className="flex flex-wrap gap-2">
+                {Object.entries(statusConfig).map(([status, config]) => (
+                  <Toggle
+                    key={status}
+                    size="sm"
+                    pressed={member.status === status}
+                    onPressedChange={() => handleStatusChange(status as TeamMemberStatus)}
+                    className={cn(
+                      "data-[state=on]:bg-white/50 border",
+                      member.status === status && "ring-1 ring-primary"
+                    )}
                   >
-                    <Toggle 
-                      pressed={member.status === status} 
-                      onPressedChange={() => handleStatusChange(status)} 
-                      className={cn(
-                        "w-10 h-10 p-0 rounded-full data-[state=on]:bg-white/80", 
-                        member.status === status ? config.iconColor : "text-gray-400"
-                      )}
+                    <motion.div 
+                      initial={{scale: 0.8, opacity: 0}}
+                      animate={{scale: 1, opacity: 1}}
+                      className="flex items-center"
                     >
-                      <Icon className="h-5 w-5" />
-                    </Toggle>
-                  </motion.div>
-                );
-              })}
+                      <config.icon className={cn("h-3 w-3 mr-1", config.iconColor)} />
+                      {config.label}
+                    </motion.div>
+                  </Toggle>
+                ))}
+              </div>
             </div>
-          </div>
+          )}
 
           <div className="flex items-center justify-between mt-4">
             <Badge variant="outline" className="bg-white/50">
               <motion.div 
-                initial={{ scale: 0.8, opacity: 0 }} 
-                animate={{ scale: 1, opacity: 1 }} 
+                initial={{scale: 0.8, opacity: 0}}
+                animate={{scale: 1, opacity: 1}}
                 className="flex items-center"
               >
                 {premiumCustomization.emoji ? (
@@ -478,6 +396,92 @@ export default function TeamMemberCard({
           </div>
         </div>
       </motion.div>
+
+      <Dialog open={isProjectDialogOpen} onOpenChange={setIsProjectDialogOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Manage Projects</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-2">
+            <p className="text-sm text-muted-foreground">
+              Enter projects separated by semicolons or commas.
+            </p>
+            <Textarea 
+              value={newProject} 
+              onChange={(e) => setNewProject(e.target.value)}
+              placeholder="Project 1; Project 2; Project 3"
+              className="h-24"
+            />
+            <div className="flex justify-end space-x-2">
+              <Button 
+                variant="outline" 
+                onClick={() => setIsProjectDialogOpen(false)}
+              >
+                Cancel
+              </Button>
+              <Button onClick={handleAddProject}>Save Projects</Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {isPremium && (
+        <Dialog open={isCustomizationOpen} onOpenChange={setIsCustomizationOpen}>
+          <DialogContent className="sm:max-w-md">
+            <DialogHeader>
+              <DialogTitle>Customize Profile</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4 py-2">
+              <p className="text-sm text-muted-foreground">
+                Personalize your team member card with custom colors and details.
+              </p>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="text-sm font-medium">Custom Color</label>
+                  <div className="grid grid-cols-4 gap-2 mt-1">
+                    {["bg-blue-50", "bg-green-50", "bg-purple-50", "bg-orange-50", "bg-pink-50", "bg-cyan-50", "bg-amber-50", "bg-emerald-50"].map(color => (
+                      <Toggle
+                        key={color}
+                        size="sm"
+                        pressed={premiumCustomization.color === color}
+                        onPressedChange={() => onUpdate(member.id, "customization", { ...premiumCustomization, color })}
+                        className={cn(
+                          color,
+                          "h-8 w-8 p-0 rounded-full data-[state=on]:ring-2 data-[state=on]:ring-primary"
+                        )}
+                      />
+                    ))}
+                  </div>
+                </div>
+                <div>
+                  <label className="text-sm font-medium">Emoji</label>
+                  <div className="grid grid-cols-4 gap-2 mt-1">
+                    {["🚀", "💻", "✨", "🔥", "🌟", "🎯", "⚡", "🧠"].map(emoji => (
+                      <Toggle
+                        key={emoji}
+                        size="sm"
+                        pressed={premiumCustomization.emoji === emoji}
+                        onPressedChange={() => onUpdate(member.id, "customization", { ...premiumCustomization, emoji })}
+                        className="h-8 w-8 p-0 rounded-full data-[state=on]:bg-accent data-[state=on]:text-accent-foreground"
+                      >
+                        {emoji}
+                      </Toggle>
+                    ))}
+                  </div>
+                </div>
+              </div>
+              <div className="flex justify-end space-x-2">
+                <Button 
+                  variant="outline" 
+                  onClick={() => setIsCustomizationOpen(false)}
+                >
+                  Close
+                </Button>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
+      )}
     </Card>
   );
 }

@@ -7,9 +7,19 @@ interface TeamMembersProps {
   members: TeamMember[];
   onUpdate: (id: string, field: string, value: any) => void;
   onDelete: (id: string) => void;
+  currentUserId?: string;
+  isAdmin: boolean;
 }
 
-export function TeamMembers({ members, onUpdate, onDelete }: TeamMembersProps) {
+export function TeamMembers({ members, onUpdate, onDelete, currentUserId, isAdmin }: TeamMembersProps) {
+  if (members.length === 0) {
+    return (
+      <div className="text-center py-8">
+        <p className="text-muted-foreground">No team members found.</p>
+      </div>
+    );
+  }
+  
   return (
     <motion.div 
       layout
@@ -29,6 +39,7 @@ export function TeamMembers({ members, onUpdate, onDelete }: TeamMembersProps) {
               member={member}
               onUpdate={onUpdate}
               onDelete={onDelete}
+              canEdit={isAdmin || member.user_id === currentUserId}
             />
           </motion.div>
         ))}
