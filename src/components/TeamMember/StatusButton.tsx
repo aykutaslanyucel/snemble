@@ -39,11 +39,12 @@ export function StatusButton({ status, currentStatus, onClick, color, tooltip }:
             e.preventDefault();
             onClick(status);
           }}
-          className={`w-7 h-7 rounded-full bg-white flex items-center justify-center transition-all ${
+          className={`w-6 h-6 rounded-full bg-white flex items-center justify-center transition-all ${
             currentStatus === status 
               ? 'shadow-md transform scale-105' 
               : 'shadow-sm hover:scale-105'
           }`}
+          style={{ boxShadow: currentStatus === status ? '0 3px 10px rgba(0,0,0,0.15)' : '' }}
           aria-label={tooltip}
         >
           {getIcon()}

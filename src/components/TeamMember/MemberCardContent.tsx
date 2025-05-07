@@ -6,6 +6,7 @@ import { TeamMemberStatus } from "@/types/TeamMemberTypes";
 import { Plus, Check, User, Clock, X, Coffee } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { getCardBackground } from "./CardBackground";
 
 interface MemberCardContentProps {
   position: string;
@@ -46,15 +47,15 @@ export function MemberCardContent({
   const getStatusIcon = (status: TeamMemberStatus) => {
     switch (status) {
       case "available":
-        return <Check className="h-3.5 w-3.5 text-green-600" />;
+        return <Check className="h-3.5 w-3.5 text-gray-700" />;
       case "someAvailability":
-        return <User className="h-3.5 w-3.5 text-blue-600" />;
+        return <User className="h-3.5 w-3.5 text-gray-700" />;
       case "busy":
-        return <Clock className="h-3.5 w-3.5 text-yellow-600" />;
+        return <Clock className="h-3.5 w-3.5 text-gray-700" />;
       case "seriouslyBusy":
-        return <X className="h-3.5 w-3.5 text-red-600" />;
+        return <X className="h-3.5 w-3.5 text-gray-700" />;
       case "away":
-        return <Coffee className="h-3.5 w-3.5 text-gray-600" />;
+        return <Coffee className="h-3.5 w-3.5 text-gray-700" />;
       default:
         return null;
     }
@@ -77,23 +78,8 @@ export function MemberCardContent({
     }
   };
 
-  // Get status badge color
-  const getStatusBadgeColor = (status: TeamMemberStatus) => {
-    switch (status) {
-      case "available":
-        return "bg-green-100 border-green-200";
-      case "someAvailability":
-        return "bg-blue-100 border-blue-200";
-      case "busy":
-        return "bg-yellow-100 border-yellow-200";
-      case "seriouslyBusy":
-        return "bg-red-100 border-red-200";
-      case "away":
-        return "bg-gray-100 border-gray-200";
-      default:
-        return "bg-white border-gray-100";
-    }
-  };
+  // Get color for this status
+  const cardStyle = getCardBackground({ status: currentStatus } as TeamMember);
 
   return (
     <CardContent className="px-6 pt-0 pb-6 space-y-6 relative">
@@ -145,11 +131,12 @@ export function MemberCardContent({
             />
             <div className="mt-2">
               <Badge 
-                className={`inline-flex items-center gap-1 px-3 py-1.5 ${getStatusBadgeColor(currentStatus)}`}
+                className="inline-flex items-center gap-1 px-3 py-1.5"
+                style={{ background: cardStyle.background }}
                 variant="outline"
               >
                 <span className="flex-shrink-0">{getStatusIcon(currentStatus)}</span>
-                <span className="text-xs font-medium">{getStatusText(currentStatus)}</span>
+                <span className="text-xs font-medium text-gray-700">{getStatusText(currentStatus)}</span>
               </Badge>
             </div>
           </div>
@@ -158,11 +145,12 @@ export function MemberCardContent({
         <div className="space-y-3">
           <h4 className="text-gray-700 font-medium">Status</h4>
           <Badge 
-            className={`inline-flex items-center gap-1.5 px-3 py-1.5 ${getStatusBadgeColor(currentStatus)}`}
+            className="inline-flex items-center gap-1.5 px-3 py-1.5"
+            style={{ background: cardStyle.background }}
             variant="outline"
           >
             <span className="flex-shrink-0">{getStatusIcon(currentStatus)}</span>
-            <span className="text-xs font-medium">{getStatusText(currentStatus)}</span>
+            <span className="text-xs font-medium text-gray-700">{getStatusText(currentStatus)}</span>
           </Badge>
         </div>
       )}
