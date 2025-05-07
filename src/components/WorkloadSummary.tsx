@@ -8,19 +8,7 @@ import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { Button } from "@/components/ui/button";
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
 import { format, subMonths, subYears, startOfWeek, subWeeks, addDays, setHours, isMonday, previousMonday, endOfDay, getDay } from "date-fns";
-import { TeamMember, TeamMemberStatus } from "@/types/TeamMemberTypes";
-
-type TeamMemberStatus = 'available' | 'someAvailability' | 'busy' | 'seriouslyBusy' | 'away';
-
-interface TeamMember {
-  id: string;
-  name: string;
-  position: string;
-  status: TeamMemberStatus;
-  projects: string[];
-  lastUpdated: Date;
-  role?: 'Associate' | 'Senior Associate' | 'Managing Associate' | 'Partner' | 'Assistant';
-}
+import { TeamMember, TeamMemberStatus, TeamMemberRole } from "@/types/TeamMemberTypes";
 
 interface Props {
   members: TeamMember[];
@@ -240,7 +228,7 @@ const DonutChart = ({ percentage, color, gradientColor, label, count, icon: Icon
   );
 };
 
-function determineRoleFromPosition(position: string): TeamMember['role'] {
+function determineRoleFromPosition(position: string): TeamMemberRole {
   position = position.toLowerCase();
   
   if (position.includes('partner')) return 'Partner';
