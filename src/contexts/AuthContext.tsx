@@ -1,7 +1,7 @@
-
 import { createContext, useContext, useState, useEffect } from "react";
 import { v4 as uuidv4 } from "uuid";
 import { getOrCreateTeamMemberForUser } from "@/lib/teamMemberUtils";
+import { toast } from "sonner";
 
 // Define the User type
 interface User {
@@ -49,8 +49,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       
       // Use consistent UUIDs for specific test users for consistency with Supabase
       let userId;
+      let userRole = 'user';
+      
       if (email === 'aykut.yucel@snellman.com') {
         userId = "b82c63f6-1aa9-4150-a857-eeac0b9c921b"; // Fixed UUID for admin
+        userRole = 'admin';
       } else if (email === 'klara.hasselberg@snellman.com') {
         userId = "35fa5e15-e3f2-48c5-900d-63d17fae865c"; // Updated UUID for Klara to match Supabase
       } else if (email === 'test@snellman.com') {
@@ -66,6 +69,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         role: email === 'aykut.yucel@snellman.com' ? 'admin' : 'user'
       };
       
+      console.info("Login successful for:", newUser);
+      
       setUser(newUser);
       setIsAdmin(newUser.role === 'admin');
       
@@ -78,6 +83,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         console.log("Team member record confirmed for user:", newUser.id);
       } catch (error: any) {
         console.error("Error ensuring team member exists on login:", error);
+        toast.error("Could not initialize your team profile", {
+          description: "Please try refreshing the page."
+        });
         // Don't throw here - allow login to succeed even if team member creation fails
         // We'll just log the error and let the user continue
       }
@@ -154,6 +162,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     if (storedUser) {
       try {
         const parsedUser = JSON.parse(storedUser);
+        console.info("Restored session for user:", parsedUser);
         setUser(parsedUser);
         setIsAdmin(parsedUser.role === 'admin');
         
@@ -164,6 +173,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           })
           .catch(error => {
             console.error("Error ensuring team member exists on session restore:", error);
+            toast.error("Could not initialize your team profile", {
+              description: "Please try refreshing the page."
+            });
             // Continue with the session even if team member creation/verification fails
           });
       } catch (error) {

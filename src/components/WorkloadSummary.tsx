@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useMemo } from "react";
 import { Card } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
@@ -76,6 +76,7 @@ const roleGroups = {
   'Assistant': 'Assistant',
 };
 
+// Move this function outside component to prevent recreation on each render
 const generateMockHistoricalData = (period: 'month' | 'year') => {
   const data = [];
   const intervals = period === 'month' ? 4 : 12;
@@ -87,6 +88,7 @@ const generateMockHistoricalData = (period: 'month' | 'year') => {
     const mondayDate = i === 0 ? currentDate : endOfDay(subWeeks(currentDate, i));
     
     const baseCapacity = 75;
+    // Use a deterministic calculation instead of Math.random()
     const variance = Math.sin(i * 0.5) * 15;
     const capacity = Math.floor(baseCapacity + variance);
     
@@ -251,25 +253,31 @@ export default function WorkloadSummary({
 }: Props) {
   const [timeRange, setTimeRange] = React.useState<'month' | 'year'>('month');
   const [showRoleMetrics, setShowRoleMetrics] = React.useState<boolean>(true);
-  const historicalData = React.useMemo(() => generateMockHistoricalData(timeRange), [timeRange]);
+  
+  // Use useMemo to stabilize data across renders
+  const historicalData = useMemo(() => generateMockHistoricalData(timeRange), [timeRange]);
 
-  const workloadData = Object.entries(statusLabels).map(([status, label], index) => {
-    const statusKey = status as TeamMemberStatus;
-    const count = members.filter(m => m.status === statusKey).length;
-    const totalMembers = members.length;
-    const percentage = totalMembers > 0 ? (count / totalMembers) * 100 : 0;
-    
-    return {
-      status: label,
-      count,
-      color: statusColors[statusKey],
-      gradientColor: statusGradientColors[statusKey],
-      percentage,
-      index,
-    };
-  });
+  // Use useMemo for workload data to prevent recalculation on each render
+  const workloadData = useMemo(() => {
+    return Object.entries(statusLabels).map(([status, label], index) => {
+      const statusKey = status as TeamMemberStatus;
+      const count = members.filter(m => m.status === statusKey).length;
+      const totalMembers = members.length;
+      const percentage = totalMembers > 0 ? (count / totalMembers) * 100 : 0;
+      
+      return {
+        status: label,
+        count,
+        color: statusColors[statusKey],
+        gradientColor: statusGradientColors[statusKey],
+        percentage,
+        index,
+      };
+    });
+  }, [members]);
 
-  const roleMetricsData = React.useMemo(() => {
+  // Use useMemo for role metrics data
+  const roleMetricsData = useMemo(() => {
     const membersWithRoles = members.map(member => ({
       ...member,
       role: member.role || determineRoleFromPosition(member.position)
@@ -327,14 +335,19 @@ export default function WorkloadSummary({
       });
   }, [members]);
 
-  const activeMembers = members.filter(m => m.status !== "away");
-  const availableMembers = members.filter(m => m.status === "available" || m.status === "someAvailability");
-  const usedCapacity = activeMembers.reduce((acc, member) => {
-    return acc + statusWeights[member.status];
-  }, 0);
+  // Calculate capacity once per render with useMemo
+  const { activeMembers, availableMembers, capacityPercentage } = useMemo(() => {
+    const active = members.filter(m => m.status !== "away");
+    const available = members.filter(m => m.status === "available" || m.status === "someAvailability");
+    const usedCapacity = active.reduce((acc, member) => {
+      return acc + statusWeights[member.status];
+    }, 0);
 
-  const maxPossibleCapacity = activeMembers.length * 100;
-  const capacityPercentage = maxPossibleCapacity ? Math.min((usedCapacity / maxPossibleCapacity) * 100, 100) : 0;
+    const maxPossibleCapacity = active.length * 100;
+    const capacity = maxPossibleCapacity ? Math.min((usedCapacity / maxPossibleCapacity) * 100, 100) : 0;
+    
+    return { activeMembers: active, availableMembers: available, capacityPercentage: capacity };
+  }, [members]);
 
   if (showOnlyCapacity) {
     return (

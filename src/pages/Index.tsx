@@ -19,6 +19,7 @@ import {
   canEditTeamMember,
   getOrCreateTeamMemberForUser 
 } from "@/lib/teamMemberUtils";
+import { toast as sonnerToast } from "sonner";
 
 export default function Index() {
   const [members, setMembers] = useState<TeamMember[]>([]);
@@ -123,7 +124,7 @@ export default function Index() {
       }
       
       // Log detailed permission info for debugging
-      console.log(`Attempting to update member ${memberToUpdate.name}:`, { 
+      console.info(`Attempting to update member ${memberToUpdate.name}:`, { 
         memberId: id,
         memberUserId: memberToUpdate.user_id, 
         currentUserId: user?.id,
@@ -132,9 +133,9 @@ export default function Index() {
         user
       });
       
-      // Check if user has permission to update this member
-      // For admins, we'll always allow updates regardless of user_id
-      if (isAdmin || memberToUpdate.user_id === user?.id) {
+      // Admin check is done first for clarity
+      if (isAdmin) {
+        console.info(`Admin ${user?.id} updating team member ${id}`);
         const updates: { [key: string]: any } = {};
         
         if (field === 'projects' && typeof value === 'string') {
@@ -145,25 +146,46 @@ export default function Index() {
         
         await updateTeamMember(id, updates);
         
-        if (field === 'projects') {
-          toast({
-            title: "Projects updated",
-            description: "Team member's projects have been updated successfully.",
-          });
-        }
-      } else {
-        toast({
-          title: "Permission denied",
-          description: "You can only update your own profile unless you're an admin.",
-          variant: "destructive",
+        sonnerToast.success(`Successfully updated ${memberToUpdate.name}`, {
+          description: `The ${field} was updated successfully.`
         });
+        
+        return;
+      } 
+      
+      // Non-admin users can only edit their own profile
+      if (memberToUpdate.user_id === user?.id) {
+        console.info(`User ${user?.id} updating their own team member ${id}`);
+        const updates: { [key: string]: any } = {};
+        
+        if (field === 'projects' && typeof value === 'string') {
+          updates.projects = value.split(/[;,]/).map(p => p.trim()).filter(p => p.length > 0);
+        } else {
+          updates[field] = value;
+        }
+        
+        await updateTeamMember(id, updates);
+        
+        sonnerToast.success(`Your profile was updated`, {
+          description: `The ${field} was updated successfully.`
+        });
+        
         return;
       }
-    } catch (error) {
+      
+      // If we get here, the user doesn't have permission
+      console.error("Permission denied for user", user?.id, "to edit member", id);
+      toast({
+        title: "Permission denied",
+        description: "You can only update your own profile unless you're an admin.",
+        variant: "destructive",
+      });
+      
+    } catch (error: any) {
       console.error("Update team member error:", error);
       toast({
-        title: "Error",
-        description: "Failed to update team member. Please try again.",
+        title: "Error updating team member",
+        description: error?.message || "Failed to update team member. Please try again.",
         variant: "destructive",
       });
     }

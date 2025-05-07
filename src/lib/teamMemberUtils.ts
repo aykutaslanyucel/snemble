@@ -95,7 +95,7 @@ export const addTeamMember = async (teamMember: Omit<TeamMember, 'id'>): Promise
 
 // Update a team member
 export const updateTeamMember = async (id: string, updates: Partial<TeamMember>): Promise<TeamMember> => {
-  console.log(`Updating team member with ID: ${id}`, updates);
+  console.info(`Updating team member with ID: ${id}`, updates);
   
   const dbUpdates: any = {};
   
@@ -108,21 +108,31 @@ export const updateTeamMember = async (id: string, updates: Partial<TeamMember>)
   if ('user_id' in updates) dbUpdates.user_id = updates.user_id;
 
   // Note: We don't need to set last_updated as there's a trigger in the database
+  
+  try {
+    const { data, error } = await supabase
+      .from('team_members')
+      .update(dbUpdates)
+      .eq('id', id)
+      .select()
+      .single();
 
-  const { data, error } = await supabase
-    .from('team_members')
-    .update(dbUpdates)
-    .eq('id', id)
-    .select()
-    .single();
+    if (error) {
+      console.error('Error updating team member:', error);
+      console.error('Error details:', JSON.stringify(error));
+      console.error('Auth status:', supabase.auth.getSession() ? 'Authenticated' : 'Not authenticated');
+      throw error;
+    }
 
-  if (error) {
-    console.error('Error updating team member:', error);
+    console.info(`Successfully updated team member with ID: ${id}`);
+    return mapDbToTeamMember(data);
+  } catch (error: any) {
+    console.error('Exception in updateTeamMember:', error?.message || error);
+    if (error?.code === 'PGRST116') {
+      console.error('This appears to be a Row Level Security error. Checking authentication...');
+    }
     throw error;
   }
-
-  console.log(`Successfully updated team member with ID: ${id}`);
-  return mapDbToTeamMember(data);
 };
 
 // Delete a team member
@@ -148,10 +158,16 @@ export const canEditTeamMember = (
   currentUserId: string | undefined, 
   isAdmin: boolean
 ): boolean => {
-  if (!currentUserId) return false;
+  if (!currentUserId) {
+    console.log("No current user ID provided, cannot edit");
+    return false;
+  }
   
   // Admins can edit any team member
-  if (isAdmin) return true;
+  if (isAdmin) {
+    console.log(`Admin ${currentUserId} can edit team member ${teamMember.id}`);
+    return true;
+  }
   
   console.log("Checking edit permission:", { 
     teamMemberUserId: teamMember.user_id, 
@@ -165,7 +181,7 @@ export const canEditTeamMember = (
 
 // Get or create a team member for a user
 export const getOrCreateTeamMemberForUser = async (userId: string, email: string, role: string): Promise<TeamMember> => {
-  console.log(`Getting or creating team member for user: ${userId}, email: ${email}`);
+  console.log(`Getting or creating team member for user: ${userId}, email: ${email}, role: ${role}`);
   
   if (!userId || !isValidUUID(userId)) {
     console.error(`Invalid UUID format for userId: ${userId}`);
