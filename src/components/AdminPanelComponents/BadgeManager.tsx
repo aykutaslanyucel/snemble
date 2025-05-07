@@ -65,7 +65,12 @@ export function BadgeManager() {
       if (error) throw error;
       
       if (data) {
-        setBadges(data as Badge[]);
+        // Fix: Convert the string timestamp to Date objects
+        const convertedBadges: Badge[] = data.map(badge => ({
+          ...badge,
+          created_at: new Date(badge.created_at)
+        }));
+        setBadges(convertedBadges);
       } else {
         setBadges([]);
       }
@@ -188,8 +193,14 @@ export function BadgeManager() {
         
       if (insertError) throw insertError;
       
+      // Fix: Parse the created_at as a Date object
+      const newBadgeWithDate: Badge = {
+        ...badgeData,
+        created_at: new Date(badgeData.created_at)
+      };
+      
       // 3. Update local state
-      setBadges([...badges, badgeData as Badge]);
+      setBadges([...badges, newBadgeWithDate]);
       
       // 4. Reset form
       setNewBadge({

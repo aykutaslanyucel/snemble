@@ -73,7 +73,8 @@ export function MemberCard({ member, onUpdate, onDelete, canEdit }: MemberCardPr
         className={`h-full overflow-hidden rounded-2xl shadow-md ${cardStyle.className}`}
         style={{ 
           background: cardStyle.background,
-          boxShadow: "0 4px 20px rgba(0, 0, 0, 0.08)"
+          boxShadow: "0 4px 20px rgba(0, 0, 0, 0.08)",
+          backgroundSize: cardStyle.className ? "200% 200%" : "auto"
         }}
       >
         {/* Add badge display if present */}

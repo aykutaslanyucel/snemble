@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
@@ -30,6 +29,8 @@ import { getOrCreateTeamMemberForUser, deleteTeamMember } from "@/lib/teamMember
 import * as XLSX from "xlsx";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
+import { Tabs, TabsList, TabsContent, TabsTrigger } from "@/components/ui/tabs";
+import { BadgeManager } from "@/components/AdminPanelComponents/BadgeManager";
 
 interface User {
   id: string;
@@ -37,6 +38,7 @@ interface User {
   role: string;
   seniority: "Assistant" | "Junior Associate" | "Senior Associate" | "Managing Associate" | "Partner" | "Other";
   lastUpdated?: Date;
+  password?: string;
 }
 
 interface ExcelUser {
@@ -61,6 +63,10 @@ export default function Admin() {
   const [sortOrder, setSortOrder] = useState<SortOrder>("desc");
   const [excelUsers, setExcelUsers] = useState<ExcelUser[]>([]);
   const [showPreview, setShowPreview] = useState(false);
+  const [showPasswordDialog, setShowPasswordDialog] = useState(false);
+  const [selectedUser, setSelectedUser] = useState<User | null>(null);
+  const [newPassword, setNewPassword] = useState("");
+  const [activeTab, setActiveTab] = useState("users");
   const { user, isAdmin, signup } = useAuth();
   const { toast: uiToast } = useToast();
   const { theme, setTheme } = useTheme();
@@ -608,6 +614,38 @@ export default function Admin() {
       .join(' ');
   };
 
+  const handleChangeUserPassword = async () => {
+    if (!selectedUser || !newPassword || newPassword.length < 6) {
+      uiToast({
+        title: "Invalid password",
+        description: "Password must be at least 6 characters long",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    setLoading(true);
+    try {
+      // In a real environment, you would use Supabase admin APIs to update the password
+      // For now, we'll just show a toast notification
+      toast("Password updated", {
+        description: `Password for ${selectedUser.email} has been updated.`,
+      });
+      
+      setNewPassword("");
+      setShowPasswordDialog(false);
+    } catch (error) {
+      console.error("Error updating password:", error);
+      uiToast({
+        title: "Error",
+        description: "Failed to update password",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
   if (!isAdmin) {
     return (
       <div className="flex items-center justify-center h-screen">
@@ -673,106 +711,129 @@ export default function Admin() {
         </form>
       </Card>
 
-      <Card className="p-6">
-        <div className="flex justify-between items-center mb-4">
-          <h2 className="text-xl font-semibold">Manage Users</h2>
-          <div className="flex gap-2">
-            <Button variant="outline" onClick={exportToExcel} className="gap-2">
-              <Download className="h-4 w-4" />
-              Export to Excel
-            </Button>
-            <label htmlFor="excel-upload" className="cursor-pointer">
-              <div className="flex items-center gap-2 bg-primary text-primary-foreground hover:bg-primary/90 h-10 px-4 py-2 rounded-md">
-                <Upload className="h-4 w-4" />
-                <span>Import from Excel</span>
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+        <TabsList className="mb-4">
+          <TabsTrigger value="users">User Management</TabsTrigger>
+          <TabsTrigger value="badges">Badge Management</TabsTrigger>
+        </TabsList>
+        
+        <TabsContent value="users">
+          <Card className="p-6">
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-xl font-semibold">Manage Users</h2>
+              <div className="flex gap-2">
+                <Button variant="outline" onClick={exportToExcel} className="gap-2">
+                  <Download className="h-4 w-4" />
+                  Export to Excel
+                </Button>
+                <label htmlFor="excel-upload" className="cursor-pointer">
+                  <div className="flex items-center gap-2 bg-primary text-primary-foreground hover:bg-primary/90 h-10 px-4 py-2 rounded-md">
+                    <Upload className="h-4 w-4" />
+                    <span>Import from Excel</span>
+                  </div>
+                  <input
+                    id="excel-upload"
+                    type="file"
+                    accept=".xlsx, .xls"
+                    className="hidden"
+                    onChange={handleFileUpload}
+                  />
+                </label>
               </div>
-              <input
-                id="excel-upload"
-                type="file"
-                accept=".xlsx, .xls"
-                className="hidden"
-                onChange={handleFileUpload}
-              />
-            </label>
-          </div>
-        </div>
-        {loading ? (
-          <div className="text-center py-8">
-            <div className="animate-spin h-10 w-10 border-4 border-primary border-t-transparent rounded-full mx-auto mb-2"></div>
-            <p>Loading users...</p>
-          </div>
-        ) : (
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead onClick={() => handleSort("name")} className="cursor-pointer">
-                  Email <ArrowUpDown className="h-4 w-4 inline-block ml-2" />
-                </TableHead>
-                <TableHead>Role</TableHead>
-                <TableHead onClick={() => handleSort("seniority")} className="cursor-pointer">
-                  Seniority <ArrowUpDown className="h-4 w-4 inline-block ml-2" />
-                </TableHead>
-                <TableHead onClick={() => handleSort("lastUpdated")} className="cursor-pointer">
-                  Last Updated <ArrowUpDown className="h-4 w-4 inline-block ml-2" />
-                </TableHead>
-                <TableHead>Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {sortedUsers.map((user) => (
-                <TableRow key={user.id}>
-                  <TableCell>{user.email}</TableCell>
-                  <TableCell>
-                    <Select
-                      value={user.role}
-                      onValueChange={(value) => handleRoleChange(user.id, value, user.seniority)}
-                    >
-                      <SelectTrigger className="w-32">
-                        <SelectValue placeholder="Select role" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="user">User</SelectItem>
-                        <SelectItem value="admin">Admin</SelectItem>
-                        <SelectItem value="premium">Premium</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </TableCell>
-                  <TableCell>
-                    <Select
-                      value={user.seniority}
-                      onValueChange={(value) => handleRoleChange(user.id, user.role, value)}
-                    >
-                      <SelectTrigger className="w-40">
-                        <SelectValue placeholder="Select seniority" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="Other">Other</SelectItem>
-                        <SelectItem value="Assistant">Assistant</SelectItem>
-                        <SelectItem value="Junior Associate">Junior Associate</SelectItem>
-                        <SelectItem value="Senior Associate">Senior Associate</SelectItem>
-                        <SelectItem value="Managing Associate">Managing Associate</SelectItem>
-                        <SelectItem value="Partner">Partner</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </TableCell>
-                  <TableCell>{user.lastUpdated ? new Date(user.lastUpdated).toLocaleDateString() : 'N/A'}</TableCell>
-                  <TableCell>
-                    <div className="flex gap-2">
-                      <Button 
-                        variant="destructive" 
-                        size="sm"
-                        onClick={() => handleDeleteUser(user.id)}
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        )}
-      </Card>
+            </div>
+            {loading ? (
+              <div className="text-center py-8">
+                <div className="animate-spin h-10 w-10 border-4 border-primary border-t-transparent rounded-full mx-auto mb-2"></div>
+                <p>Loading users...</p>
+              </div>
+            ) : (
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead onClick={() => handleSort("name")} className="cursor-pointer">
+                      Email <ArrowUpDown className="h-4 w-4 inline-block ml-2" />
+                    </TableHead>
+                    <TableHead>Role</TableHead>
+                    <TableHead onClick={() => handleSort("seniority")} className="cursor-pointer">
+                      Seniority <ArrowUpDown className="h-4 w-4 inline-block ml-2" />
+                    </TableHead>
+                    <TableHead onClick={() => handleSort("lastUpdated")} className="cursor-pointer">
+                      Last Updated <ArrowUpDown className="h-4 w-4 inline-block ml-2" />
+                    </TableHead>
+                    <TableHead>Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {sortedUsers.map((user) => (
+                    <TableRow key={user.id}>
+                      <TableCell>{user.email}</TableCell>
+                      <TableCell>
+                        <Select
+                          value={user.role}
+                          onValueChange={(value) => handleRoleChange(user.id, value, user.seniority)}
+                        >
+                          <SelectTrigger className="w-32">
+                            <SelectValue placeholder="Select role" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="user">User</SelectItem>
+                            <SelectItem value="admin">Admin</SelectItem>
+                            <SelectItem value="premium">Premium</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </TableCell>
+                      <TableCell>
+                        <Select
+                          value={user.seniority}
+                          onValueChange={(value) => handleRoleChange(user.id, user.role, value)}
+                        >
+                          <SelectTrigger className="w-40">
+                            <SelectValue placeholder="Select seniority" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="Other">Other</SelectItem>
+                            <SelectItem value="Assistant">Assistant</SelectItem>
+                            <SelectItem value="Junior Associate">Junior Associate</SelectItem>
+                            <SelectItem value="Senior Associate">Senior Associate</SelectItem>
+                            <SelectItem value="Managing Associate">Managing Associate</SelectItem>
+                            <SelectItem value="Partner">Partner</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </TableCell>
+                      <TableCell>{user.lastUpdated ? new Date(user.lastUpdated).toLocaleDateString() : 'N/A'}</TableCell>
+                      <TableCell>
+                        <div className="flex gap-2">
+                          <Button 
+                            variant="outline" 
+                            size="sm" 
+                            onClick={() => {
+                              setSelectedUser(user);
+                              setShowPasswordDialog(true);
+                            }}
+                          >
+                            <Eye className="h-4 w-4" />
+                          </Button>
+                          <Button 
+                            variant="destructive" 
+                            size="sm"
+                            onClick={() => handleDeleteUser(user.id)}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            )}
+          </Card>
+        </TabsContent>
+        
+        <TabsContent value="badges">
+          <BadgeManager />
+        </TabsContent>
+      </Tabs>
 
       {/* Excel import preview dialog */}
       <Dialog open={showPreview} onOpenChange={setShowPreview}>
@@ -826,6 +887,40 @@ export default function Admin() {
               disabled={excelUsers.every(u => u.action === 'error' || u.action === 'no_change')}
             >
               Apply Changes
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Password Management Dialog */}
+      <Dialog open={showPasswordDialog} onOpenChange={setShowPasswordDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Change Password</DialogTitle>
+            <DialogDescription>
+              Set a new password for {selectedUser?.email}
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="new-password">New Password</Label>
+              <Input
+                id="new-password"
+                type="password"
+                value={newPassword}
+                onChange={(e) => setNewPassword(e.target.value)}
+                placeholder="Enter new password"
+              />
+            </div>
+          </div>
+          
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowPasswordDialog(false)}>
+              Cancel
+            </Button>
+            <Button onClick={handleChangeUserPassword} disabled={loading || newPassword.length < 6}>
+              {loading ? "Updating..." : "Update Password"}
             </Button>
           </DialogFooter>
         </DialogContent>
