@@ -122,6 +122,16 @@ export default function Index() {
         throw new Error("Member not found");
       }
       
+      // Log detailed permission info for debugging
+      console.log(`Attempting to update member ${memberToUpdate.name}:`, { 
+        memberId: id,
+        memberUserId: memberToUpdate.user_id, 
+        currentUserId: user?.id,
+        isAdmin,
+        canEdit: canEditTeamMember(memberToUpdate, user?.id, isAdmin),
+        user
+      });
+      
       // Check if user has permission to update this member
       if (!canEditTeamMember(memberToUpdate, user?.id, isAdmin)) {
         toast({
@@ -149,6 +159,7 @@ export default function Index() {
         });
       }
     } catch (error) {
+      console.error("Update team member error:", error);
       toast({
         title: "Error",
         description: "Failed to update team member. Please try again.",

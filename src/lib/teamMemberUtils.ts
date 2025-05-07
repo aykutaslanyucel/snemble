@@ -1,4 +1,3 @@
-
 import { TeamMember, TeamMemberStatus, TeamMemberRole } from "@/types/TeamMemberTypes";
 import { supabase } from "@/integrations/supabase/client";
 import { validate as isValidUUID } from 'uuid';
@@ -150,6 +149,13 @@ export const canEditTeamMember = (
 ): boolean => {
   if (!currentUserId) return false;
   if (isAdmin) return true;
+  
+  console.log("Checking edit permission:", { 
+    teamMemberUserId: teamMember.user_id, 
+    currentUserId,
+    isMatch: teamMember.user_id === currentUserId
+  });
+  
   return teamMember.user_id === currentUserId;
 };
 

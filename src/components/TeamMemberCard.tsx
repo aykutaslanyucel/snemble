@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { motion } from "framer-motion";
 import { format, formatDistanceToNow } from "date-fns";
@@ -60,6 +59,13 @@ export default function TeamMemberCard({
   onDelete,
   canEdit
 }: Props) {
+  console.log("Team member card rendering:", { 
+    memberId: member.id, 
+    memberName: member.name, 
+    canEdit: canEdit,
+    userId: member.user_id
+  });
+
   const [isEditing, setIsEditing] = useState(false);
   const [editedName, setEditedName] = useState(member.name);
   const [editedPosition, setEditedPosition] = useState(member.position);
