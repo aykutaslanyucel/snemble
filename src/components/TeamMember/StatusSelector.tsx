@@ -19,7 +19,7 @@ interface StatusSelectorProps {
 
 export function StatusSelector({ currentStatus, onStatusChange }: StatusSelectorProps) {
   return (
-    <div className="flex items-center space-x-1.5 mb-1">
+    <div className="flex items-center space-x-1 mb-1">
       {STATUS_BUTTONS.map((statusBtn) => (
         <StatusButton
           key={statusBtn.status}
