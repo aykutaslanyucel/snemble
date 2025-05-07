@@ -11,6 +11,7 @@ import Login from "./pages/Login";
 import Signup from "./pages/Signup";
 import Admin from "./pages/Admin";
 import NotFound from "./pages/NotFound";
+import { useEffect } from "react";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -21,9 +22,29 @@ const queryClient = new QueryClient({
   },
 });
 
+// Helper function to log app initialization for debugging
+function useAppDebug() {
+  useEffect(() => {
+    console.log("App initialized");
+    console.log("React version:", React.version);
+    console.log("Environment:", import.meta.env.MODE);
+    
+    // Check for common issues
+    try {
+      const testObj = { test: true };
+      console.log("JSON stringify test:", JSON.stringify(testObj));
+    } catch (error) {
+      console.error("JSON stringify error:", error);
+    }
+  }, []);
+}
+
 // Define route protection components inside the App component so they can use useAuth
 function AppRoutes() {
   const { user, isAdmin, loading } = useAuth();
+  
+  // Use our debug hook
+  useAppDebug();
   
   console.log("Auth state in AppRoutes:", { user, isAdmin, loading });
 

@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -28,9 +29,7 @@ const STATUS_BUTTONS = [
   { status: "away", color: "#F1F0FB", tooltip: "Away" },
 ];
 
-// Export as named export - this is the primary way we'll import this component
 export function TeamMemberCard({ member, onUpdate, onDelete, canEdit }: TeamMemberCardProps) {
-  // ... keep existing code (component state definitions)
   const [isEditingName, setIsEditingName] = useState(false);
   const [name, setName] = useState(member.name);
   const [isEditingProjects, setIsEditingProjects] = useState(false);
@@ -72,6 +71,9 @@ export function TeamMemberCard({ member, onUpdate, onDelete, canEdit }: TeamMemb
 
   // Get the appropriate background based on member's customization or status
   const getCardBackground = () => {
+    // Add a console log to check the member's customization
+    console.log("Member customization:", member.customization);
+    
     if (member.customization) {
       if (member.customization.gradient) {
         return {
@@ -268,7 +270,10 @@ export function TeamMemberCard({ member, onUpdate, onDelete, canEdit }: TeamMemb
           <div className="py-4">
             <CardCustomizer 
               teamMember={member} 
-              onUpdate={() => setShowCustomizer(false)}
+              onUpdate={(updates) => {
+                onUpdate(member.id, "customization", updates);
+                setShowCustomizer(false);
+              }}
             />
           </div>
         </DialogContent>

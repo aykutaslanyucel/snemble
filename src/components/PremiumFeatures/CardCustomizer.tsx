@@ -1,252 +1,278 @@
+
 import { useState, useEffect } from 'react';
 import { Card, CardHeader, CardTitle, CardContent, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Input } from "@/components/ui/input";
-import { updateTeamMember } from "@/lib/teamMemberUtils";
+import { Check } from "lucide-react";
 import { TeamMember } from "@/types/TeamMemberTypes";
-import { Sparkles, Palette, Paintbrush, CheckCircle, RefreshCcw } from "lucide-react";
-import { useAuth } from "@/contexts/AuthContext";
-import { useToast } from "@/components/ui/use-toast";
+import { useToast } from "@/hooks/use-toast";
 
-const COLOR_PRESETS = {
-  blue: { color: "#D3E4FD", gradient: "#B3D4FF" },
-  green: { color: "#F2FCE2", gradient: "#D2ECB2" },
-  yellow: { color: "#FEF7CD", gradient: "#FEE69D" },
-  red: { color: "#FFDEE2", gradient: "#FFBEC2" },
-  purple: { color: "#E5DEFF", gradient: "#D6BCFA" }
-};
-
-const GRADIENT_PRESETS = [
-  "linear-gradient(90deg, rgb(254,100,121) 0%, rgb(251,221,186) 100%)",
-  "linear-gradient(to right, #ee9ca7, #ffdde1)",
-  "linear-gradient(90deg, hsla(29, 92%, 70%, 1) 0%, hsla(0, 87%, 73%, 1) 100%)",
-  "linear-gradient(90deg, hsla(221, 45%, 73%, 1) 0%, hsla(220, 78%, 29%, 1) 100%)",
-  "linear-gradient(90deg, hsla(46, 73%, 75%, 1) 0%, hsla(176, 73%, 88%, 1) 100%)",
-  "linear-gradient(90deg, hsla(277, 75%, 84%, 1) 0%, hsla(297, 50%, 51%, 1) 100%)"
-];
+interface CardCustomizationOptions {
+  color?: string;
+  gradient?: string;
+  animate?: boolean;
+}
 
 interface CardCustomizerProps {
   teamMember: TeamMember;
-  onUpdate: () => void;
+  onUpdate: (customization: CardCustomizationOptions) => void;
 }
 
+// Predefined gradients
+const GRADIENTS = [
+  "linear-gradient(135deg, #fdfcfb 0%, #e2d1c3 100%)",
+  "linear-gradient(109.6deg, rgba(223,234,247,1) 11.2%, rgba(244,248,252,1) 91.1%)",
+  "linear-gradient(90deg, hsla(277, 75%, 84%, 1) 0%, hsla(297, 50%, 51%, 1) 100%)",
+  "linear-gradient(90deg, hsla(46, 73%, 75%, 1) 0%, hsla(176, 73%, 88%, 1) 100%)",
+  "linear-gradient(90deg, hsla(59, 86%, 68%, 1) 0%, hsla(134, 36%, 53%, 1) 100%)",
+];
+
+// Predefined solid colors
+const COLORS = [
+  "#D3E4FD", // Blue - Available
+  "#F2FCE2", // Green - Some Availability
+  "#FEF7CD", // Yellow - Busy
+  "#FFDEE2", // Red - Seriously Busy
+  "#F1F0FB", // Purple - Away
+  "#E5DEFF", // Lavender
+];
+
 export function CardCustomizer({ teamMember, onUpdate }: CardCustomizerProps) {
-  const [mode, setMode] = useState<'solid' | 'gradient'>('solid');
-  const [animate, setAnimate] = useState(false);
-  const [selectedColor, setSelectedColor] = useState(teamMember.customization?.color || COLOR_PRESETS.blue.color);
-  const [selectedGradient, setSelectedGradient] = useState(teamMember.customization?.gradient || GRADIENT_PRESETS[0]);
-  const [customColor, setCustomColor] = useState(teamMember.customization?.color || '#D3E4FD');
-  const [customGradient, setCustomGradient] = useState(teamMember.customization?.gradient || GRADIENT_PRESETS[0]);
-  const [saving, setSaving] = useState(false);
-  const { user, isPremium } = useAuth();
+  const [customization, setCustomization] = useState<CardCustomizationOptions>(
+    teamMember.customization || {}
+  );
+  const [customColor, setCustomColor] = useState(customization.color || "");
+  const [customGradient, setCustomGradient] = useState(customization.gradient || "");
   const { toast } = useToast();
-  
+
+  // Used for preview
+  const [previewStyle, setPreviewStyle] = useState({
+    background: teamMember.customization?.gradient || teamMember.customization?.color || "#F1F0FB" 
+  });
+
+  // Update preview when customization changes
   useEffect(() => {
-    // Initialize from team member customization if available
-    if (teamMember.customization) {
-      setMode(teamMember.customization.gradient ? 'gradient' : 'solid');
-      setAnimate(!!teamMember.customization.animate);
-      if (teamMember.customization.color) {
-        setSelectedColor(teamMember.customization.color);
-        setCustomColor(teamMember.customization.color);
-      }
-      if (teamMember.customization.gradient) {
-        setSelectedGradient(teamMember.customization.gradient);
-        setCustomGradient(teamMember.customization.gradient);
-      }
-    }
-  }, [teamMember]);
-
-  if (!isPremium) {
-    return (
-      <Card className="border-dashed border-2 border-primary/50">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Sparkles className="w-5 h-5 text-yellow-400" />
-            Premium Feature
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="text-center py-8">
-          <p className="text-muted-foreground mb-4">
-            Upgrade to premium to customize your capacity card with custom colors and animations.
-          </p>
-          <Button 
-            variant="secondary"
-            className="bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 text-white"
-          >
-            Upgrade to Premium
-          </Button>
-        </CardContent>
-      </Card>
-    );
-  }
-
-  const handleSave = async () => {
-    if (!teamMember.id) return;
+    let background = "";
     
-    setSaving(true);
+    if (customization.gradient) {
+      background = customization.gradient;
+    } else if (customization.color) {
+      background = customization.color;
+    }
+    
+    if (background) {
+      setPreviewStyle({ background });
+    }
+  }, [customization]);
+
+  const handleSelectColor = (color: string) => {
+    const newCustomization = {
+      ...customization,
+      color,
+      gradient: undefined // Remove gradient if color is selected
+    };
+    
+    setCustomization(newCustomization);
+    setCustomColor(color);
+    setCustomGradient("");
+  };
+
+  const handleSelectGradient = (gradient: string) => {
+    const newCustomization = {
+      ...customization,
+      gradient,
+      color: undefined // Remove color if gradient is selected
+    };
+    
+    setCustomization(newCustomization);
+    setCustomGradient(gradient);
+    setCustomColor("");
+  };
+
+  const handleApplyCustomColor = () => {
+    if (!customColor) return;
+    
     try {
-      const customization = {
-        ...teamMember.customization,
-        color: mode === 'solid' ? selectedColor : null,
-        gradient: mode === 'gradient' ? selectedGradient : null,
-        animate: mode === 'gradient' ? animate : false
+      // Very basic validation
+      if (!/^#[0-9A-F]{6}$/i.test(customColor)) {
+        toast({
+          title: "Invalid color format",
+          description: "Please use a valid hex color (e.g., #FF5500)",
+          variant: "destructive"
+        });
+        return;
+      }
+      
+      const newCustomization = {
+        ...customization,
+        color: customColor,
+        gradient: undefined
       };
       
-      await updateTeamMember(teamMember.id, { customization });
-      toast({
-        title: "Customization saved",
-        description: "Your card styling has been updated.",
-      });
-      onUpdate();
+      setCustomization(newCustomization);
     } catch (error) {
-      console.error("Error saving customization:", error);
       toast({
-        title: "Error saving customization",
-        description: "Please try again later.",
+        title: "Invalid color",
+        description: "Please use a valid hex color (e.g., #FF5500)",
         variant: "destructive"
       });
-    } finally {
-      setSaving(false);
     }
   };
 
-  const resetCustomization = async () => {
-    if (!teamMember.id) return;
+  const handleApplyCustomGradient = () => {
+    if (!customGradient) return;
     
-    setSaving(true);
     try {
-      await updateTeamMember(teamMember.id, { 
-        customization: null 
-      });
+      // Basic check if it includes the word gradient
+      if (!customGradient.includes("gradient")) {
+        toast({
+          title: "Invalid gradient format",
+          description: "Please use a valid CSS gradient",
+          variant: "destructive"
+        });
+        return;
+      }
       
-      // Reset local state
-      setMode('solid');
-      setAnimate(false);
-      setSelectedColor(COLOR_PRESETS.blue.color);
-      setSelectedGradient(GRADIENT_PRESETS[0]);
-      setCustomColor('#D3E4FD');
-      setCustomGradient(GRADIENT_PRESETS[0]);
+      const newCustomization = {
+        ...customization, 
+        gradient: customGradient,
+        color: undefined
+      };
       
-      toast({
-        title: "Customization reset",
-        description: "Your card styling has been reset to default.",
-      });
-      onUpdate();
+      setCustomization(newCustomization);
     } catch (error) {
-      console.error("Error resetting customization:", error);
       toast({
-        title: "Error resetting customization",
-        description: "Please try again later.",
+        title: "Invalid gradient",
+        description: "Please use a valid CSS gradient",
         variant: "destructive"
       });
-    } finally {
-      setSaving(false);
     }
+  };
+
+  const handleToggleAnimate = (checked: boolean) => {
+    setCustomization({ ...customization, animate: checked });
+  };
+
+  const handleSave = () => {
+    // Add validation if needed
+    onUpdate(customization);
+    toast({
+      title: "Card customized",
+      description: "Your card style has been updated",
+    });
   };
 
   return (
-    <Card className="overflow-hidden">
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <Palette className="w-5 h-5" />
-          Customize Capacity Card
-        </CardTitle>
-      </CardHeader>
-      <CardContent>
-        <Tabs value={mode} onValueChange={(value) => setMode(value as 'solid' | 'gradient')}>
-          <TabsList className="grid grid-cols-2 mb-4">
-            <TabsTrigger value="solid">Solid Color</TabsTrigger>
-            <TabsTrigger value="gradient">Gradient</TabsTrigger>
-          </TabsList>
-          
-          <TabsContent value="solid">
-            <div className="grid grid-cols-5 gap-2 mb-4">
-              {Object.entries(COLOR_PRESETS).map(([name, { color }]) => (
-                <button
-                  key={name}
-                  className={`h-10 rounded-md transition-all ${
-                    selectedColor === color ? 'ring-2 ring-primary ring-offset-2' : ''
-                  }`}
-                  style={{ backgroundColor: color }}
-                  onClick={() => setSelectedColor(color)}
-                />
-              ))}
-            </div>
-            <div className="flex items-center gap-2 mt-4">
-              <Label htmlFor="custom-color">Custom:</Label>
-              <Input 
-                id="custom-color" 
-                type="color" 
-                value={customColor} 
-                onChange={(e) => {
-                  setCustomColor(e.target.value);
-                  setSelectedColor(e.target.value);
-                }}
-                className="w-16 h-8 p-1"
-              />
-              <span className="text-sm text-muted-foreground">{customColor}</span>
-            </div>
-          </TabsContent>
-          
-          <TabsContent value="gradient">
-            <div className="grid grid-cols-2 gap-2 mb-4">
-              {GRADIENT_PRESETS.map((gradient, index) => (
-                <button
-                  key={index}
-                  className={`h-12 rounded-md transition-all ${
-                    selectedGradient === gradient ? 'ring-2 ring-primary ring-offset-2' : ''
-                  }`}
-                  style={{ background: gradient }}
-                  onClick={() => setSelectedGradient(gradient)}
-                />
-              ))}
-            </div>
-            <div className="flex items-center space-x-2 mt-4">
-              <Switch
-                id="animate"
-                checked={animate}
-                onCheckedChange={setAnimate}
-              />
-              <Label htmlFor="animate">Animate gradient</Label>
-            </div>
-          </TabsContent>
-        </Tabs>
-        
-        <div className="mt-6">
-          <h3 className="mb-2 text-sm font-medium">Live Preview:</h3>
-          <div
-            className={`w-full h-24 rounded-xl border shadow-inner bg-cover ${
-              mode === 'gradient' && animate ? 'animate-gradient' : ''
-            }`}
-            style={{
-              background: mode === 'solid' ? selectedColor : selectedGradient,
-              backgroundSize: mode === 'gradient' ? '400% 400%' : undefined,
-            }}
+    <div className="space-y-6">
+      {/* Preview */}
+      <Card 
+        className={`border ${customization.animate ? "animate-gradient" : ""}`}
+        style={previewStyle}
+      >
+        <CardHeader className="p-4">
+          <CardTitle className="text-base">{teamMember.name}</CardTitle>
+        </CardHeader>
+        <CardContent className="p-4 pt-0">
+          <p className="text-sm">Card preview</p>
+        </CardContent>
+      </Card>
+      
+      {/* Color Presets */}
+      <div>
+        <h3 className="text-sm font-medium mb-2">Solid Colors</h3>
+        <div className="flex flex-wrap gap-2">
+          {COLORS.map(color => (
+            <button
+              key={color}
+              onClick={() => handleSelectColor(color)}
+              className="w-8 h-8 rounded-full border flex items-center justify-center transition-all hover:scale-110"
+              style={{ backgroundColor: color }}
+            >
+              {customization.color === color && !customization.gradient && (
+                <Check className="h-4 w-4 text-gray-700" />
+              )}
+            </button>
+          ))}
+        </div>
+      </div>
+      
+      {/* Gradient Presets */}
+      <div>
+        <h3 className="text-sm font-medium mb-2">Gradient Presets</h3>
+        <div className="flex flex-wrap gap-2">
+          {GRADIENTS.map(gradient => (
+            <button
+              key={gradient}
+              onClick={() => handleSelectGradient(gradient)}
+              className="w-8 h-8 rounded-full border flex items-center justify-center transition-all hover:scale-110"
+              style={{ background: gradient }}
+            >
+              {customization.gradient === gradient && (
+                <Check className="h-4 w-4 text-gray-700" />
+              )}
+            </button>
+          ))}
+        </div>
+      </div>
+      
+      {/* Custom Color Input */}
+      <div className="flex items-end gap-2">
+        <div className="flex-1">
+          <Label htmlFor="custom-color">Custom Color (HEX)</Label>
+          <Input 
+            id="custom-color"
+            value={customColor} 
+            onChange={(e) => setCustomColor(e.target.value)}
+            placeholder="#RRGGBB"
           />
         </div>
-      </CardContent>
-      <CardFooter className="flex justify-between">
-        <Button 
-          variant="outline" 
-          onClick={resetCustomization}
-          disabled={saving}
-        >
-          <RefreshCcw className="w-4 h-4 mr-2" />
+        <Button onClick={handleApplyCustomColor} variant="outline" className="mb-px">
+          Apply
+        </Button>
+      </div>
+      
+      {/* Custom Gradient Input */}
+      <div className="flex items-end gap-2">
+        <div className="flex-1">
+          <Label htmlFor="custom-gradient">Custom CSS Gradient</Label>
+          <Input 
+            id="custom-gradient"
+            value={customGradient} 
+            onChange={(e) => setCustomGradient(e.target.value)}
+            placeholder="linear-gradient(...)"
+          />
+        </div>
+        <Button onClick={handleApplyCustomGradient} variant="outline" className="mb-px">
+          Apply
+        </Button>
+      </div>
+      
+      {/* Animation Toggle */}
+      <div className="flex items-center justify-between">
+        <Label htmlFor="animate-toggle" className="cursor-pointer">
+          Animate gradient
+        </Label>
+        <Switch 
+          id="animate-toggle"
+          checked={!!customization.animate}
+          onCheckedChange={handleToggleAnimate}
+          disabled={!customization.gradient}
+        />
+      </div>
+      
+      {/* Actions */}
+      <div className="flex justify-end gap-2">
+        <Button variant="outline" onClick={() => onUpdate({})}>
           Reset
         </Button>
-        <Button 
-          onClick={handleSave} 
-          disabled={saving}
-        >
-          <CheckCircle className="w-4 h-4 mr-2" />
-          {saving ? 'Saving...' : 'Save Customization'}
+        <Button onClick={handleSave}>
+          Save
         </Button>
-      </CardFooter>
-    </Card>
+      </div>
+    </div>
   );
 }
+
+export default CardCustomizer;
