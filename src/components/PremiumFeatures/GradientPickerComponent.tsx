@@ -1,10 +1,13 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { HexColorPicker } from 'react-colorful';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { GRADIENT_ANGLES, RADIAL_POSITIONS } from './CardCustomizerPresets';
 
 interface GradientPickerComponentProps {
   currentGradient: string;
@@ -21,15 +24,60 @@ export function GradientPickerComponent({
   const [endColor, setEndColor] = useState("#000000");
   const [angle, setAngle] = useState("90");
   const [gradientType, setGradientType] = useState("linear");
+  const [radialPosition, setRadialPosition] = useState("center");
   const [showPicker, setShowPicker] = useState(false);
   const [activeColorPicker, setActiveColorPicker] = useState<"start" | "end" | null>(null);
+  
+  // Parse current gradient on component mount
+  useEffect(() => {
+    if (currentGradient) {
+      try {
+        // Check if it's a linear gradient
+        if (currentGradient.includes('linear-gradient')) {
+          setGradientType("linear");
+          
+          // Extract angle
+          const angleMatch = currentGradient.match(/linear-gradient\((\d+)deg/);
+          if (angleMatch && angleMatch[1]) {
+            setAngle(angleMatch[1]);
+          }
+          
+          // Extract colors
+          const colorsMatch = currentGradient.match(/linear-gradient\(\d+deg,\s*([^,]+),\s*([^)]+)\)/);
+          if (colorsMatch && colorsMatch[1] && colorsMatch[2]) {
+            setStartColor(colorsMatch[1].trim());
+            setEndColor(colorsMatch[2].trim());
+          }
+        } 
+        // Check if it's a radial gradient
+        else if (currentGradient.includes('radial-gradient')) {
+          setGradientType("radial");
+          
+          // Extract position
+          const positionMatch = currentGradient.match(/radial-gradient\(circle at ([^,]+)/);
+          if (positionMatch && positionMatch[1]) {
+            setRadialPosition(positionMatch[1].trim());
+          }
+          
+          // Extract colors
+          const colorsMatch = currentGradient.match(/radial-gradient\(circle(?:\s+at\s+[^,]+)?,\s*([^,]+),\s*([^)]+)\)/);
+          if (colorsMatch && colorsMatch[1] && colorsMatch[2]) {
+            setStartColor(colorsMatch[1].trim());
+            setEndColor(colorsMatch[2].trim());
+          }
+        }
+      } catch (error) {
+        console.error("Error parsing gradient:", error);
+      }
+    }
+  }, [currentGradient]);
   
   // Generate a preview gradient
   const getPreviewGradient = () => {
     if (gradientType === "linear") {
       return `linear-gradient(${angle}deg, ${startColor}, ${endColor})`;
     } else {
-      return `radial-gradient(circle, ${startColor}, ${endColor})`;
+      return `radial-gradient(circle at ${radialPosition}, ${startColor}, ${endColor})`;
     }
   };
   
@@ -79,10 +127,10 @@ export function GradientPickerComponent({
         onClick={togglePicker}
       />
 
-      {/* Simplified gradient picker without nesting multiple Radix UI components */}
+      {/* Gradient picker */}
       {showPicker && (
         <div 
-          className="absolute right-0 mt-2 bg-white border rounded-md shadow-md p-4 z-[100] color-picker-container"
+          className="absolute right-0 mt-2 bg-white dark:bg-gray-800 border rounded-md shadow-md p-4 z-[100] color-picker-container"
           onClick={handlePickerClick}
           style={{ minWidth: '320px' }}
         >
@@ -114,7 +162,7 @@ export function GradientPickerComponent({
                   </div>
 
                   {activeColorPicker === "start" && (
-                    <div className="mt-2 p-2 border rounded-md bg-white shadow-md">
+                    <div className="mt-2 p-2 border rounded-md bg-white dark:bg-gray-700 shadow-md">
                       <HexColorPicker 
                         color={startColor} 
                         onChange={setStartColor} 
@@ -139,7 +187,7 @@ export function GradientPickerComponent({
                   </div>
 
                   {activeColorPicker === "end" && (
-                    <div className="mt-2 p-2 border rounded-md bg-white shadow-md">
+                    <div className="mt-2 p-2 border rounded-md bg-white dark:bg-gray-700 shadow-md">
                       <HexColorPicker 
                         color={endColor} 
                         onChange={setEndColor} 
@@ -152,36 +200,64 @@ export function GradientPickerComponent({
               <TabsContent value="settings" className="space-y-4 pt-2">
                 <div className="space-y-2">
                   <Label>Gradient Type</Label>
-                  <div className="flex gap-2">
-                    <Button 
-                      variant={gradientType === "linear" ? "default" : "outline"}
-                      size="sm"
-                      onClick={() => setGradientType("linear")}
-                      type="button"
-                    >
-                      Linear
-                    </Button>
-                    <Button 
-                      variant={gradientType === "radial" ? "default" : "outline"}
-                      size="sm"
-                      onClick={() => setGradientType("radial")}
-                      type="button"
-                    >
-                      Radial
-                    </Button>
-                  </div>
+                  <RadioGroup 
+                    value={gradientType} 
+                    onValueChange={setGradientType}
+                    className="flex gap-4"
+                  >
+                    <div className="flex items-center space-x-2">
+                      <RadioGroupItem value="linear" id="linear" />
+                      <Label htmlFor="linear">Linear</Label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <RadioGroupItem value="radial" id="radial" />
+                      <Label htmlFor="radial">Radial</Label>
+                    </div>
+                  </RadioGroup>
                 </div>
                 
                 {gradientType === "linear" && (
                   <div className="space-y-2">
                     <Label>Angle ({angle}°)</Label>
-                    <Input 
-                      type="range" 
-                      min="0" 
-                      max="360" 
-                      value={angle} 
-                      onChange={(e) => setAngle(e.target.value)}
-                    />
+                    <div className="space-y-2">
+                      <Input 
+                        type="range" 
+                        min="0" 
+                        max="360" 
+                        value={angle} 
+                        onChange={(e) => setAngle(e.target.value)}
+                      />
+                      <Select value={angle} onValueChange={setAngle}>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select angle" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {GRADIENT_ANGLES.map((angleOption) => (
+                            <SelectItem key={angleOption.value} value={angleOption.value}>
+                              {angleOption.label}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                )}
+                
+                {gradientType === "radial" && (
+                  <div className="space-y-2">
+                    <Label>Position</Label>
+                    <Select value={radialPosition} onValueChange={setRadialPosition}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select position" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {RADIAL_POSITIONS.map((position) => (
+                          <SelectItem key={position.value} value={position.value}>
+                            {position.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                   </div>
                 )}
               </TabsContent>

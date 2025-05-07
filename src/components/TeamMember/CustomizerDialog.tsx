@@ -44,7 +44,8 @@ export function CustomizerDialog({ isOpen, setIsOpen, member, onUpdate }: Custom
           if (
             target.closest('.react-colorful') || 
             target.closest('[data-radix-popper-content-wrapper]') ||
-            target.closest('.color-picker-container')
+            target.closest('.color-picker-container') ||
+            target.closest('[role="dialog"]')
           ) {
             e.preventDefault();
           }

@@ -15,12 +15,25 @@ export type TeamMemberRole =
   | 'Senior Member'
   | 'Junior Associate';
 
+// Define gradient animation types
+export type GradientAnimationType = 'none' | 'gentle' | 'smooth' | 'energetic' | 'dramatic';
+
+// Define gradient types
+export type GradientType = 'linear' | 'radial';
+
 // Define a consistent customization interface
 export interface TeamMemberCustomization {
   color?: string;
   gradient?: string;
   animate?: boolean;
+  animationType?: GradientAnimationType;
   texture?: string;
+  gradientType?: GradientType;
+  gradientAngle?: string;
+  radialPosition?: string;
+  badge?: string;
+  badgePosition?: 'top-left' | 'top-right' | 'bottom-left' | 'bottom-right' | 'center';
+  badgeSize?: 'small' | 'medium' | 'large';
   hat?: string;
   emoji?: string;
 }
@@ -41,4 +54,14 @@ export interface Announcement {
   id: string;
   message: string;
   timestamp: Date;
+}
+
+// Added: Badge interface
+export interface Badge {
+  id: string;
+  name: string;
+  description?: string;
+  imageUrl: string;
+  isActive: boolean;
+  createdAt: Date;
 }

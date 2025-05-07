@@ -1,7 +1,7 @@
 
 import { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
-import { TeamMember, TeamMemberCustomization } from "@/types/TeamMemberTypes";
+import { TeamMember, TeamMemberCustomization, GradientAnimationType } from "@/types/TeamMemberTypes";
 import { useToast } from "@/hooks/use-toast";
 import { CardPreview } from './CardPreview';
 import { ColorSelector } from './ColorSelector';
@@ -10,6 +10,8 @@ import { AnimationToggle } from './AnimationToggle';
 import { ColorPickerComponent } from './ColorPickerComponent';
 import { GradientPickerComponent } from './GradientPickerComponent';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { BadgeSelector } from './BadgeSelector';
+import { supabase } from "@/integrations/supabase/client";
 
 interface CardCustomizerProps {
   teamMember: TeamMember;
@@ -22,12 +24,48 @@ export function CardCustomizer({ teamMember, onUpdate }: CardCustomizerProps) {
     teamMember.customization || {}
   );
   
+  // State for badges
+  const [badges, setBadges] = useState<{ id: string; name: string; imageUrl: string }[]>([]);
+  const [loadingBadges, setLoadingBadges] = useState(false);
+  
   const { toast } = useToast();
 
   // Used for preview
   const [previewStyle, setPreviewStyle] = useState({
     background: teamMember.customization?.gradient || teamMember.customization?.color || "#F1F0FB" 
   });
+
+  // Load available badges on component mount
+  useEffect(() => {
+    const fetchBadges = async () => {
+      setLoadingBadges(true);
+      try {
+        // Check if badges table exists
+        const { data, error } = await supabase
+          .from('badges')
+          .select('id, name, image_url')
+          .eq('is_active', true)
+          .order('name');
+          
+        if (!error && data) {
+          setBadges(data.map(badge => ({
+            id: badge.id,
+            name: badge.name,
+            imageUrl: badge.image_url
+          })));
+        } else {
+          console.log("No badges found or table doesn't exist");
+          setBadges([]);
+        }
+      } catch (error) {
+        console.error("Error fetching badges:", error);
+      } finally {
+        setLoadingBadges(false);
+      }
+    };
+    
+    fetchBadges();
+  }, []);
 
   // Update preview when customization changes
   useEffect(() => {
@@ -80,6 +118,33 @@ export function CardCustomizer({ teamMember, onUpdate }: CardCustomizerProps) {
   const handleToggleAnimate = (checked: boolean) => {
     setCustomization({ ...customization, animate: checked });
   };
+  
+  const handleAnimationTypeChange = (type: GradientAnimationType) => {
+    setCustomization({ ...customization, animationType: type });
+  };
+  
+  const handleSelectBadge = (badgeUrl: string | null) => {
+    if (badgeUrl) {
+      setCustomization({ 
+        ...customization, 
+        badge: badgeUrl,
+        badgePosition: customization.badgePosition || 'top-right',
+        badgeSize: customization.badgeSize || 'medium'
+      });
+    } else {
+      // Remove badge if null is selected
+      const { badge, badgePosition, badgeSize, ...restCustomization } = customization;
+      setCustomization(restCustomization);
+    }
+  };
+  
+  const handleBadgePositionChange = (position: 'top-left' | 'top-right' | 'bottom-left' | 'bottom-right' | 'center') => {
+    setCustomization({ ...customization, badgePosition: position });
+  };
+  
+  const handleBadgeSizeChange = (size: 'small' | 'medium' | 'large') => {
+    setCustomization({ ...customization, badgeSize: size });
+  };
 
   const handleSave = () => {
     // Add validation if needed
@@ -98,13 +163,18 @@ export function CardCustomizer({ teamMember, onUpdate }: CardCustomizerProps) {
           teamMember={teamMember} 
           previewStyle={previewStyle} 
           animate={!!customization.animate}
+          animationType={customization.animationType}
+          badge={customization.badge}
+          badgePosition={customization.badgePosition}
+          badgeSize={customization.badgeSize}
         />
       </div>
       
       <Tabs defaultValue="presets" className="w-full">
-        <TabsList className="grid w-full grid-cols-2 mb-2">
+        <TabsList className="grid w-full grid-cols-3 mb-2">
           <TabsTrigger value="presets">Presets</TabsTrigger>
           <TabsTrigger value="advanced">Advanced</TabsTrigger>
+          <TabsTrigger value="badges">Badges</TabsTrigger>
         </TabsList>
         
         <TabsContent value="presets" className="space-y-4">
@@ -118,6 +188,15 @@ export function CardCustomizer({ teamMember, onUpdate }: CardCustomizerProps) {
           <GradientSelector 
             customization={customization} 
             onSelectGradient={handleSelectGradient} 
+          />
+          
+          {/* Animation Toggle (in presets for easy access) */}
+          <AnimationToggle 
+            animate={!!customization.animate}
+            animationType={customization.animationType || "gentle"}
+            onToggle={handleToggleAnimate}
+            onAnimationTypeChange={handleAnimationTypeChange}
+            disabled={!customization.gradient}
           />
         </TabsContent>
         
@@ -142,14 +221,21 @@ export function CardCustomizer({ teamMember, onUpdate }: CardCustomizerProps) {
             />
           </div>
         </TabsContent>
+        
+        <TabsContent value="badges" className="space-y-4">
+          {/* Badge Selector */}
+          <BadgeSelector
+            badges={badges}
+            selectedBadge={customization.badge}
+            onSelectBadge={handleSelectBadge}
+            onPositionChange={handleBadgePositionChange}
+            onSizeChange={handleBadgeSizeChange}
+            selectedPosition={customization.badgePosition}
+            selectedSize={customization.badgeSize}
+            isLoading={loadingBadges}
+          />
+        </TabsContent>
       </Tabs>
-      
-      {/* Animation Toggle */}
-      <AnimationToggle 
-        animate={!!customization.animate}
-        onToggle={handleToggleAnimate}
-        disabled={!customization.gradient}
-      />
       
       {/* Actions */}
       <div className="flex justify-end gap-2 pt-2 border-t">

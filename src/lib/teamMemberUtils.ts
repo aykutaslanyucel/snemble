@@ -314,25 +314,60 @@ export const subscribeToTeamMembers = (
       callback([]);
     });
   
-  // Then set up real-time changes
-  const subscription = supabase
+  // Then set up real-time changes - FIXED IMPLEMENTATION
+  const channel = supabase
     .channel('team_members_changes')
     .on('postgres_changes', 
-      { event: '*', schema: 'public', table: 'team_members' }, 
-      async () => {
+      { event: '*', schema: 'public', table: 'team_members' },
+      async (payload) => {
+        console.log('Received real-time update:', payload);
         // Re-fetch all team members when any change occurs
         try {
-          const updatedMembers = await fetchTeamMembers();
-          callback(updatedMembers);
+          // For insert/update operations, we can optimize by just updating the specific member
+          if (payload.eventType === 'INSERT' || payload.eventType === 'UPDATE') {
+            const updatedMember = payload.new as any;
+            // Convert to TeamMember type
+            const mappedMember = mapDbToTeamMember(updatedMember);
+            // Fetch all members and update optimistically
+            const allMembers = await fetchTeamMembers();
+            callback(allMembers);
+          } 
+          // For delete operations, we need to refetch all
+          else if (payload.eventType === 'DELETE') {
+            const allMembers = await fetchTeamMembers();
+            callback(allMembers);
+          }
         } catch (error) {
           console.error('Error refreshing team members:', error);
+          // In case of error, refresh the entire list
+          try {
+            const allMembers = await fetchTeamMembers();
+            callback(allMembers);
+          } catch (secondError) {
+            console.error('Failed to refresh team members after error:', secondError);
+          }
         }
       }
     )
-    .subscribe();
+    .subscribe((status, err) => {
+      if (status === 'SUBSCRIBED') {
+        console.log('Successfully subscribed to team members changes');
+      } else if (status === 'CHANNEL_ERROR') {
+        console.error('Error subscribing to team members changes:', err);
+      } else if (status === 'TIMED_OUT') {
+        console.error('Subscription timed out');
+      } else {
+        console.log('Subscription status:', status);
+      }
+    });
   
-  // Return unsubscribe function
+  // Return unsubscribe function with error handling
   return () => {
-    supabase.removeChannel(subscription);
+    try {
+      supabase.removeChannel(channel);
+      console.log('Unsubscribed from team members changes');
+    } catch (error) {
+      console.error('Error unsubscribing from team members changes:', error);
+    }
   };
 };
