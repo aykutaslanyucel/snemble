@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
@@ -129,7 +130,7 @@ export function BadgeSelector({
               >
                 <div className="flex flex-col items-center space-y-1">
                   <div className="p-2 border rounded-md relative h-24 w-24 bg-slate-50">
-                    <div className="absolute top-0 left-0 h-8 w-8 rounded-full border border-dashed flex items-center justify-center translate-x-[-30%] translate-y-[-30%]">
+                    <div className="absolute top-0 left-0 h-8 w-8 rounded-full border border-dashed flex items-center justify-center translate-x-[-120%] translate-y-[-120%]">
                       <div className="h-6 w-6 rounded-full bg-primary"></div>
                     </div>
                   </div>
@@ -141,7 +142,7 @@ export function BadgeSelector({
                 
                 <div className="flex flex-col items-center space-y-1">
                   <div className="p-2 border rounded-md relative h-24 w-24 bg-slate-50">
-                    <div className="absolute top-0 right-0 h-8 w-8 rounded-full border border-dashed flex items-center justify-center translate-x-[30%] translate-y-[-30%]">
+                    <div className="absolute top-0 right-0 h-8 w-8 rounded-full border border-dashed flex items-center justify-center translate-x-[120%] translate-y-[-120%]">
                       <div className="h-6 w-6 rounded-full bg-primary"></div>
                     </div>
                   </div>
@@ -153,7 +154,7 @@ export function BadgeSelector({
                 
                 <div className="flex flex-col items-center space-y-1">
                   <div className="p-2 border rounded-md relative h-24 w-24 bg-slate-50">
-                    <div className="absolute bottom-0 left-0 h-8 w-8 rounded-full border border-dashed flex items-center justify-center translate-x-[-30%] translate-y-[30%]">
+                    <div className="absolute bottom-0 left-0 h-8 w-8 rounded-full border border-dashed flex items-center justify-center translate-x-[-120%] translate-y-[120%]">
                       <div className="h-6 w-6 rounded-full bg-primary"></div>
                     </div>
                   </div>
@@ -165,7 +166,7 @@ export function BadgeSelector({
                 
                 <div className="flex flex-col items-center space-y-1">
                   <div className="p-2 border rounded-md relative h-24 w-24 bg-slate-50">
-                    <div className="absolute bottom-0 right-0 h-8 w-8 rounded-full border border-dashed flex items-center justify-center translate-x-[30%] translate-y-[30%]">
+                    <div className="absolute bottom-0 right-0 h-8 w-8 rounded-full border border-dashed flex items-center justify-center translate-x-[120%] translate-y-[120%]">
                       <div className="h-6 w-6 rounded-full bg-primary"></div>
                     </div>
                   </div>

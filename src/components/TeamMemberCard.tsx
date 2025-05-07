@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { TeamMember, TeamMemberStatus } from "@/types/TeamMemberTypes";
 import { motion } from "framer-motion";
@@ -38,7 +39,7 @@ export function TeamMemberCard({ member, onUpdate, onDelete, canEdit }: TeamMemb
   const animationClass = member.customization?.animate && member.customization?.gradient ? 
     `animate-gradient-${member.customization.animationType || 'gentle'}` : '';
   
-  // Calculate badge position styles
+  // Calculate badge position styles with much larger offsets to create "hat" effect
   const getBadgePositionStyle = () => {
     if (!member.customization?.badge) return {};
     
@@ -53,10 +54,10 @@ export function TeamMemberCard({ member, onUpdate, onDelete, canEdit }: TeamMemb
     }
     
     return {
-      top: position.includes('top') ? '-10px' : 'auto',
-      bottom: position.includes('bottom') ? '-10px' : 'auto',
-      right: position.includes('right') ? '-10px' : 'auto',
-      left: position.includes('left') ? '-10px' : 'auto'
+      top: position.includes('top') ? '-40px' : 'auto',
+      bottom: position.includes('bottom') ? '-40px' : 'auto',
+      right: position.includes('right') ? '-40px' : 'auto',
+      left: position.includes('left') ? '-40px' : 'auto'
     };
   };
   
@@ -170,10 +171,10 @@ export function TeamMemberCard({ member, onUpdate, onDelete, canEdit }: TeamMemb
           backgroundSize: "200% 200%"
         }}
       >
-        {/* Add badge display with improved positioning */}
+        {/* Add badge display with improved positioning - outside the card as a "hat" */}
         {member.customization?.badge && (
           <div 
-            className={`absolute ${getBadgeSizeClass()} rounded-full overflow-hidden z-10`}
+            className={`absolute ${getBadgeSizeClass()} rounded-full overflow-hidden z-20 pointer-events-none`}
             style={getBadgePositionStyle()}
           >
             <img 

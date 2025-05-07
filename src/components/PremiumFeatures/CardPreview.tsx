@@ -38,13 +38,13 @@ export function CardPreview({
     large: "w-28 h-28"
   };
 
-  // Calculate position values for badges
-  // We'll use fixed positions with more extreme values to make badges extend beyond the card
+  // Calculate position values for badges with much larger offsets for "hat" effect
+  // We'll use much more extreme offset values to make them extend well beyond the card
   const badgePositionValues = {
-    "top-left": { top: "-10px", left: "-10px", transform: "none" },
-    "top-right": { top: "-10px", right: "-10px", transform: "none" },
-    "bottom-left": { bottom: "-10px", left: "-10px", transform: "none" },
-    "bottom-right": { bottom: "-10px", right: "-10px", transform: "none" },
+    "top-left": { top: "-40px", left: "-40px", transform: "none" },
+    "top-right": { top: "-40px", right: "-40px", transform: "none" },
+    "bottom-left": { bottom: "-40px", left: "-40px", transform: "none" },
+    "bottom-right": { bottom: "-40px", right: "-40px", transform: "none" },
     "center": { top: "50%", left: "50%", transform: "translate(-50%, -50%)" }
   };
 
@@ -62,7 +62,7 @@ export function CardPreview({
     >
       {badge && (
         <div 
-          className={`absolute ${sizeClass} rounded-full overflow-hidden z-10`}
+          className={`absolute ${sizeClass} rounded-full overflow-hidden z-20 pointer-events-none`}
           style={positionStyle}
         >
           <img 
