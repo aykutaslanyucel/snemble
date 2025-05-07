@@ -1,4 +1,3 @@
-
 import { TeamMember, TeamMemberStatus, TeamMemberRole } from "@/types/TeamMemberTypes";
 import { supabase } from "@/integrations/supabase/client";
 import { validate as isValidUUID } from 'uuid';
@@ -175,7 +174,7 @@ export const canEditTeamMember = (
   return canEdit;
 };
 
-// Get or create a team member for a user with fixed position handling
+// Get or create a team member for a user with position directly from seniority
 export const getOrCreateTeamMemberForUser = async (userId: string, email: string, role: string): Promise<TeamMember> => {
   console.log(`Getting or creating team member for user: ${userId}, email: ${email}, role: ${role}`);
   
@@ -201,17 +200,23 @@ export const getOrCreateTeamMemberForUser = async (userId: string, email: string
     return mapDbToTeamMember(existingMember);
   }
 
-  // If no existing member, create a new one
+  // Get the user's seniority directly from profiles table
+  const { data: profileData, error: profileError } = await supabase
+    .from('profiles')
+    .select('seniority')
+    .eq('id', userId)
+    .maybeSingle();
+  
+  if (profileError) {
+    console.error('Error fetching user profile:', profileError);
+    throw profileError;
+  }
+
+  // Format name from email
   const formattedName = formatNameFromEmail(email);
   
-  // Map role to appropriate position title
-  let position = "Junior Associate";  // Default position for all team members
-  
-  if (role === 'admin') {
-    position = "Senior Associate";
-  } else if (role === 'premium') {
-    position = "Managing Associate";
-  }
+  // Use seniority directly as position, with fallback to Junior Associate
+  const position = profileData?.seniority || "Junior Associate";
   
   // Convert role string to TeamMemberRole type
   const memberRole: TeamMemberRole = (role === 'admin' || role === 'user' || role === 'premium') 
@@ -220,7 +225,7 @@ export const getOrCreateTeamMemberForUser = async (userId: string, email: string
   
   const newTeamMember: Omit<TeamMember, 'id'> = {
     name: formattedName,
-    position: position,
+    position: position, // Use seniority directly as position
     status: 'available',
     projects: [],
     lastUpdated: new Date(),
@@ -229,7 +234,7 @@ export const getOrCreateTeamMemberForUser = async (userId: string, email: string
   };
 
   try {
-    console.log(`Creating new team member for user ${userId}`);
+    console.log(`Creating new team member for user ${userId} with position: ${position}`);
     return await addTeamMember(newTeamMember);
   } catch (error) {
     console.error(`Failed to create team member for user ${userId}:`, error);
@@ -314,4 +319,3 @@ export const subscribeToTeamMembers = (
     supabase.removeChannel(subscription);
   };
 };
-

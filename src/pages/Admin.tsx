@@ -31,7 +31,7 @@ interface User {
   id: string;
   email: string;
   role: string;
-  seniority: "Other" | "Junior Associate" | "Senior Associate" | "Partners";
+  seniority: "Assistant" | "Junior Associate" | "Senior Associate" | "Managing Associate" | "Partner" | "Other";
   lastUpdated?: Date;
 }
 
@@ -135,9 +135,11 @@ export default function Admin() {
       case "seniority":
         const seniorityOrder = {
           "Other": 0,
-          "Junior Associate": 1,
-          "Senior Associate": 2,
-          "Partners": 3,
+          "Assistant": 1,
+          "Junior Associate": 2,
+          "Senior Associate": 3,
+          "Managing Associate": 4,
+          "Partner": 5,
         };
         comparison = seniorityOrder[a.seniority] - seniorityOrder[b.seniority];
         break;
@@ -161,7 +163,7 @@ export default function Admin() {
         
       if (error) throw error;
       
-      // Update the team member role as well
+      // Update the team member role and position as well
       try {
         const { data: teamMember, error: teamMemberError } = await supabase
           .from('team_members')
@@ -176,15 +178,18 @@ export default function Admin() {
         if (teamMember) {
           const { error: updateError } = await supabase
             .from('team_members')
-            .update({ role: newRole })
+            .update({ 
+              role: newRole,
+              position: newSeniority || teamMember.position // Directly use seniority as position
+            })
             .eq('id', teamMember.id);
             
           if (updateError) {
-            console.error("Error updating team member role:", updateError);
+            console.error("Error updating team member:", updateError);
           }
         }
       } catch (error) {
-        console.error("Error updating team member role:", error);
+        console.error("Error updating team member:", error);
       }
       
       // Update local state
@@ -198,7 +203,7 @@ export default function Admin() {
       ));
       
       toast("Success", {
-        description: "User role updated successfully",
+        description: "User role and seniority updated successfully",
       });
     } catch (error) {
       console.error("Error updating user role:", error);
@@ -435,7 +440,7 @@ export default function Admin() {
                   <TableCell>
                     <Select
                       value={user.role}
-                      onValueChange={(value) => handleRoleChange(user.id, value)}
+                      onValueChange={(value) => handleRoleChange(user.id, value, user.seniority)}
                     >
                       <SelectTrigger className="w-32">
                         <SelectValue placeholder="Select role" />
@@ -457,9 +462,11 @@ export default function Admin() {
                       </SelectTrigger>
                       <SelectContent>
                         <SelectItem value="Other">Other</SelectItem>
+                        <SelectItem value="Assistant">Assistant</SelectItem>
                         <SelectItem value="Junior Associate">Junior Associate</SelectItem>
                         <SelectItem value="Senior Associate">Senior Associate</SelectItem>
-                        <SelectItem value="Partners">Partners</SelectItem>
+                        <SelectItem value="Managing Associate">Managing Associate</SelectItem>
+                        <SelectItem value="Partner">Partner</SelectItem>
                       </SelectContent>
                     </Select>
                   </TableCell>
