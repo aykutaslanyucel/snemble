@@ -14,6 +14,7 @@ import { ProjectsDialog } from "@/components/TeamMember/ProjectsDialog";
 import { DeleteConfirmationDialog } from "@/components/TeamMember/DeleteConfirmationDialog";
 import { CustomizerDialog } from "@/components/TeamMember/CustomizerDialog";
 import { StatusSelector } from "./TeamMember/StatusSelector";
+import { getCardBackground } from "./TeamMember/CardBackground";
 
 interface TeamMemberCardProps {
   member: TeamMember;
@@ -30,6 +31,9 @@ export function TeamMemberCard({ member, onUpdate, onDelete, canEdit }: TeamMemb
   const [isConfirmingDelete, setIsConfirmingDelete] = useState(false);
   const [showCustomizer, setShowCustomizer] = useState(false);
   const { isPremium } = useAuth();
+  
+  // Get the background based on status or customization
+  const cardStyle = getCardBackground(member);
   
   const handleStatusChange = (status: TeamMemberStatus) => {
     if (status === member.status) return; // No change
@@ -60,31 +64,6 @@ export function TeamMemberCard({ member, onUpdate, onDelete, canEdit }: TeamMemb
   const handleDeleteMember = () => {
     onDelete(member.id!);
     setIsConfirmingDelete(false);
-  };
-
-  // Card background based on status
-  const getCardBackground = () => {
-    // Custom styling if member has customization
-    if (member.customization) {
-      if (member.customization.gradient) return member.customization.gradient;
-      if (member.customization.color) return member.customization.color;
-    }
-    
-    // Default styling based on status
-    switch (member.status) {
-      case "available":
-        return "#D3E4FD";
-      case "someAvailability":
-        return "#F2FCE2";
-      case "busy":
-        return "#FEF7CD";
-      case "seriouslyBusy":
-        return "#FFDEE2";
-      case "away":
-        return "#E5E5E5";
-      default:
-        return "#F1F0FB";
-    }
   };
 
   // Time since last update
@@ -126,35 +105,17 @@ export function TeamMemberCard({ member, onUpdate, onDelete, canEdit }: TeamMemb
   const getStatusIcon = (status: TeamMemberStatus) => {
     switch (status) {
       case "available":
-        return <Check className="h-3.5 w-3.5 text-green-600" />;
+        return <Check className="h-3.5 w-3.5 text-gray-600" />;
       case "someAvailability":
-        return <User className="h-3.5 w-3.5 text-blue-600" />;
+        return <User className="h-3.5 w-3.5 text-gray-600" />;
       case "busy":
-        return <Clock className="h-3.5 w-3.5 text-yellow-600" />;
+        return <Clock className="h-3.5 w-3.5 text-gray-600" />;
       case "seriouslyBusy":
-        return <X className="h-3.5 w-3.5 text-red-600" />;
+        return <X className="h-3.5 w-3.5 text-gray-600" />;
       case "away":
         return <Coffee className="h-3.5 w-3.5 text-gray-600" />;
       default:
         return null;
-    }
-  };
-
-  // Get status badge color
-  const getStatusBadgeColor = (status: TeamMemberStatus) => {
-    switch (status) {
-      case "available":
-        return "bg-green-100 border-green-200";
-      case "someAvailability":
-        return "bg-blue-100 border-blue-200";
-      case "busy":
-        return "bg-yellow-100 border-yellow-200";
-      case "seriouslyBusy":
-        return "bg-red-100 border-red-200";
-      case "away":
-        return "bg-gray-100 border-gray-200";
-      default:
-        return "bg-white border-gray-100";
     }
   };
 
@@ -166,10 +127,9 @@ export function TeamMemberCard({ member, onUpdate, onDelete, canEdit }: TeamMemb
       className="h-full"
     >
       <div 
-        className="rounded-2xl overflow-hidden h-full shadow-lg p-6"
+        className="rounded-2xl overflow-hidden h-full shadow-lg p-6 relative"
         style={{ 
-          background: getCardBackground(),
-          boxShadow: "0px 10px 25px -5px rgba(0,0,0,0.05)"
+          background: cardStyle.background,
         }}
       >
         {/* Card Header */}
@@ -299,21 +259,21 @@ export function TeamMemberCard({ member, onUpdate, onDelete, canEdit }: TeamMemb
                 />
                 <div className="mt-2">
                   <Badge 
-                    className={`inline-flex items-center gap-1 px-3 py-1.5 ${getStatusBadgeColor(member.status)}`}
-                    variant="outline"
+                    className={`inline-flex items-center gap-1 px-3 py-1.5`}
+                    style={{ background: cardStyle.background }}
                   >
                     <span className="flex-shrink-0">{getStatusIcon(member.status)}</span>
-                    <span className="text-xs font-medium">{getStatusText()}</span>
+                    <span className="text-xs font-medium text-gray-700">{getStatusText()}</span>
                   </Badge>
                 </div>
               </div>
             ) : (
               <Badge 
-                className={`inline-flex items-center gap-1.5 px-3 py-1.5 ${getStatusBadgeColor(member.status)}`}
-                variant="outline"
+                className={`inline-flex items-center gap-1.5 px-3 py-1.5`}
+                style={{ background: cardStyle.background }}
               >
                 <span className="flex-shrink-0">{getStatusIcon(member.status)}</span>
-                <span className="text-xs font-medium">{getStatusText()}</span>
+                <span className="text-xs font-medium text-gray-700">{getStatusText()}</span>
               </Badge>
             )}
           </div>

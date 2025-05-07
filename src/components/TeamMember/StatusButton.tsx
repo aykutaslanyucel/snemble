@@ -39,7 +39,7 @@ export function StatusButton({ status, currentStatus, onClick, color, tooltip }:
             e.preventDefault();
             onClick(status);
           }}
-          className={`w-8 h-8 rounded-full bg-white flex items-center justify-center transition-all ${
+          className={`w-7 h-7 rounded-full bg-white flex items-center justify-center transition-all ${
             currentStatus === status 
               ? 'shadow-md transform scale-105' 
               : 'shadow-sm hover:scale-105'
