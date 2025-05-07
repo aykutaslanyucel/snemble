@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -34,15 +33,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-
-interface Badge {
-  id: string;
-  name: string;
-  description?: string;
-  image_url: string;
-  is_active: boolean;
-  created_at: Date;
-}
+import { Badge } from "@/types/TeamMemberTypes";
 
 export function BadgeManager() {
   const [badges, setBadges] = useState<Badge[]>([]);
@@ -73,7 +64,11 @@ export function BadgeManager() {
         
       if (error) throw error;
       
-      setBadges(data || []);
+      if (data) {
+        setBadges(data as Badge[]);
+      } else {
+        setBadges([]);
+      }
     } catch (error) {
       console.error("Error fetching badges:", error);
       toast({
@@ -194,7 +189,7 @@ export function BadgeManager() {
       if (insertError) throw insertError;
       
       // 3. Update local state
-      setBadges([...badges, badgeData]);
+      setBadges([...badges, badgeData as Badge]);
       
       // 4. Reset form
       setNewBadge({

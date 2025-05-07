@@ -1,6 +1,6 @@
 
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
-import { TeamMember } from "@/types/TeamMemberTypes";
+import { TeamMember, GradientAnimationType } from "@/types/TeamMemberTypes";
 import "@/styles/animations.css";
 
 interface CardPreviewProps {
@@ -9,7 +9,7 @@ interface CardPreviewProps {
     background: string;
   };
   animate: boolean;
-  animationType?: string;
+  animationType?: GradientAnimationType;
   badge?: string;
   badgePosition?: string;
   badgeSize?: string;
@@ -19,7 +19,7 @@ export function CardPreview({
   teamMember, 
   previewStyle, 
   animate, 
-  animationType = "animate-gradient",
+  animationType = "gentle",
   badge,
   badgePosition = "top-right",
   badgeSize = "medium"

@@ -9,6 +9,33 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      badges: {
+        Row: {
+          created_at: string | null
+          description: string | null
+          id: string
+          image_url: string
+          is_active: boolean | null
+          name: string
+        }
+        Insert: {
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          image_url: string
+          is_active?: boolean | null
+          name: string
+        }
+        Update: {
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          image_url?: string
+          is_active?: boolean | null
+          name?: string
+        }
+        Relationships: []
+      }
       capacity_cards: {
         Row: {
           created_at: string | null

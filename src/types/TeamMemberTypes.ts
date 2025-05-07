@@ -56,12 +56,12 @@ export interface Announcement {
   timestamp: Date;
 }
 
-// Added: Badge interface
+// Define Badge interface
 export interface Badge {
   id: string;
   name: string;
   description?: string;
-  imageUrl: string;
-  isActive: boolean;
-  createdAt: Date;
+  image_url: string;
+  is_active: boolean;
+  created_at: Date;
 }

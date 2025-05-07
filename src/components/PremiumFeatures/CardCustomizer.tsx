@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { TeamMember, TeamMemberCustomization, GradientAnimationType } from "@/types/TeamMemberTypes";
@@ -12,6 +11,7 @@ import { GradientPickerComponent } from './GradientPickerComponent';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { BadgeSelector } from './BadgeSelector';
 import { supabase } from "@/integrations/supabase/client";
+import { Badge } from "@/types/TeamMemberTypes";
 
 interface CardCustomizerProps {
   teamMember: TeamMember;
@@ -43,7 +43,7 @@ export function CardCustomizer({ teamMember, onUpdate }: CardCustomizerProps) {
         // Check if badges table exists
         const { data, error } = await supabase
           .from('badges')
-          .select('id, name, image_url')
+          .select('id, name, image_url, is_active')
           .eq('is_active', true)
           .order('name');
           

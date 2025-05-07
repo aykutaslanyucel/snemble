@@ -76,6 +76,34 @@ export function MemberCard({ member, onUpdate, onDelete, canEdit }: MemberCardPr
           boxShadow: "0 4px 20px rgba(0, 0, 0, 0.08)"
         }}
       >
+        {/* Add badge display if present */}
+        {member.customization?.badge && (
+          <div 
+            className={`absolute ${member.customization.badgePosition || 'top-right'} z-10`}
+            style={{
+              top: member.customization.badgePosition?.includes('top') ? '0.5rem' : 'auto',
+              bottom: member.customization.badgePosition?.includes('bottom') ? '0.5rem' : 'auto',
+              right: member.customization.badgePosition?.includes('right') ? '0.5rem' : 'auto',
+              left: member.customization.badgePosition?.includes('left') ? '0.5rem' : 'auto',
+              transform: member.customization.badgePosition === 'center' ? 'translate(-50%, -50%)' : 'none'
+            }}
+          >
+            <div 
+              className={`overflow-hidden rounded-full ${
+                member.customization.badgeSize === 'small' ? 'w-8 h-8' : 
+                member.customization.badgeSize === 'large' ? 'w-16 h-16' : 
+                'w-12 h-12'
+              }`}
+            >
+              <img 
+                src={member.customization.badge} 
+                alt="Badge" 
+                className="w-full h-full object-contain"
+              />
+            </div>
+          </div>
+        )}
+        
         <MemberCardHeader
           name={name}
           isEditingName={isEditingName}

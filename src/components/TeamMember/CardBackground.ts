@@ -1,5 +1,5 @@
 
-import { TeamMember } from "@/types/TeamMemberTypes";
+import { TeamMember, GradientAnimationType } from "@/types/TeamMemberTypes";
 
 // Status colors for cards with exact color matching
 const STATUS_COLORS = {
@@ -15,11 +15,19 @@ export function getCardBackground(member: TeamMember) {
   const customization = member.customization || {};
   
   if (customization.gradient) {
+    // Handle the animation class based on animationType
+    let animationClass = "";
+    if (customization.animate) {
+      const animationType = customization.animationType || "gentle";
+      animationClass = `animate-gradient-${animationType}`;
+    }
+    
     return {
       background: customization.gradient,
-      className: customization.animate ? "animate-gradient" : ""
+      className: animationClass
     };
   }
+  
   if (customization.color) {
     return {
       background: customization.color,
