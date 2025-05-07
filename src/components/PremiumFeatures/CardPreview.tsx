@@ -41,23 +41,42 @@ export function CardPreview({
   // Get badge size class
   const sizeClass = badgeSizeClasses[badgeSize as keyof typeof badgeSizeClasses] || badgeSizeClasses.medium;
 
-  // Calculate badge position styles with reasonable pixel values
+  // Calculate badge position styles with reasonable pixel values based on badge size
   const getBadgePosition = () => {
     if (!badge || !badgePosition) return null;
     
-    const positions = {
-      "top-left": { top: "-20px", left: "-15px" },
-      "top-right": { top: "-20px", right: "-15px" },
-      "bottom-left": { bottom: "-20px", left: "-15px" },
-      "bottom-right": { bottom: "-20px", right: "-15px" }
+    // Adjust offset based on badge size
+    const getPositionStyles = () => {
+      // Base offsets for different badge sizes
+      const offsets = {
+        small: { top: "-10px", right: "-10px", bottom: "-10px", left: "-10px" },
+        medium: { top: "-15px", right: "-15px", bottom: "-15px", left: "-15px" },
+        large: { top: "-20px", right: "-20px", bottom: "-20px", left: "-20px" }
+      };
+      
+      const offsetsBySize = offsets[badgeSize as keyof typeof offsets] || offsets.medium;
+      
+      // Position mapping
+      const positions = {
+        "top-left": { top: offsetsBySize.top, left: offsetsBySize.left },
+        "top-right": { top: offsetsBySize.top, right: offsetsBySize.right },
+        "bottom-left": { bottom: offsetsBySize.bottom, left: offsetsBySize.left },
+        "bottom-right": { bottom: offsetsBySize.bottom, right: offsetsBySize.right }
+      };
+      
+      return positions[badgePosition as keyof typeof positions] || positions["top-right"];
     };
     
-    const positionStyle = positions[badgePosition as keyof typeof positions] || positions["top-right"];
+    const positionStyle = getPositionStyles();
     
     return (
       <div 
         className={`${sizeClass} absolute badge-element`}
-        style={positionStyle}
+        style={{
+          ...positionStyle,
+          zIndex: 5,
+          pointerEvents: "none" // Make badge non-interactive in preview
+        }}
       >
         <img 
           src={badge} 
@@ -69,7 +88,7 @@ export function CardPreview({
   };
 
   return (
-    <div className="w-full py-10 px-6 badge-container">
+    <div className="w-full py-10 px-6 relative">
       {/* Render the badge separately outside the card */}
       {badge && getBadgePosition()}
       

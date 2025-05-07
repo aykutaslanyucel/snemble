@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { TeamMember, TeamMemberStatus } from "@/types/TeamMemberTypes";
 import { motion } from "framer-motion";
@@ -51,20 +50,41 @@ export function MemberCard({ member, onUpdate, onDelete, canEdit }: MemberCardPr
   const getBadgePosition = () => {
     if (!member.customization?.badge || !member.customization?.badgePosition) return null;
     
-    const positions = {
-      "top-left": { top: "-20px", left: "-15px" },
-      "top-right": { top: "-20px", right: "-15px" },
-      "bottom-left": { bottom: "-20px", left: "-15px" },
-      "bottom-right": { bottom: "-20px", right: "-15px" }
+    // Define offsets based on badge size
+    const getBadgeOffsets = () => {
+      const size = member.customization?.badgeSize || 'medium';
+      
+      // Adjust offset based on badge size
+      // Smaller offsets to keep badges closer to the card edges
+      const offsets = {
+        small: { top: "-10px", right: "-10px", bottom: "-10px", left: "-10px" },
+        medium: { top: "-15px", right: "-15px", bottom: "-15px", left: "-15px" },
+        large: { top: "-20px", right: "-20px", bottom: "-20px", left: "-20px" }
+      };
+      
+      return offsets[size as keyof typeof offsets] || offsets.medium;
     };
     
-    const positionStyle = positions[member.customization.badgePosition as keyof typeof positions] 
-      || positions["top-right"];
+    const offsets = getBadgeOffsets();
+    const position = member.customization.badgePosition;
+    
+    const positions = {
+      "top-left": { top: offsets.top, left: offsets.left },
+      "top-right": { top: offsets.top, right: offsets.right },
+      "bottom-left": { bottom: offsets.bottom, left: offsets.left },
+      "bottom-right": { bottom: offsets.bottom, right: offsets.right }
+    };
+    
+    const positionStyle = positions[position as keyof typeof positions] || positions["top-right"];
     
     return (
       <div 
-        className={`${getBadgeSizeClass()} absolute badge-element`}
-        style={positionStyle}
+        className={`${getBadgeSizeClass()} absolute`}
+        style={{
+          ...positionStyle,
+          zIndex: 5, // Higher than card but lower than popover menus
+          pointerEvents: "none" // Make badge non-interactive
+        }}
       >
         <img 
           src={member.customization.badge} 
@@ -111,8 +131,7 @@ export function MemberCard({ member, onUpdate, onDelete, canEdit }: MemberCardPr
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.3 }}
-      className="h-full py-10 px-6 badge-container"
-      style={{ position: "relative" }}
+      className="h-full py-10 px-6 relative"
     >
       {/* Render badge outside card with proper positioning */}
       {member.customization?.badge && getBadgePosition()}

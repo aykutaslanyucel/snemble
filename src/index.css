@@ -60,16 +60,9 @@
     font-feature-settings: "ss01", "ss02", "cv01", "cv02", "cv03";
   }
   
-  /* Badge container class to ensure visibility without disrupting other elements */
-  .badge-container {
-    overflow: visible !important;
-    position: relative;
-  }
-  
-  /* Style for badges specifically */
+  /* Ensure proper badge visibility without breaking UI interaction */
   .badge-element {
-    z-index: 10;
-    position: absolute;
+    z-index: 5;
   }
   
   /* Status colors */

@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { TeamMember, TeamMemberStatus } from "@/types/TeamMemberTypes";
 import { motion } from "framer-motion";
@@ -51,38 +50,52 @@ export function TeamMemberCard({ member, onUpdate, onDelete, canEdit }: TeamMemb
     }
   };
 
-  // Calculate badge position styles - use reasonable fixed pixel values
-  const getBadgeStyle = () => {
-    if (!member.customization?.badge || !member.customization?.badgePosition) return {};
+  // Calculate badge position styles with consistent positioning logic
+  const getBadgePosition = () => {
+    if (!member.customization?.badge || !member.customization?.badgePosition) return null;
     
-    const positions = {
-      "top-left": { 
-        position: "absolute", 
-        top: "-20px", 
-        left: "-15px", 
-        zIndex: 10 
-      },
-      "top-right": { 
-        position: "absolute", 
-        top: "-20px", 
-        right: "-15px", 
-        zIndex: 10 
-      },
-      "bottom-left": { 
-        position: "absolute", 
-        bottom: "-20px", 
-        left: "-15px", 
-        zIndex: 10 
-      },
-      "bottom-right": { 
-        position: "absolute", 
-        bottom: "-20px", 
-        right: "-15px", 
-        zIndex: 10 
-      }
+    // Define offsets based on badge size
+    const getBadgeOffsets = () => {
+      const size = member.customization?.badgeSize || 'medium';
+      
+      // Adjust offset based on badge size - smaller offsets to keep badges closer to card
+      const offsets = {
+        small: { top: "-10px", right: "-10px", bottom: "-10px", left: "-10px" },
+        medium: { top: "-15px", right: "-15px", bottom: "-15px", left: "-15px" },
+        large: { top: "-20px", right: "-20px", bottom: "-20px", left: "-20px" }
+      };
+      
+      return offsets[size as keyof typeof offsets] || offsets.medium;
     };
     
-    return positions[member.customization.badgePosition] || positions["top-right"];
+    const offsets = getBadgeOffsets();
+    const position = member.customization.badgePosition;
+    
+    const positions = {
+      "top-left": { top: offsets.top, left: offsets.left },
+      "top-right": { top: offsets.top, right: offsets.right },
+      "bottom-left": { bottom: offsets.bottom, left: offsets.left },
+      "bottom-right": { bottom: offsets.bottom, right: offsets.right }
+    };
+    
+    const positionStyle = positions[position as keyof typeof positions] || positions["top-right"];
+    
+    return (
+      <div 
+        className={`${getBadgeSizeClass()} absolute`}
+        style={{
+          ...positionStyle,
+          zIndex: 5, // Higher than card but lower than popover menus (which are typically z-index 50+)
+          pointerEvents: "none" // Make badge non-interactive
+        }}
+      >
+        <img 
+          src={member.customization.badge} 
+          alt="Badge" 
+          className="w-full h-full object-contain"
+        />
+      </div>
+    );
   };
 
   const handleStatusChange = (status: TeamMemberStatus) => {
@@ -174,22 +187,11 @@ export function TeamMemberCard({ member, onUpdate, onDelete, canEdit }: TeamMemb
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.3 }}
-      className="h-full badge-container"
+      className="h-full relative"
     >
-      <div className="relative h-full">
-        {/* Badge placed outside card with reasonable positioning */}
-        {member.customization?.badge && (
-          <div 
-            className={`${getBadgeSizeClass()} badge-element`}
-            style={getBadgeStyle()}
-          >
-            <img 
-              src={member.customization.badge} 
-              alt="Badge" 
-              className="w-full h-full object-contain"
-            />
-          </div>
-        )}
+      <div className="py-10 px-6 relative h-full">
+        {/* Render badge outside card with proper positioning */}
+        {member.customization?.badge && getBadgePosition()}
         
         <div 
           className="rounded-2xl h-full shadow-lg p-6 relative"
@@ -231,11 +233,12 @@ export function TeamMemberCard({ member, onUpdate, onDelete, canEdit }: TeamMemb
                 <PopoverTrigger asChild>
                   <button 
                     className="rounded-full p-2 bg-white/80 hover:bg-white shadow-sm"
+                    style={{ zIndex: 10 }} // Higher z-index to ensure it's clickable
                   >
                     <MoreHorizontal className="h-5 w-5 text-gray-500" />
                   </button>
                 </PopoverTrigger>
-                <PopoverContent className="w-56" align="end">
+                <PopoverContent className="w-56" align="end" style={{ zIndex: 20 }}>
                   <div className="grid gap-1">
                     <Button
                       variant="ghost"
