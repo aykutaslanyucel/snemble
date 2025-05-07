@@ -2,11 +2,11 @@
 import React from "react";
 import { CardContent } from "@/components/ui/card";
 import { StatusSelector } from "./StatusSelector";
-import { TeamMemberStatus } from "@/types/TeamMemberTypes";
+import { TeamMember, TeamMemberStatus } from "@/types/TeamMemberTypes";
 import { Plus, Check, User, Clock, X, Coffee } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { getCardBackground } from "./CardBackground";
+import { getCardBackground, getStatusText } from "./CardBackground";
 
 interface MemberCardContentProps {
   position: string;
@@ -61,24 +61,7 @@ export function MemberCardContent({
     }
   };
 
-  const getStatusText = (status: TeamMemberStatus) => {
-    switch (status) {
-      case "available":
-        return "Available";
-      case "someAvailability":
-        return "Some Availability";
-      case "busy":
-        return "Busy";
-      case "seriouslyBusy":
-        return "Seriously Busy";
-      case "away":
-        return "Away";
-      default:
-        return "Unknown";
-    }
-  };
-
-  // Get color for this status
+  // Get color for this status - creating a mock TeamMember object to use the getCardBackground function
   const cardStyle = getCardBackground({ status: currentStatus } as TeamMember);
 
   return (

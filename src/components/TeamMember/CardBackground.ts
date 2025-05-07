@@ -4,10 +4,10 @@ import { TeamMember } from "@/types/TeamMemberTypes";
 // Status colors for cards with exact color matching
 const STATUS_COLORS = {
   "available": "#dae7ff", // Blue for Available
-  "someAvailability": "#fdfdfd", // Green for Some Availability
-  "busy": "#f4f4f4", // Orange for Busy
+  "someAvailability": "#cdecdb", // Green for Some Availability
+  "busy": "#ffdcb1", // Orange for Busy
   "seriouslyBusy": "#ffacac", // Red/Pink for Seriously Busy
-  "away": "#fdfdfe" // Gray for Away
+  "away": "#cacaca" // Gray for Away
 };
 
 export function getCardBackground(member: TeamMember) {
