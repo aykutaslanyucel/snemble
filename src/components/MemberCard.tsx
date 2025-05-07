@@ -47,15 +47,15 @@ export function MemberCard({ member, onUpdate, onDelete, canEdit }: MemberCardPr
     }
   };
 
-  // Calculate badge position styles with fixed pixel values
+  // Calculate badge position styles with reasonable fixed pixel values
   const getBadgePosition = () => {
     if (!member.customization?.badge || !member.customization?.badgePosition) return null;
     
     const positions = {
-      "top-left": { top: "-40px", left: "-30px" },
-      "top-right": { top: "-40px", right: "-30px" },
-      "bottom-left": { bottom: "-40px", left: "-30px" },
-      "bottom-right": { bottom: "-40px", right: "-30px" }
+      "top-left": { top: "-20px", left: "-15px" },
+      "top-right": { top: "-20px", right: "-15px" },
+      "bottom-left": { bottom: "-20px", left: "-15px" },
+      "bottom-right": { bottom: "-20px", right: "-15px" }
     };
     
     const positionStyle = positions[member.customization.badgePosition as keyof typeof positions] 
@@ -63,7 +63,7 @@ export function MemberCard({ member, onUpdate, onDelete, canEdit }: MemberCardPr
     
     return (
       <div 
-        className={`${getBadgeSizeClass()} absolute z-[100]`}
+        className={`${getBadgeSizeClass()} absolute badge-element`}
         style={positionStyle}
       >
         <img 
@@ -111,13 +111,10 @@ export function MemberCard({ member, onUpdate, onDelete, canEdit }: MemberCardPr
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.3 }}
-      className="h-full py-10 px-6"
-      style={{ 
-        position: "relative",
-        transform: "translate3d(0,0,0)" // Create a new stacking context
-      }}
+      className="h-full py-10 px-6 badge-container"
+      style={{ position: "relative" }}
     >
-      {/* Render badge outside card */}
+      {/* Render badge outside card with proper positioning */}
       {member.customization?.badge && getBadgePosition()}
       
       <Card 
@@ -125,7 +122,9 @@ export function MemberCard({ member, onUpdate, onDelete, canEdit }: MemberCardPr
         style={{ 
           background: cardStyle.background,
           boxShadow: "0 4px 20px rgba(0, 0, 0, 0.08)",
-          backgroundSize: "200% 200%"
+          backgroundSize: "200% 200%",
+          position: "relative",
+          zIndex: 1
         }}
       >
         <MemberCardHeader

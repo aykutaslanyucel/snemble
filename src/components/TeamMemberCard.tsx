@@ -51,38 +51,34 @@ export function TeamMemberCard({ member, onUpdate, onDelete, canEdit }: TeamMemb
     }
   };
 
-  // Calculate badge position styles - more extreme positioning to ensure visibility
+  // Calculate badge position styles - use reasonable fixed pixel values
   const getBadgeStyle = () => {
     if (!member.customization?.badge || !member.customization?.badgePosition) return {};
     
-    const positions: Record<string, React.CSSProperties> = {
+    const positions = {
       "top-left": { 
         position: "absolute", 
-        top: "-60%", 
-        left: "-35%", 
-        transform: "none",
-        zIndex: 50
+        top: "-20px", 
+        left: "-15px", 
+        zIndex: 10 
       },
       "top-right": { 
         position: "absolute", 
-        top: "-60%", 
-        right: "-35%", 
-        transform: "none",
-        zIndex: 50
+        top: "-20px", 
+        right: "-15px", 
+        zIndex: 10 
       },
       "bottom-left": { 
         position: "absolute", 
-        bottom: "-60%", 
-        left: "-35%", 
-        transform: "none",
-        zIndex: 50
+        bottom: "-20px", 
+        left: "-15px", 
+        zIndex: 10 
       },
       "bottom-right": { 
         position: "absolute", 
-        bottom: "-60%", 
-        right: "-35%", 
-        transform: "none",
-        zIndex: 50
+        bottom: "-20px", 
+        right: "-15px", 
+        zIndex: 10 
       }
     };
     
@@ -178,14 +174,13 @@ export function TeamMemberCard({ member, onUpdate, onDelete, canEdit }: TeamMemb
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.3 }}
-      className="h-full overflow-visible"
-      style={{ minHeight: "100%", overflow: "visible" }}
+      className="h-full badge-container"
     >
-      <div className="relative h-full overflow-visible" style={{ overflow: "visible" }}>
-        {/* Badge placed outside card for "hat" effect */}
+      <div className="relative h-full">
+        {/* Badge placed outside card with reasonable positioning */}
         {member.customization?.badge && (
           <div 
-            className={`${getBadgeSizeClass()} pointer-events-none absolute`}
+            className={`${getBadgeSizeClass()} badge-element`}
             style={getBadgeStyle()}
           >
             <img 
@@ -201,7 +196,8 @@ export function TeamMemberCard({ member, onUpdate, onDelete, canEdit }: TeamMemb
           style={{ 
             background: cardStyle.background,
             backgroundSize: "200% 200%",
-            overflow: "visible" // Explicitly set overflow to visible
+            position: "relative",
+            zIndex: 1
           }}
         >
           {/* Card Header */}
