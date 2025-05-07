@@ -31,6 +31,10 @@ export function MemberCard({ member, onUpdate, onDelete, canEdit }: MemberCardPr
   // Get custom background or default based on status
   const cardStyle = getCardBackground(member);
   
+  // Ensure we have the proper animation class
+  const animationClass = member.customization?.animate && member.customization?.gradient ? 
+    `animate-gradient-${member.customization.animationType || 'gentle'}` : '';
+  
   const handleStatusChange = (status: TeamMemberStatus) => {
     if (status === member.status) return; // No change
     
@@ -70,11 +74,11 @@ export function MemberCard({ member, onUpdate, onDelete, canEdit }: MemberCardPr
       className="h-full"
     >
       <Card 
-        className={`h-full overflow-hidden rounded-2xl shadow-md ${cardStyle.className}`}
+        className={`h-full overflow-hidden rounded-2xl shadow-md ${cardStyle.className} ${animationClass}`}
         style={{ 
           background: cardStyle.background,
           boxShadow: "0 4px 20px rgba(0, 0, 0, 0.08)",
-          backgroundSize: cardStyle.className ? "200% 200%" : "auto"
+          backgroundSize: "200% 200%"
         }}
       >
         {/* Add badge display if present */}
