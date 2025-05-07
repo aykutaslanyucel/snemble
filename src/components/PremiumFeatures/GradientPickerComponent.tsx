@@ -45,7 +45,7 @@ export function GradientPickerComponent({
         <label className="text-sm font-medium">{label}</label>
         <Popover open={isOpen} onOpenChange={setIsOpen}>
           <PopoverTrigger asChild>
-            <Button variant="outline" size="sm">
+            <Button variant="outline" size="sm" type="button">
               Create Gradient
             </Button>
           </PopoverTrigger>
@@ -53,11 +53,12 @@ export function GradientPickerComponent({
             className="w-80 p-4"
             side="right"
             align="start"
-            onInteractOutside={(e) => e.preventDefault()}
-            onClick={(e) => e.stopPropagation()}
-            data-gradient-picker
+            sideOffset={5}
+            onInteractOutside={(e) => {
+              e.preventDefault();
+            }}
           >
-            <div className="space-y-4" data-gradient-picker onClick={(e) => e.stopPropagation()}>
+            <div className="space-y-4">
               <div 
                 className="w-full h-20 rounded-md shadow-inner border" 
                 style={{ background: getPreviewGradient() }}
@@ -78,26 +79,22 @@ export function GradientPickerComponent({
                       />
                       <Popover>
                         <PopoverTrigger asChild>
-                          <Button variant="outline" size="sm">Change</Button>
+                          <Button variant="outline" size="sm" type="button">Change</Button>
                         </PopoverTrigger>
                         <PopoverContent 
                           className="w-auto p-3" 
-                          onClick={(e) => e.stopPropagation()}
                           onInteractOutside={(e) => e.preventDefault()}
                         >
-                          <div onClick={(e) => e.stopPropagation()}>
-                            <HexColorPicker 
-                              color={startColor} 
-                              onChange={setStartColor} 
-                            />
-                          </div>
+                          <HexColorPicker 
+                            color={startColor} 
+                            onChange={setStartColor} 
+                          />
                         </PopoverContent>
                       </Popover>
                       <Input 
                         value={startColor} 
                         onChange={(e) => setStartColor(e.target.value)}
                         className="w-24" 
-                        onClick={(e) => e.stopPropagation()}
                       />
                     </div>
                   </div>
@@ -111,26 +108,22 @@ export function GradientPickerComponent({
                       />
                       <Popover>
                         <PopoverTrigger asChild>
-                          <Button variant="outline" size="sm">Change</Button>
+                          <Button variant="outline" size="sm" type="button">Change</Button>
                         </PopoverTrigger>
                         <PopoverContent 
                           className="w-auto p-3" 
-                          onClick={(e) => e.stopPropagation()}
                           onInteractOutside={(e) => e.preventDefault()}
                         >
-                          <div onClick={(e) => e.stopPropagation()}>
-                            <HexColorPicker 
-                              color={endColor} 
-                              onChange={setEndColor} 
-                            />
-                          </div>
+                          <HexColorPicker 
+                            color={endColor} 
+                            onChange={setEndColor} 
+                          />
                         </PopoverContent>
                       </Popover>
                       <Input 
                         value={endColor} 
                         onChange={(e) => setEndColor(e.target.value)}
                         className="w-24" 
-                        onClick={(e) => e.stopPropagation()}
                       />
                     </div>
                   </div>
@@ -144,6 +137,7 @@ export function GradientPickerComponent({
                         variant={gradientType === "linear" ? "default" : "outline"}
                         size="sm"
                         onClick={() => setGradientType("linear")}
+                        type="button"
                       >
                         Linear
                       </Button>
@@ -151,6 +145,7 @@ export function GradientPickerComponent({
                         variant={gradientType === "radial" ? "default" : "outline"}
                         size="sm"
                         onClick={() => setGradientType("radial")}
+                        type="button"
                       >
                         Radial
                       </Button>
@@ -175,6 +170,7 @@ export function GradientPickerComponent({
               <Button 
                 onClick={handleApplyGradient} 
                 className="w-full"
+                type="button"
               >
                 Apply Gradient
               </Button>

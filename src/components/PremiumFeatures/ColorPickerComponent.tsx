@@ -27,20 +27,16 @@ export function ColorPickerComponent({
   
   const handleColorChange = (newColor: string) => {
     setColor(newColor);
+    // Apply color changes immediately for better visual feedback
+    onChange(newColor);
   };
   
-  const handleApplyColor = () => {
-    onChange(color);
-    setIsOpen(false);
-  };
-
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setColor(e.target.value);
   };
   
   // Handle input blur to apply color when user finishes typing
   const handleInputBlur = () => {
-    // Don't close the popover, just update the color
     onChange(color);
   };
   
@@ -58,6 +54,7 @@ export function ColorPickerComponent({
               <Button 
                 variant="outline" 
                 size="sm"
+                type="button"
               >
                 Pick Color
               </Button>
@@ -66,21 +63,19 @@ export function ColorPickerComponent({
               className="w-auto p-4" 
               side="right"
               align="start"
-              onInteractOutside={(e) => e.preventDefault()}
-              onClick={(e) => e.stopPropagation()}
-              data-color-picker-wrapper
+              sideOffset={5}
+              onInteractOutside={(e) => {
+                e.preventDefault();
+              }}
+              onClick={(e) => {
+                e.stopPropagation();
+              }}
             >
-              <div 
-                className="space-y-4"
-                onClick={(e) => e.stopPropagation()}
-                data-color-picker-wrapper
-              >
+              <div className="space-y-4">
                 {/* Color picker */}
                 <div 
                   className="react-colorful-wrapper" 
                   onClick={(e) => e.stopPropagation()}
-                  onMouseDown={(e) => e.stopPropagation()}
-                  data-color-picker
                 >
                   <HexColorPicker 
                     color={color} 
@@ -100,7 +95,11 @@ export function ColorPickerComponent({
                   />
                   <Button 
                     size="sm" 
-                    onClick={handleApplyColor}
+                    onClick={() => {
+                      onChange(color);
+                      setIsOpen(false);
+                    }}
+                    type="button"
                   >
                     Apply
                   </Button>
