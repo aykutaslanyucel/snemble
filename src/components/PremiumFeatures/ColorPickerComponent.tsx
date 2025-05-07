@@ -29,13 +29,22 @@ export function ColorPickerComponent({
     setColor(newColor);
   };
   
-  const handleApplyColor = () => {
+  const handleApplyColor = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
     onChange(color);
     setIsOpen(false);
   };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    e.stopPropagation();
     setColor(e.target.value);
+  };
+  
+  // Prevent clicks inside the PopoverContent from closing the popover
+  const preventClose = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
   };
   
   return (
@@ -49,30 +58,45 @@ export function ColorPickerComponent({
           />
           <Popover open={isOpen} onOpenChange={setIsOpen}>
             <PopoverTrigger asChild>
-              <Button variant="outline" size="sm">
+              <Button variant="outline" size="sm" onClick={() => setIsOpen(true)}>
                 Pick Color
               </Button>
             </PopoverTrigger>
-            <PopoverContent className="w-auto p-4" side="right">
-              <div className="space-y-4">
-                <div 
-                  onClick={(e) => e.stopPropagation()}
-                  onMouseDown={(e) => e.preventDefault()}
-                >
+            <PopoverContent 
+              className="w-auto p-4" 
+              side="right" 
+              onInteractOutside={(e) => {
+                // Only close when clicking outside the popover
+                // Don't close when interacting with the color picker
+                const target = e.target as HTMLElement;
+                if (target.closest('.react-colorful')) {
+                  e.preventDefault();
+                }
+              }}
+              onOpenAutoFocus={(e) => e.preventDefault()}
+            >
+              <div className="space-y-4" onClick={preventClose}>
+                {/* Color picker */}
+                <div className="react-colorful-wrapper">
                   <HexColorPicker 
                     color={color} 
-                    onChange={handleColorChange} 
+                    onChange={handleColorChange}
                   />
                 </div>
+                
+                {/* Color input and apply button */}
                 <div className="flex justify-between gap-2">
                   <input
                     type="text"
                     value={color}
                     onChange={handleInputChange}
+                    onClick={preventClose}
                     className="flex-1 px-2 py-1 border rounded-md text-sm"
-                    onClick={(e) => e.stopPropagation()}
                   />
-                  <Button size="sm" onClick={handleApplyColor}>
+                  <Button 
+                    size="sm" 
+                    onClick={handleApplyColor}
+                  >
                     Apply
                   </Button>
                 </div>
