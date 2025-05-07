@@ -31,25 +31,26 @@ export function CardPreview({
       "animate-gradient-gentle") : 
     "";
 
-  // Define size classes for badges
+  // Define size classes for badges with larger dimensions
   const badgeSizeClasses = {
-    small: "w-8 h-8",
-    medium: "w-12 h-12",
-    large: "w-16 h-16"
+    small: "w-12 h-12",
+    medium: "w-20 h-20",
+    large: "w-28 h-28"
   };
 
-  // Define position classes for badges
-  const badgePositionClasses = {
-    "top-left": "top-2 left-2",
-    "top-right": "top-2 right-2",
-    "bottom-left": "bottom-2 left-2",
-    "bottom-right": "bottom-2 right-2",
-    "center": "top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2"
+  // Calculate position values for badges
+  // We'll use fixed positions with more extreme values to make badges extend beyond the card
+  const badgePositionValues = {
+    "top-left": { top: "-10px", left: "-10px", transform: "none" },
+    "top-right": { top: "-10px", right: "-10px", transform: "none" },
+    "bottom-left": { bottom: "-10px", left: "-10px", transform: "none" },
+    "bottom-right": { bottom: "-10px", right: "-10px", transform: "none" },
+    "center": { top: "50%", left: "50%", transform: "translate(-50%, -50%)" }
   };
 
-  // Get size and position classes
+  // Get size and position styles
   const sizeClass = badgeSizeClasses[badgeSize as keyof typeof badgeSizeClasses] || badgeSizeClasses.medium;
-  const positionClass = badgePositionClasses[badgePosition as keyof typeof badgePositionClasses] || badgePositionClasses["top-right"];
+  const positionStyle = badgePositionValues[badgePosition as keyof typeof badgePositionValues] || badgePositionValues["top-right"];
 
   return (
     <Card 
@@ -60,7 +61,10 @@ export function CardPreview({
       }}
     >
       {badge && (
-        <div className={`absolute ${positionClass} ${sizeClass} rounded-full overflow-hidden z-10`}>
+        <div 
+          className={`absolute ${sizeClass} rounded-full overflow-hidden z-10`}
+          style={positionStyle}
+        >
           <img 
             src={badge} 
             alt="Badge" 

@@ -35,6 +35,40 @@ export function MemberCard({ member, onUpdate, onDelete, canEdit }: MemberCardPr
   const animationClass = member.customization?.animate && member.customization?.gradient ? 
     `animate-gradient-${member.customization.animationType || 'gentle'}` : '';
   
+  // Calculate badge position styles
+  const getBadgePositionStyle = () => {
+    if (!member.customization?.badge) return {};
+    
+    const position = member.customization.badgePosition || 'top-right';
+    
+    if (position === 'center') {
+      return {
+        top: '50%',
+        left: '50%',
+        transform: 'translate(-50%, -50%)'
+      };
+    }
+    
+    return {
+      top: position.includes('top') ? '-10px' : 'auto',
+      bottom: position.includes('bottom') ? '-10px' : 'auto',
+      right: position.includes('right') ? '-10px' : 'auto',
+      left: position.includes('left') ? '-10px' : 'auto'
+    };
+  };
+  
+  // Get badge size class
+  const getBadgeSizeClass = () => {
+    const size = member.customization?.badgeSize || 'medium';
+    
+    switch (size) {
+      case 'small': return 'w-12 h-12';
+      case 'large': return 'w-28 h-28';
+      case 'medium':
+      default: return 'w-20 h-20';
+    }
+  };
+
   const handleStatusChange = (status: TeamMemberStatus) => {
     if (status === member.status) return; // No change
     
@@ -81,31 +115,17 @@ export function MemberCard({ member, onUpdate, onDelete, canEdit }: MemberCardPr
           backgroundSize: "200% 200%"
         }}
       >
-        {/* Add badge display if present */}
+        {/* Add badge display if present with improved positioning */}
         {member.customization?.badge && (
           <div 
-            className={`absolute ${member.customization.badgePosition || 'top-right'} z-10`}
-            style={{
-              top: member.customization.badgePosition?.includes('top') ? '0.5rem' : 'auto',
-              bottom: member.customization.badgePosition?.includes('bottom') ? '0.5rem' : 'auto',
-              right: member.customization.badgePosition?.includes('right') ? '0.5rem' : 'auto',
-              left: member.customization.badgePosition?.includes('left') ? '0.5rem' : 'auto',
-              transform: member.customization.badgePosition === 'center' ? 'translate(-50%, -50%)' : 'none'
-            }}
+            className={`absolute ${getBadgeSizeClass()} rounded-full overflow-hidden z-10`}
+            style={getBadgePositionStyle()}
           >
-            <div 
-              className={`overflow-hidden rounded-full ${
-                member.customization.badgeSize === 'small' ? 'w-8 h-8' : 
-                member.customization.badgeSize === 'large' ? 'w-16 h-16' : 
-                'w-12 h-12'
-              }`}
-            >
-              <img 
-                src={member.customization.badge} 
-                alt="Badge" 
-                className="w-full h-full object-contain"
-              />
-            </div>
+            <img 
+              src={member.customization.badge} 
+              alt="Badge" 
+              className="w-full h-full object-contain"
+            />
           </div>
         )}
         
