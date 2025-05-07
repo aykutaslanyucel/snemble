@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { HexColorPicker } from 'react-colorful';
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -18,6 +18,13 @@ export function ColorPickerComponent({
   const [color, setColor] = useState(currentColor || "#ffffff");
   const [isOpen, setIsOpen] = useState(false);
   
+  // Update local state when prop changes
+  useEffect(() => {
+    if (currentColor) {
+      setColor(currentColor);
+    }
+  }, [currentColor]);
+  
   const handleColorChange = (newColor: string) => {
     setColor(newColor);
   };
@@ -25,6 +32,10 @@ export function ColorPickerComponent({
   const handleApplyColor = () => {
     onChange(color);
     setIsOpen(false);
+  };
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setColor(e.target.value);
   };
   
   return (
@@ -42,9 +53,12 @@ export function ColorPickerComponent({
                 Pick Color
               </Button>
             </PopoverTrigger>
-            <PopoverContent className="w-auto p-4" side="right" onOpenAutoFocus={(e) => e.preventDefault()}>
-              <div className="space-y-4" onClick={(e) => e.stopPropagation()}>
-                <div onClick={(e) => e.stopPropagation()}>
+            <PopoverContent className="w-auto p-4" side="right">
+              <div className="space-y-4">
+                <div 
+                  onClick={(e) => e.stopPropagation()}
+                  onMouseDown={(e) => e.preventDefault()}
+                >
                   <HexColorPicker 
                     color={color} 
                     onChange={handleColorChange} 
@@ -54,8 +68,9 @@ export function ColorPickerComponent({
                   <input
                     type="text"
                     value={color}
-                    onChange={(e) => setColor(e.target.value)}
+                    onChange={handleInputChange}
                     className="flex-1 px-2 py-1 border rounded-md text-sm"
+                    onClick={(e) => e.stopPropagation()}
                   />
                   <Button size="sm" onClick={handleApplyColor}>
                     Apply

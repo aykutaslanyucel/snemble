@@ -10,6 +10,7 @@ import { AnimationToggle } from './AnimationToggle';
 import { ColorPickerComponent } from './ColorPickerComponent';
 import { CustomColorInput } from './CustomColorInput';
 import { CustomGradientInput } from './CustomGradientInput';
+import { GradientPickerComponent } from './GradientPickerComponent';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 interface CardCustomizerProps {
@@ -74,6 +75,11 @@ export function CardCustomizer({ teamMember, onUpdate }: CardCustomizerProps) {
   const handleColorPickerChange = (color: string) => {
     console.log("Color picker change:", color);
     handleSelectColor(color);
+  };
+
+  const handleGradientPickerChange = (gradient: string) => {
+    console.log("Gradient picker change:", gradient);
+    handleSelectGradient(gradient);
   };
 
   // Legacy support for custom color input
@@ -141,22 +147,15 @@ export function CardCustomizer({ teamMember, onUpdate }: CardCustomizerProps) {
               onChange={handleColorPickerChange}
               label="Pick a Color"
             />
-            
-            {/* Kept for backward compatibility */}
-            <CustomColorInput
-              customColor={customColor}
-              setCustomColor={setCustomColor}
-              handleApplyCustomColor={handleApplyCustomColor}
-            />
           </div>
           
-          {/* Custom Gradient Input - kept for backward compatibility */}
-          <div className="space-y-2">
+          {/* Gradient Picker */}
+          <div className="space-y-4">
             <h3 className="text-sm font-medium">Custom Gradient</h3>
-            <CustomGradientInput
-              customGradient={customGradient}
-              setCustomGradient={setCustomGradient}
-              handleApplyCustomGradient={handleApplyCustomGradient}
+            <GradientPickerComponent 
+              currentGradient={customization.gradient || ""}
+              onChange={handleGradientPickerChange}
+              label="Create Gradient"
             />
           </div>
         </TabsContent>
