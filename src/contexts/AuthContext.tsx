@@ -1,5 +1,6 @@
 
 import { createContext, useContext, useState, useEffect } from "react";
+import { getOrCreateTeamMemberForUser } from "@/lib/teamMemberUtils";
 
 // Define the User type
 interface User {
@@ -51,6 +52,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       
       // Store in localStorage for persistence
       localStorage.setItem('user', JSON.stringify(newUser));
+      
+      // Create or get team member for this user
+      try {
+        await getOrCreateTeamMemberForUser(newUser.id, newUser.email, newUser.role);
+      } catch (error) {
+        console.error("Error ensuring team member exists on login:", error);
+      }
     } catch (error) {
       console.error('Login error:', error);
       throw error;
@@ -82,6 +90,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       
       // Store in localStorage for persistence
       localStorage.setItem('user', JSON.stringify(newUser));
+      
+      // Create or get team member for this user
+      try {
+        await getOrCreateTeamMemberForUser(newUser.id, newUser.email, newUser.role);
+      } catch (error) {
+        console.error("Error ensuring team member exists on signup:", error);
+      }
     } catch (error) {
       console.error('Signup error:', error);
       throw error;
@@ -116,6 +131,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         const parsedUser = JSON.parse(storedUser);
         setUser(parsedUser);
         setIsAdmin(parsedUser.role === 'admin');
+        
+        // Create or get team member for this returning user
+        getOrCreateTeamMemberForUser(parsedUser.id, parsedUser.email, parsedUser.role)
+          .catch(error => {
+            console.error("Error ensuring team member exists on session restore:", error);
+          });
       } catch (error) {
         console.error('Error parsing stored user:', error);
         localStorage.removeItem('user');

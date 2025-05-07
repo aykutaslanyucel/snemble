@@ -16,7 +16,8 @@ import {
   deleteTeamMember, 
   addTeamMember, 
   subscribeToTeamMembers,
-  canEditTeamMember 
+  canEditTeamMember,
+  getOrCreateTeamMemberForUser 
 } from "@/lib/teamMemberUtils";
 
 export default function Index() {
@@ -28,7 +29,7 @@ export default function Index() {
   const { toast } = useToast();
   const { user, isAdmin, logout } = useAuth();
 
-  // Fetch members and set up subscription
+  // Fetch members and set up subscription and ensure the current user has a team member
   useEffect(() => {
     setLoading(true);
     
@@ -38,11 +39,27 @@ export default function Index() {
       setLoading(false);
     });
     
+    // Check if current user has a team member
+    if (user) {
+      getOrCreateTeamMemberForUser(user.id, user.email, isAdmin ? 'admin' : 'user')
+        .then(() => {
+          console.log("User team member verified");
+        })
+        .catch(error => {
+          console.error("Error ensuring user has team member:", error);
+          toast({
+            title: "Error",
+            description: "Failed to initialize your team profile. Please refresh.",
+            variant: "destructive",
+          });
+        });
+    }
+    
     // Cleanup subscription on component unmount
     return () => {
       unsubscribe();
     };
-  }, []);
+  }, [user, isAdmin, toast]);
 
   const activeProjects = useMemo(() => {
     const projectSet = new Set<string>();

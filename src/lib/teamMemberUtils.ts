@@ -2,6 +2,15 @@
 import { TeamMember, TeamMemberStatus } from "@/types/TeamMemberTypes";
 import { supabase } from "@/integrations/supabase/client";
 
+// Format name from email
+export const formatNameFromEmail = (email: string): string => {
+  const namePart = email.split('@')[0];
+  return namePart
+    .split('.')
+    .map(part => part.charAt(0).toUpperCase() + part.slice(1))
+    .join(' ');
+};
+
 // Convert Supabase team member to app TeamMember
 export const mapDbToTeamMember = (dbTeamMember: any): TeamMember => {
   return {
@@ -125,6 +134,48 @@ export const canEditTeamMember = (
   return teamMember.user_id === currentUserId;
 };
 
+// Get or create a team member for a user
+export const getOrCreateTeamMemberForUser = async (userId: string, email: string, role: string): Promise<TeamMember> => {
+  // First check if a team member already exists for this user
+  const { data: existingMember, error: fetchError } = await supabase
+    .from('team_members')
+    .select('*')
+    .eq('user_id', userId)
+    .maybeSingle();
+
+  if (fetchError) {
+    console.error('Error checking for existing team member:', fetchError);
+    throw fetchError;
+  }
+
+  if (existingMember) {
+    return mapDbToTeamMember(existingMember);
+  }
+
+  // If no existing member, create a new one
+  const formattedName = formatNameFromEmail(email);
+  let position = "Team Member";
+  
+  // Set position based on role (can be refined with data from admin panel)
+  if (role === 'admin') {
+    position = "Team Lead";
+  } else if (role === 'premium') {
+    position = "Senior Member";
+  }
+  
+  const newTeamMember: Omit<TeamMember, 'id'> = {
+    name: formattedName,
+    position: position,
+    status: 'available',
+    projects: [],
+    lastUpdated: new Date(),
+    user_id: userId,
+    role: role
+  };
+
+  return addTeamMember(newTeamMember);
+};
+
 // Set up real-time subscription
 export const subscribeToTeamMembers = (
   callback: (teamMembers: TeamMember[]) => void
@@ -156,3 +207,4 @@ export const subscribeToTeamMembers = (
     supabase.removeChannel(subscription);
   };
 };
+
