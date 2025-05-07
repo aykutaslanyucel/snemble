@@ -43,7 +43,7 @@ function useAppDebug() {
 
 // Define route protection components inside the App component so they can use useAuth
 function AppRoutes() {
-  const { user, isAdmin, loading } = useAuth();
+  const { user, isAdmin, loading, resetAuthState } = useAuth();
   
   // Use our debug hook
   useAppDebug();
@@ -55,8 +55,14 @@ function AppRoutes() {
     if (loading) {
       console.log("Auth is loading, showing loading state...");
       return (
-        <div className="min-h-screen flex items-center justify-center">
-          <div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full"></div>
+        <div className="min-h-screen flex flex-col items-center justify-center gap-4">
+          <div className="spinner"></div>
+          <button 
+            onClick={resetAuthState} 
+            className="text-sm text-muted-foreground hover:text-primary transition-colors"
+          >
+            Taking too long? Click here
+          </button>
         </div>
       );
     }
@@ -75,8 +81,14 @@ function AppRoutes() {
     if (loading) {
       console.log("Auth is loading, showing loading state for admin route...");
       return (
-        <div className="min-h-screen flex items-center justify-center">
-          <div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full"></div>
+        <div className="min-h-screen flex flex-col items-center justify-center gap-4">
+          <div className="spinner"></div>
+          <button 
+            onClick={resetAuthState} 
+            className="text-sm text-muted-foreground hover:text-primary transition-colors"
+          >
+            Taking too long? Click here
+          </button>
         </div>
       );
     }
