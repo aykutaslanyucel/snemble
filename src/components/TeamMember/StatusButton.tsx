@@ -16,15 +16,15 @@ export function StatusButton({ status, currentStatus, onClick, color, tooltip }:
   const getIcon = () => {
     switch (status) {
       case "available":
-        return <Check className="h-3.5 w-3.5 text-gray-700" />;
+        return <Check className="h-5 w-5 text-gray-700" />;
       case "someAvailability":
-        return <User className="h-3.5 w-3.5 text-gray-700" />;
+        return <User className="h-5 w-5 text-gray-700" />;
       case "busy":
-        return <Clock className="h-3.5 w-3.5 text-gray-700" />;
+        return <Clock className="h-5 w-5 text-gray-700" />;
       case "seriouslyBusy":
-        return <X className="h-3.5 w-3.5 text-gray-700" />;
+        return <X className="h-5 w-5 text-gray-700" />;
       case "away":
-        return <Coffee className="h-3.5 w-3.5 text-gray-700" />;
+        return <Coffee className="h-5 w-5 text-gray-700" />;
       default:
         return null;
     }
@@ -39,19 +39,18 @@ export function StatusButton({ status, currentStatus, onClick, color, tooltip }:
             e.preventDefault();
             onClick(status);
           }}
-          className={`w-8 h-8 rounded-full bg-white flex items-center justify-center shadow-sm transition-all ${
-            currentStatus === status ? 'ring-2 ring-white/70 transform scale-110' : 'hover:scale-105'
+          className={`w-12 h-12 rounded-full bg-white flex items-center justify-center transition-all ${
+            currentStatus === status 
+              ? 'ring-2 ring-blue-400 transform scale-110 shadow-md' 
+              : 'shadow-sm hover:scale-105'
           }`}
-          style={{ 
-            border: currentStatus === status ? '2px solid rgba(255,255,255,0.8)' : '1px solid rgba(0,0,0,0.05)'
-          }}
           aria-label={tooltip}
         >
           {getIcon()}
         </button>
       </PopoverTrigger>
-      <PopoverContent className="p-1 w-auto">
-        <p className="text-xs">{tooltip}</p>
+      <PopoverContent className="p-2 rounded-xl shadow-lg">
+        <p className="text-sm font-medium">{tooltip}</p>
       </PopoverContent>
     </Popover>
   );

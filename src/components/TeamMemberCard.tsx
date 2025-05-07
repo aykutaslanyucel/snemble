@@ -4,8 +4,7 @@ import { TeamMember, TeamMemberStatus } from "@/types/TeamMemberTypes";
 import { motion } from "framer-motion";
 import { useAuth } from "@/contexts/AuthContext";
 import "../styles/animations.css";
-import { Badge } from "@/components/ui/badge";
-import { MoreVertical, Plus, Check, User, Clock, X, Coffee } from "lucide-react";
+import { Check, User, Clock, X, Coffee, Plus, MoreHorizontal } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 // Import our dialogs
@@ -27,7 +26,6 @@ export function TeamMemberCard({ member, onUpdate, onDelete, canEdit }: TeamMemb
   const [projects, setProjects] = useState(member.projects.join(", "));
   const [isConfirmingDelete, setIsConfirmingDelete] = useState(false);
   const [showCustomizer, setShowCustomizer] = useState(false);
-  const [isMenuOpen, setIsMenuOpen] = useState(false);
   const { isPremium } = useAuth();
   
   const handleStatusChange = (status: TeamMemberStatus) => {
@@ -121,46 +119,28 @@ export function TeamMemberCard({ member, onUpdate, onDelete, canEdit }: TeamMemb
     }
   };
 
-  // Status icon based on status
-  const getStatusIcon = () => {
-    switch (member.status) {
-      case "available":
-        return <Check className="h-3.5 w-3.5 text-gray-700" />;
-      case "someAvailability":
-        return <User className="h-3.5 w-3.5 text-gray-700" />;
-      case "busy":
-        return <Clock className="h-3.5 w-3.5 text-gray-700" />;
-      case "seriouslyBusy":
-        return <X className="h-3.5 w-3.5 text-gray-700" />;
-      case "away":
-        return <Coffee className="h-3.5 w-3.5 text-gray-700" />;
-      default:
-        return null;
-    }
-  };
-
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.3 }}
-      className="flex flex-col"
+      className="h-full"
     >
       <div 
-        className="rounded-lg overflow-hidden h-full"
+        className="rounded-2xl overflow-hidden h-full shadow-lg p-6"
         style={{ 
           background: getCardBackground(),
-          boxShadow: "0px 1px 2px rgba(0, 0, 0, 0.05)"
+          boxShadow: "0px 10px 25px -5px rgba(0,0,0,0.05)"
         }}
       >
         {/* Card Header */}
-        <div className="p-4 flex justify-between items-start">
+        <div className="flex justify-between items-start mb-6">
           <div>
             {isEditingName ? (
               <div className="flex items-center">
                 <input
                   type="text"
-                  className="bg-white/80 rounded-md border border-gray-200 px-2 py-1 text-sm"
+                  className="bg-white/90 rounded-xl border border-gray-100 px-3 py-2 text-lg font-medium"
                   value={name}
                   onChange={(e) => setName(e.target.value)}
                   onBlur={handleNameChange}
@@ -170,116 +150,99 @@ export function TeamMemberCard({ member, onUpdate, onDelete, canEdit }: TeamMemb
               </div>
             ) : (
               <h3 
-                className="font-medium text-gray-800 text-base"
+                className="font-semibold text-gray-800 text-2xl mb-1"
                 onClick={() => canEdit && setIsEditingName(true)}
               >
                 {member.name}
               </h3>
             )}
-            <p className="text-sm text-gray-600">{member.position}</p>
+            <p className="text-gray-600 text-md">{member.position}</p>
           </div>
           
           {canEdit && (
             <button 
-              className="rounded-full p-1 bg-white/70 hover:bg-white/90 shadow-sm"
-              onClick={() => setIsMenuOpen(!isMenuOpen)}
+              className="rounded-full p-2 bg-white/80 hover:bg-white shadow-sm"
+              onClick={() => setIsConfirmingDelete(true)}
             >
-              <MoreVertical className="h-4 w-4 text-gray-500" />
+              <MoreHorizontal className="h-5 w-5 text-gray-500" />
             </button>
           )}
         </div>
         
-        {/* Card Content */}
-        <div className="px-4 pb-1">
-          <div className="mb-4">
-            <p className="text-xs font-medium text-gray-700 mb-1.5">Projects</p>
-            {member.projects.length > 0 ? (
-              <div className="flex flex-wrap gap-1.5">
-                {member.projects.map((project, index) => (
-                  <Badge 
-                    key={index} 
-                    variant="outline" 
-                    className="bg-white/90 text-gray-700 hover:bg-white rounded-full"
-                  >
-                    {project}
-                  </Badge>
-                ))}
-                
-                {canEdit && (
-                  <button 
-                    onClick={() => setIsEditingProjects(true)}
-                    className="bg-white/80 hover:bg-white/90 text-gray-600 rounded-full w-5 h-5 flex items-center justify-center shadow-sm"
-                  >
-                    <Plus className="h-2.5 w-2.5" />
-                  </button>
-                )}
-              </div>
-            ) : (
-              <div className="flex items-center gap-2">
-                <p className="text-xs text-gray-500">No projects</p>
-                
-                {canEdit && (
-                  <Button 
-                    size="sm" 
-                    variant="outline" 
-                    className="h-6 text-xs bg-white/80 border-gray-200 rounded-full px-2"
-                    onClick={() => setIsEditingProjects(true)}
-                  >
-                    <Plus className="h-2.5 w-2.5 mr-1" />
-                    Add Project
-                  </Button>
-                )}
-              </div>
+        {/* Projects Section */}
+        <div className="mb-8">
+          <div className="flex items-center justify-between mb-3">
+            <h4 className="text-gray-700 font-medium">Projects</h4>
+            
+            {canEdit && (
+              <Button 
+                onClick={() => setIsEditingProjects(true)}
+                className="rounded-full px-4 py-2 h-auto bg-white text-gray-700 hover:bg-white/90 shadow-sm flex items-center gap-1.5"
+                variant="ghost"
+              >
+                <Plus className="h-4 w-4" />
+                Add Project
+              </Button>
             )}
           </div>
           
-          <div>
-            <p className="text-xs font-medium text-gray-700 mb-1.5">Status</p>
-            <div className="flex items-center justify-between">
-              {canEdit ? (
-                <div className="flex space-x-1.5">
-                  <StatusButton 
-                    status="available"
-                    current={member.status} 
-                    onClick={() => handleStatusChange("available")}
-                    color="#D3E4FD" 
-                  />
-                  <StatusButton 
-                    status="someAvailability"
-                    current={member.status} 
-                    onClick={() => handleStatusChange("someAvailability")}
-                    color="#F2FCE2" 
-                  />
-                  <StatusButton 
-                    status="busy"
-                    current={member.status} 
-                    onClick={() => handleStatusChange("busy")}
-                    color="#FEF7CD" 
-                  />
-                  <StatusButton 
-                    status="seriouslyBusy"
-                    current={member.status} 
-                    onClick={() => handleStatusChange("seriouslyBusy")}
-                    color="#FFDEE2" 
-                  />
-                  <StatusButton 
-                    status="away"
-                    current={member.status} 
-                    onClick={() => handleStatusChange("away")}
-                    color="#E5E5E5" 
-                  />
-                </div>
-              ) : (
-                <div className="flex items-center gap-1.5 bg-white/90 border border-gray-100 px-2.5 py-1 rounded-full">
-                  <span className="w-5 h-5 flex items-center justify-center bg-white rounded-full shadow-sm">
-                    {getStatusIcon()}
-                  </span>
-                  <span className="text-xs font-medium text-gray-700">{getStatusText()}</span>
-                </div>
-              )}
-              
-              <span className="text-xs text-gray-500 ml-auto">{getTimeAgo()}</span>
+          {member.projects.length > 0 ? (
+            <div className="flex flex-wrap gap-2">
+              {member.projects.map((project, index) => (
+                <span 
+                  key={index} 
+                  className="bg-white/90 text-gray-700 rounded-full px-3 py-1 text-sm font-medium shadow-sm"
+                >
+                  {project}
+                </span>
+              ))}
             </div>
+          ) : (
+            <p className="text-gray-500 text-sm">No projects assigned</p>
+          )}
+        </div>
+        
+        {/* Status Section */}
+        <div className="space-y-3">
+          <h4 className="text-gray-700 font-medium">Status</h4>
+          
+          <div className="flex items-center justify-between">
+            {canEdit ? (
+              <div className="flex space-x-3">
+                <StatusButton 
+                  status="available"
+                  current={member.status} 
+                  onClick={() => handleStatusChange("available")}
+                />
+                <StatusButton 
+                  status="someAvailability"
+                  current={member.status} 
+                  onClick={() => handleStatusChange("someAvailability")}
+                />
+                <StatusButton 
+                  status="busy"
+                  current={member.status} 
+                  onClick={() => handleStatusChange("busy")}
+                />
+                <StatusButton 
+                  status="seriouslyBusy"
+                  current={member.status} 
+                  onClick={() => handleStatusChange("seriouslyBusy")}
+                />
+                <StatusButton 
+                  status="away"
+                  current={member.status} 
+                  onClick={() => handleStatusChange("away")}
+                />
+              </div>
+            ) : (
+              <div className="flex items-center gap-2 bg-white/80 rounded-full px-3 py-1.5 shadow-sm">
+                {getStatusIcon(member.status)}
+                <span className="text-sm font-medium text-gray-700">{getStatusText()}</span>
+              </div>
+            )}
+            
+            <span className="text-xs text-gray-400">{getTimeAgo()}</span>
           </div>
         </div>
       </div>
@@ -312,46 +275,45 @@ export function TeamMemberCard({ member, onUpdate, onDelete, canEdit }: TeamMemb
   );
 }
 
-// Status Button Component
+// Status Button Component with enhanced styling
 function StatusButton({ 
   status, 
   current, 
   onClick, 
-  color 
 }: { 
   status: TeamMemberStatus; 
   current: TeamMemberStatus;
   onClick: () => void;
-  color: string;
 }) {
-  const getIcon = () => {
-    switch (status) {
-      case "available":
-        return <Check className="h-3.5 w-3.5 text-gray-700" />;
-      case "someAvailability":
-        return <User className="h-3.5 w-3.5 text-gray-700" />;
-      case "busy":
-        return <Clock className="h-3.5 w-3.5 text-gray-700" />;
-      case "seriouslyBusy":
-        return <X className="h-3.5 w-3.5 text-gray-700" />;
-      case "away":
-        return <Coffee className="h-3.5 w-3.5 text-gray-700" />;
-      default:
-        return null;
-    }
-  };
-
   return (
     <button
       onClick={onClick}
-      className={`w-8 h-8 rounded-full bg-white flex items-center justify-center shadow-sm transition-all ${
-        current === status ? 'ring-2 ring-white/70 transform scale-105' : 'hover:scale-105'
+      className={`w-12 h-12 rounded-full bg-white flex items-center justify-center transition-all ${
+        current === status 
+          ? 'ring-2 ring-blue-400 transform scale-110 shadow-md' 
+          : 'shadow-sm hover:scale-105'
       }`}
-      style={{ 
-        border: current === status ? '2px solid rgba(255,255,255,0.8)' : '1px solid rgba(0,0,0,0.05)'
-      }}
+      aria-label={`Set status to ${status}`}
     >
-      {getIcon()}
+      {getStatusIcon(status)}
     </button>
   );
+}
+
+// Extracted status icon function to be used in multiple places
+function getStatusIcon(status: TeamMemberStatus) {
+  switch (status) {
+    case "available":
+      return <Check className="h-5 w-5 text-gray-700" />;
+    case "someAvailability":
+      return <User className="h-5 w-5 text-gray-700" />;
+    case "busy":
+      return <Clock className="h-5 w-5 text-gray-700" />;
+    case "seriouslyBusy":
+      return <X className="h-5 w-5 text-gray-700" />;
+    case "away":
+      return <Coffee className="h-5 w-5 text-gray-700" />;
+    default:
+      return null;
+  }
 }

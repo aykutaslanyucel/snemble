@@ -3,9 +3,8 @@ import React from "react";
 import { CardContent } from "@/components/ui/card";
 import { StatusSelector } from "./StatusSelector";
 import { TeamMemberStatus } from "@/types/TeamMemberTypes";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 interface MemberCardContentProps {
   position: string;
@@ -25,60 +24,48 @@ export function MemberCardContent({
   onEditProjects
 }: MemberCardContentProps) {
   return (
-    <CardContent className="px-4 pt-0 pb-2 space-y-4">
-      <div className="mb-1">
-        <div className="text-sm text-gray-600 dark:text-gray-300 font-normal">
+    <CardContent className="px-6 pt-0 pb-6 space-y-6">
+      <div className="mb-2">
+        <div className="text-gray-600 dark:text-gray-300 text-md">
           {position}
         </div>
       </div>
       
-      <div className="space-y-1.5">
-        <p className="text-xs font-medium text-gray-700 mb-1.5">Projects</p>
-        <div className="flex flex-wrap gap-1.5">
+      <div className="space-y-3">
+        <div className="flex items-center justify-between">
+          <h4 className="text-gray-700 font-medium">Projects</h4>
+          
+          {canEdit && (
+            <Button 
+              onClick={onEditProjects}
+              className="rounded-full px-4 py-2 h-auto bg-white text-gray-700 hover:bg-white/90 shadow-sm flex items-center gap-1.5"
+              variant="ghost"
+            >
+              <Plus className="h-4 w-4" />
+              Add Project
+            </Button>
+          )}
+        </div>
+        
+        <div className="flex flex-wrap gap-2">
           {projects.length > 0 ? (
-            <>
-              {projects.map((project, index) => (
-                <Badge 
-                  key={index} 
-                  variant="outline" 
-                  className="bg-white/90 text-gray-700 hover:bg-white rounded-full px-2.5 py-0.5 text-xs"
-                >
-                  {project}
-                </Badge>
-              ))}
-              
-              {canEdit && (
-                <button 
-                  onClick={onEditProjects}
-                  className="bg-white/80 hover:bg-white/90 text-gray-600 rounded-full w-5 h-5 flex items-center justify-center shadow-sm"
-                >
-                  <Plus className="h-2.5 w-2.5" />
-                </button>
-              )}
-            </>
+            projects.map((project, index) => (
+              <span 
+                key={index} 
+                className="bg-white/90 text-gray-700 rounded-full px-3 py-1 text-sm font-medium shadow-sm"
+              >
+                {project}
+              </span>
+            ))
           ) : (
-            <div className="flex items-center gap-2">
-              <p className="text-xs text-gray-500">No projects</p>
-              
-              {canEdit && (
-                <Button 
-                  size="sm" 
-                  variant="outline" 
-                  className="h-6 text-xs bg-white/80 border-gray-200 rounded-full px-2"
-                  onClick={onEditProjects}
-                >
-                  <Plus className="h-2.5 w-2.5 mr-1" />
-                  Add Project
-                </Button>
-              )}
-            </div>
+            <p className="text-gray-500 text-sm">No projects assigned</p>
           )}
         </div>
       </div>
       
       {canEdit && (
-        <div className="space-y-1">
-          <p className="text-xs font-medium text-gray-700 mb-1.5">Status</p>
+        <div className="space-y-3">
+          <h4 className="text-gray-700 font-medium">Status</h4>
           <StatusSelector
             currentStatus={currentStatus}
             onStatusChange={onStatusChange}
