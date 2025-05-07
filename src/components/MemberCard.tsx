@@ -35,29 +35,6 @@ export function MemberCard({ member, onUpdate, onDelete, canEdit }: MemberCardPr
   const animationClass = member.customization?.animate && member.customization?.gradient ? 
     `animate-gradient-${member.customization.animationType || 'gentle'}` : '';
   
-  // Calculate badge position styles with percentage-based positioning to prevent cropping
-  const getBadgePositionStyle = () => {
-    if (!member.customization?.badge) return {};
-    
-    const position = member.customization.badgePosition || 'top-right';
-    
-    if (position === 'center') {
-      return {
-        top: '50%',
-        left: '50%',
-        transform: 'translate(-50%, -50%)'
-      };
-    }
-    
-    // Use percentage-based positioning to ensure badges are fully visible
-    return {
-      top: position.includes('top') ? '-50%' : 'auto',
-      bottom: position.includes('bottom') ? '-50%' : 'auto',
-      right: position.includes('right') ? '-50%' : 'auto',
-      left: position.includes('left') ? '-50%' : 'auto'
-    };
-  };
-  
   // Get badge size class
   const getBadgeSizeClass = () => {
     const size = member.customization?.badgeSize || 'medium';
@@ -66,8 +43,46 @@ export function MemberCard({ member, onUpdate, onDelete, canEdit }: MemberCardPr
       case 'small': return 'w-12 h-12';
       case 'large': return 'w-28 h-28';
       case 'medium':
-      default: return 'w-20 h-20';
+      default: return 'w-20 w-20';
     }
+  };
+
+  // Calculate badge position styles - positioned well outside card for "hat" effect
+  const getBadgeStyle = () => {
+    if (!member.customization?.badge || !member.customization?.badgePosition) return {};
+    
+    const positions: Record<string, React.CSSProperties> = {
+      "top-left": { 
+        position: "absolute", 
+        top: "-40%", 
+        left: "-25%", 
+        transform: "none",
+        zIndex: 10
+      },
+      "top-right": { 
+        position: "absolute", 
+        top: "-40%", 
+        right: "-25%", 
+        transform: "none",
+        zIndex: 10
+      },
+      "bottom-left": { 
+        position: "absolute", 
+        bottom: "-40%", 
+        left: "-25%", 
+        transform: "none",
+        zIndex: 10
+      },
+      "bottom-right": { 
+        position: "absolute", 
+        bottom: "-40%", 
+        right: "-25%", 
+        transform: "none",
+        zIndex: 10
+      }
+    };
+    
+    return positions[member.customization.badgePosition] || positions["top-right"];
   };
 
   const handleStatusChange = (status: TeamMemberStatus) => {
@@ -109,11 +124,11 @@ export function MemberCard({ member, onUpdate, onDelete, canEdit }: MemberCardPr
       className="h-full"
     >
       <div className="relative h-full">
-        {/* Badge added outside the card container for full visibility */}
+        {/* Badge placed outside card for "hat" effect */}
         {member.customization?.badge && (
           <div 
-            className={`absolute ${getBadgeSizeClass()} overflow-visible z-20 pointer-events-none`}
-            style={getBadgePositionStyle()}
+            className={`${getBadgeSizeClass()} pointer-events-none`}
+            style={getBadgeStyle()}
           >
             <img 
               src={member.customization.badge} 

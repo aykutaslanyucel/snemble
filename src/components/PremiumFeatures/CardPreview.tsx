@@ -31,32 +31,57 @@ export function CardPreview({
       "animate-gradient-gentle") : 
     "";
 
-  // Define size classes for badges with larger dimensions
+  // Define size classes for badges
   const badgeSizeClasses = {
     small: "w-12 h-12",
     medium: "w-20 h-20",
     large: "w-28 h-28"
   };
-
-  // Calculate position values for badges with extreme offsets to prevent cropping
-  const badgePositionValues = {
-    "top-left": { top: "-50%", left: "-50%", transform: "none" },
-    "top-right": { top: "-50%", right: "-50%", transform: "none" },
-    "bottom-left": { bottom: "-50%", left: "-50%", transform: "none" },
-    "bottom-right": { bottom: "-50%", right: "-50%", transform: "none" },
-    "center": { top: "50%", left: "50%", transform: "translate(-50%, -50%)" }
-  };
-
-  // Get size and position styles
+  
+  // Get badge size class
   const sizeClass = badgeSizeClasses[badgeSize as keyof typeof badgeSizeClasses] || badgeSizeClasses.medium;
-  const positionStyle = badgePositionValues[badgePosition as keyof typeof badgePositionValues] || badgePositionValues["top-right"];
+
+  // Calculate badge position styles - fully outside the card
+  const getBadgeStyle = () => {
+    if (!badge || !badgePosition) return {};
+    
+    const positions: Record<string, React.CSSProperties> = {
+      "top-left": { 
+        position: "absolute", 
+        top: "-40%", 
+        left: "-25%", 
+        transform: "none"
+      },
+      "top-right": { 
+        position: "absolute", 
+        top: "-40%", 
+        right: "-25%", 
+        transform: "none"
+      },
+      "bottom-left": { 
+        position: "absolute", 
+        bottom: "-40%", 
+        left: "-25%", 
+        transform: "none"
+      },
+      "bottom-right": { 
+        position: "absolute", 
+        bottom: "-40%", 
+        right: "-25%", 
+        transform: "none"
+      }
+    };
+    
+    return positions[badgePosition] || positions["top-right"];
+  };
 
   return (
     <div className="relative">
+      {/* Badge placed outside card for "hat" effect */}
       {badge && (
         <div 
-          className={`absolute ${sizeClass} overflow-visible z-20 pointer-events-none`}
-          style={positionStyle}
+          className={`${sizeClass} pointer-events-none z-10`}
+          style={getBadgeStyle()}
         >
           <img 
             src={badge} 
