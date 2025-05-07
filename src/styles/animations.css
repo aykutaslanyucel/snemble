@@ -1,0 +1,31 @@
+
+@keyframes gradientShift {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+.animate-gradient {
+  animation: gradientShift 6s ease infinite;
+  background-size: 400% 400%;
+}
+
+/* Status button styling improvements */
+.status-button {
+  @apply rounded-full w-8 h-8 flex items-center justify-center transition-all;
+  @apply border border-transparent hover:border-gray-300 dark:hover:border-gray-600;
+  @apply text-gray-700 dark:text-gray-900 hover:shadow-md;
+}
+
+.status-button.active {
+  @apply border-2 transform scale-110 shadow-lg;
+}
+
+/* Dark mode improvements for status buttons */
+.dark .status-button {
+  @apply text-gray-700;
+}
+
+.dark .status-button.active {
+  @apply ring-2 ring-white ring-opacity-30;
+}

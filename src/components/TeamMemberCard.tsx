@@ -1,505 +1,277 @@
-import { useState } from "react";
-import { motion } from "framer-motion";
-import { format, formatDistanceToNow } from "date-fns";
-import { Card } from "@/components/ui/card";
-import { MoreVertical, Trash2, Edit, CheckCircle, XCircle, User, Clock, Coffee, Plus, Crown, Palette, Brush, Settings, Lock } from "lucide-react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Input } from "@/components/ui/input";
-import { Toggle } from "@/components/ui/toggle";
-import { Textarea } from "@/components/ui/textarea";
-import { cn } from "@/lib/utils";
-import { TeamMember, TeamMemberStatus } from "@/types/TeamMemberTypes";
 
-interface Props {
+import React, { useState } from "react";
+import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Badge } from "@/components/ui/badge";
+import { MoreVertical, Edit, Trash2, Briefcase, Palette } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { TeamMember, TeamMemberStatus } from "@/types/TeamMemberTypes";
+import { motion } from "framer-motion";
+import { CardCustomizer } from "@/components/PremiumFeatures/CardCustomizer";
+import { useAuth } from "@/contexts/AuthContext";
+import "../styles/animations.css";
+
+interface TeamMemberCardProps {
   member: TeamMember;
-  onUpdate: (id: string, field: string, value: any) => void;
-  onDelete: (id: string) => void;
+  onUpdate: (id: string, field: string, value: any) => Promise<void>;
+  onDelete: (id: string) => Promise<void>;
   canEdit: boolean;
 }
 
-const statusConfig = {
-  available: {
-    label: "Available",
-    color: "bg-blue-50",
-    icon: CheckCircle,
-    iconColor: "text-blue-500"
-  },
-  someAvailability: {
-    label: "Some Availability",
-    color: "bg-green-50",
-    icon: Clock,
-    iconColor: "text-green-500"
-  },
-  busy: {
-    label: "Busy",
-    color: "bg-yellow-50",
-    icon: User,
-    iconColor: "text-yellow-500"
-  },
-  seriouslyBusy: {
-    label: "Seriously Busy",
-    color: "bg-red-50",
-    icon: XCircle,
-    iconColor: "text-red-500"
-  },
-  away: {
-    label: "Away",
-    color: "bg-gray-50",
-    icon: Coffee,
-    iconColor: "text-gray-500"
-  }
-} as const;
+// Status button configs with colors but without labels
+const STATUS_BUTTONS = [
+  { status: "available", color: "#D3E4FD", tooltip: "Available" },
+  { status: "someAvailability", color: "#F2FCE2", tooltip: "Some Availability" },
+  { status: "busy", color: "#FEF7CD", tooltip: "Busy" },
+  { status: "seriouslyBusy", color: "#FFDEE2", tooltip: "Seriously Busy" },
+  { status: "away", color: "#F1F0FB", tooltip: "Away" },
+];
 
-export default function TeamMemberCard({
-  member,
-  onUpdate,
-  onDelete,
-  canEdit
-}: Props) {
-  console.log("Team member card rendering:", { 
-    memberId: member.id, 
-    memberName: member.name, 
-    canEdit: canEdit,
-    userId: member.user_id
-  });
+export function TeamMemberCard({ member, onUpdate, onDelete, canEdit }: TeamMemberCardProps) {
+  const [isEditingName, setIsEditingName] = useState(false);
+  const [name, setName] = useState(member.name);
+  const [isEditingProjects, setIsEditingProjects] = useState(false);
+  const [projects, setProjects] = useState(member.projects.join(", "));
+  const [isConfirmingDelete, setIsConfirmingDelete] = useState(false);
+  const [showCustomizer, setShowCustomizer] = useState(false);
+  const { isPremium } = useAuth();
+  
+  const handleStatusChange = (status: TeamMemberStatus) => {
+    if (status === member.status) return; // No change
+    
+    // Update status with optimistic UI update
+    onUpdate(member.id, "status", status);
+  };
 
-  const [isEditing, setIsEditing] = useState(false);
-  const [editedName, setEditedName] = useState(member.name);
-  const [editedPosition, setEditedPosition] = useState(member.position);
-  const [newProject, setNewProject] = useState("");
-  const [editingProjects, setEditingProjects] = useState("");
-  const [isProjectDialogOpen, setIsProjectDialogOpen] = useState(false);
-  const [isCustomizationOpen, setIsCustomizationOpen] = useState(false);
-  const [statusChangeInProgress, setStatusChangeInProgress] = useState<string | null>(null);
-  
-  const handleSave = () => {
-    onUpdate(member.id, "name", editedName);
-    onUpdate(member.id, "position", editedPosition);
-    setIsEditing(false);
-  };
-  
-  const handleStatusChange = (newStatus: TeamMemberStatus) => {
-    // Set the status that is currently being updated
-    setStatusChangeInProgress(newStatus);
-    
-    // Optimistically update the UI with the new status
-    onUpdate(member.id, "status", newStatus);
-    
-    // Clear the in-progress status after a short delay to show the animation
-    setTimeout(() => {
-      setStatusChangeInProgress(null);
-    }, 500);
-  };
-  
-  const handleAddProject = () => {
-    if (newProject.trim()) {
-      onUpdate(member.id, "projects", newProject);
-      setNewProject("");
-      setIsProjectDialogOpen(false);
+  const handleNameChange = () => {
+    if (name !== member.name) {
+      onUpdate(member.id, "name", name);
     }
+    setIsEditingName(false);
   };
-  
-  const handleRemoveProject = (projectToRemove: string) => {
-    onUpdate(
-      member.id, 
-      "projects", 
-      member.projects.filter(project => project !== projectToRemove)
-    );
+
+  const handleProjectsChange = () => {
+    const newProjects = projects
+      .split(/[,;]/)
+      .map((p) => p.trim())
+      .filter((p) => p.length > 0);
+    
+    if (JSON.stringify(newProjects) !== JSON.stringify(member.projects)) {
+      onUpdate(member.id, "projects", newProjects);
+    }
+    setIsEditingProjects(false);
   };
-  
-  const getTimeAgo = (date: Date) => {
-    return formatDistanceToNow(date, {
-      addSuffix: true
-    });
+
+  const handleDeleteMember = () => {
+    onDelete(member.id);
+    setIsConfirmingDelete(false);
   };
-  
-  const openProjectDialog = () => {
-    setNewProject(member.projects.join('; '));
-    setIsProjectDialogOpen(true);
+
+  // Get the appropriate background based on member's customization or status
+  const getCardBackground = () => {
+    if (member.customization) {
+      if (member.customization.gradient) {
+        return {
+          background: member.customization.gradient,
+          className: member.customization.animate ? "animate-gradient" : ""
+        };
+      }
+      if (member.customization.color) {
+        return {
+          background: member.customization.color,
+          className: ""
+        };
+      }
+    }
+    
+    // Default color based on status
+    const statusConfig = STATUS_BUTTONS.find(s => s.status === member.status);
+    return {
+      background: statusConfig?.color || "#F1F0FB",
+      className: ""
+    };
   };
-  
-  const currentStatus = statusConfig[member.status] || statusConfig.available;
-  const premiumCustomization = member.customization || {};
-  const isPremium = member.role?.toLowerCase() === 'premium';
-  
-  // Non-editable read-only view
-  if (!canEdit) {
-    return (
-      <Card className={cn(
-        "team-member-card overflow-hidden border-none shadow-lg transition-all duration-300", 
-        currentStatus.color, 
-        isPremium && "border-2 border-yellow-400/50", 
-        premiumCustomization.color
-      )}>
-        <motion.div 
-          initial={false}
-          animate={{
-            opacity: 1,
-            scale: 1,
-            transition: {
-              type: "spring",
-              stiffness: 300,
-              damping: 30
-            }
-          }}
-          className="p-6"
-        >
-          <div className="flex justify-between items-start mb-4">
-            <div className="flex-1">
-              <div className="flex items-center gap-2">
-                <div>
-                  <h3 className="text-lg font-semibold text-slate-950">{member.name}</h3>
-                  <p className="text-sm text-slate-950">{member.position}</p>
-                </div>
-                {isPremium && (
-                  <Badge variant="outline" className="bg-yellow-100/50">
-                    <Crown className="h-3 w-3 mr-1 text-yellow-600" />
-                    Premium
-                  </Badge>
-                )}
-              </div>
-            </div>
-            
-            <Badge variant="outline" className="text-gray-500 flex items-center gap-1">
-              <Lock className="h-3 w-3" />
-              <span className="text-xs">Read Only</span>
-            </Badge>
-          </div>
 
-          <div className="space-y-4">
-            <div>
-              <div className="flex items-center justify-between mb-2">
-                <label className="text-sm font-medium bg-transparent">Projects</label>
-              </div>
-              <div className="flex flex-wrap gap-2">
-                {member.projects.map((project, index) => (
-                  <Badge key={index} variant="secondary">
-                    {project}
-                  </Badge>
-                ))}
-                {member.projects.length === 0 && (
-                  <span className="text-sm text-gray-500">No projects assigned</span>
-                )}
-              </div>
-            </div>
+  const cardStyle = getCardBackground();
 
-            <div className="space-y-2">
-              <label className="text-sm font-medium block">Status</label>
-              <Badge variant="outline" className="bg-white/50">
-                <motion.div 
-                  initial={{scale: 0.8, opacity: 0}}
-                  animate={{scale: 1, opacity: 1}}
-                  className="flex items-center"
-                >
-                  <currentStatus.icon className={cn("h-3 w-3 mr-1", currentStatus.iconColor)} />
-                  {currentStatus.label}
-                </motion.div>
-              </Badge>
-            </div>
-
-            <div className="flex items-center justify-between mt-4">
-              <Badge variant="outline" className="bg-white/50">
-                <motion.div 
-                  initial={{scale: 0.8, opacity: 0}}
-                  animate={{scale: 1, opacity: 1}}
-                  className="flex items-center"
-                >
-                  {premiumCustomization.emoji ? (
-                    <span className="mr-1">{premiumCustomization.emoji}</span>
-                  ) : (
-                    <currentStatus.icon className={cn("h-3 w-3 mr-1", currentStatus.iconColor)} />
-                  )}
-                  {currentStatus.label}
-                  {premiumCustomization.hat && <span className="ml-1">{premiumCustomization.hat}</span>}
-                </motion.div>
-              </Badge>
-              <span className="text-xs text-muted-foreground">
-                {getTimeAgo(member.lastUpdated)}
-              </span>
-            </div>
-          </div>
-        </motion.div>
-      </Card>
-    );
-  }
-
-  // Editable view
   return (
-    <Card className={cn(
-      "team-member-card overflow-hidden border-none shadow-lg transition-all duration-300",
-      isEditing ? "ring-2 ring-primary" : currentStatus.color,
-      isPremium && "border-2 border-yellow-400/50",
-      premiumCustomization.color
-    )}>
-      <motion.div 
-        initial={false}
-        animate={{
-          opacity: 1,
-          scale: 1,
-          transition: {
-            type: "spring",
-            stiffness: 300,
-            damping: 30
-          }
-        }}
-        className="p-6"
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.3 }}
+      className="flex flex-col"
+    >
+      <Card 
+        className={`h-full border dark:border-gray-800 ${cardStyle.className}`}
+        style={{ background: cardStyle.background }}
       >
-        <div className="flex justify-between items-start mb-4">
-          <div className="flex-1">
-            {isEditing ? (
-              <div className="space-y-2">
-                <Input 
-                  value={editedName} 
-                  onChange={(e) => setEditedName(e.target.value)}
-                  placeholder="Name"
-                  className="font-semibold"
-                />
-                <Input 
-                  value={editedPosition} 
-                  onChange={(e) => setEditedPosition(e.target.value)}
-                  placeholder="Position"
-                  className="text-sm"
+        <CardHeader className="p-4 flex-row items-center justify-between">
+          <CardTitle className="text-gray-800 dark:text-gray-900 text-base font-medium flex items-center gap-2">
+            {isEditingName ? (
+              <div className="flex items-center gap-1">
+                <Input
+                  className="border-gray-300 bg-white text-gray-800 text-sm p-1 h-7"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  onBlur={handleNameChange}
+                  onKeyDown={(e) => e.key === "Enter" && handleNameChange()}
+                  autoFocus
                 />
               </div>
             ) : (
-              <div className="flex items-center gap-2">
-                <div>
-                  <h3 className="text-lg font-semibold text-slate-950">{member.name}</h3>
-                  <p className="text-sm text-slate-950">{member.position}</p>
-                </div>
-                {isPremium && (
-                  <Badge variant="outline" className="bg-yellow-100/50">
-                    <Crown className="h-3 w-3 mr-1 text-yellow-600" />
-                    Premium
-                  </Badge>
-                )}
-              </div>
+              <span onClick={() => canEdit && setIsEditingName(true)} className={`${canEdit ? 'cursor-pointer hover:underline' : ''}`}>
+                {member.name}
+              </span>
             )}
-          </div>
-          {isEditing ? (
-            <div className="flex space-x-2">
-              <Button 
-                variant="outline" 
-                size="sm" 
-                onClick={() => setIsEditing(false)}
-              >
-                Cancel
-              </Button>
-              <Button 
-                variant="default" 
-                size="sm" 
-                onClick={handleSave}
-              >
-                Save
-              </Button>
-            </div>
-          ) : (
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="sm">
-                  <MoreVertical className="h-4 w-4" />
+          </CardTitle>
+          
+          {canEdit && (
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                  <MoreVertical className="h-4 w-4 text-gray-700 dark:text-gray-800" />
                 </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                <DropdownMenuItem onClick={() => setIsEditing(true)}>
-                  <Edit className="mr-2 h-4 w-4" />
-                  Edit
-                </DropdownMenuItem>
-                {isPremium && (
-                  <DropdownMenuItem onClick={() => setIsCustomizationOpen(true)}>
-                    <Palette className="mr-2 h-4 w-4" />
-                    Customize
-                  </DropdownMenuItem>
-                )}
-                <DropdownMenuSeparator />
-                <DropdownMenuItem 
-                  className="text-red-600"
-                  onClick={() => onDelete(member.id)}
-                >
-                  <Trash2 className="mr-2 h-4 w-4" />
-                  Delete
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          )}
-        </div>
-
-        <div className="space-y-4">
-          <div>
-            <div className="flex items-center justify-between mb-2">
-              <label className="text-sm font-medium bg-transparent">Projects</label>
-              {!isEditing && (
-                <Button 
-                  variant="ghost" 
-                  size="sm"
-                  onClick={openProjectDialog}
-                >
-                  <Plus className="h-3.5 w-3.5" />
-                </Button>
-              )}
-            </div>
-            <div className="flex flex-wrap gap-2">
-              {member.projects.map((project, index) => (
-                <Badge key={index} variant="secondary" className="group">
-                  {project}
-                  {!isEditing && (
-                    <button 
-                      className="ml-1 opacity-0 group-hover:opacity-100 transition-opacity" 
-                      onClick={() => handleRemoveProject(project)}
-                    >
-                      <XCircle className="h-3 w-3 text-red-500" />
-                    </button>
-                  )}
-                </Badge>
-              ))}
-              {member.projects.length === 0 && (
-                <span className="text-sm text-gray-500">No projects assigned</span>
-              )}
-            </div>
-          </div>
-
-          {!isEditing && (
-            <div className="space-y-2">
-              <label className="text-sm font-medium block">Status</label>
-              <div className="flex flex-wrap gap-2">
-                {Object.entries(statusConfig).map(([status, config]) => (
-                  <Toggle
-                    key={status}
+              </PopoverTrigger>
+              <PopoverContent className="w-56" align="end">
+                <div className="grid gap-1">
+                  <Button
+                    variant="ghost"
                     size="sm"
-                    pressed={member.status === status}
-                    onPressedChange={() => handleStatusChange(status as TeamMemberStatus)}
-                    className={cn(
-                      "data-[state=on]:bg-white/50 border",
-                      member.status === status && "ring-1 ring-primary",
-                      statusChangeInProgress === status && "animate-pulse"
-                    )}
-                    disabled={statusChangeInProgress !== null}
+                    className="justify-start"
+                    onClick={() => setIsEditingName(true)}
                   >
-                    <motion.div 
-                      initial={{scale: 0.8, opacity: 0}}
-                      animate={{scale: 1, opacity: 1}}
-                      className="flex items-center"
+                    <Edit className="mr-2 h-4 w-4" />
+                    Edit Name
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="justify-start"
+                    onClick={() => setIsEditingProjects(true)}
+                  >
+                    <Briefcase className="mr-2 h-4 w-4" />
+                    Edit Projects
+                  </Button>
+                  {isPremium && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="justify-start"
+                      onClick={() => setShowCustomizer(true)}
                     >
-                      <config.icon className={cn("h-3 w-3 mr-1", config.iconColor)} />
-                      {config.label}
-                    </motion.div>
-                  </Toggle>
-                ))}
-              </div>
+                      <Palette className="mr-2 h-4 w-4" />
+                      Customize Card
+                    </Button>
+                  )}
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="justify-start text-red-500 hover:text-red-600 hover:bg-red-50"
+                    onClick={() => setIsConfirmingDelete(true)}
+                  >
+                    <Trash2 className="mr-2 h-4 w-4" />
+                    Delete
+                  </Button>
+                </div>
+              </PopoverContent>
+            </Popover>
+          )}
+        </CardHeader>
+        <CardContent className="p-4 pt-0 space-y-3 flex flex-col justify-between">
+          <div>
+            <div className="text-sm text-gray-600 dark:text-gray-700 mb-1">
+              <span className="font-medium">Position:</span> {member.position}
+            </div>
+            <div className="text-sm text-gray-600 dark:text-gray-700 mb-3">
+              <span className="font-medium">Projects:</span>{" "}
+              {member.projects.length > 0 ? member.projects.join(", ") : "None"}
+            </div>
+          </div>
+          
+          {canEdit && (
+            <div className="flex items-center justify-center gap-2">
+              {STATUS_BUTTONS.map((statusBtn) => (
+                <Popover key={statusBtn.status}>
+                  <PopoverTrigger asChild>
+                    <button
+                      onClick={() => handleStatusChange(statusBtn.status as TeamMemberStatus)}
+                      className={`status-button ${member.status === statusBtn.status ? 'active' : ''}`}
+                      style={{ backgroundColor: statusBtn.color }}
+                      aria-label={statusBtn.tooltip}
+                    />
+                  </PopoverTrigger>
+                  <PopoverContent className="p-1 w-auto">
+                    <p className="text-xs">{statusBtn.tooltip}</p>
+                  </PopoverContent>
+                </Popover>
+              ))}
             </div>
           )}
+        </CardContent>
+      </Card>
 
-          <div className="flex items-center justify-between mt-4">
-            <Badge variant="outline" className="bg-white/50">
-              <motion.div 
-                initial={{scale: 0.8, opacity: 0}}
-                animate={{scale: 1, opacity: 1}}
-                className="flex items-center"
-              >
-                {premiumCustomization.emoji ? (
-                  <span className="mr-1">{premiumCustomization.emoji}</span>
-                ) : (
-                  <currentStatus.icon className={cn("h-3 w-3 mr-1", currentStatus.iconColor)} />
-                )}
-                {currentStatus.label}
-                {premiumCustomization.hat && <span className="ml-1">{premiumCustomization.hat}</span>}
-              </motion.div>
-            </Badge>
-            <span className="text-xs text-muted-foreground">
-              {getTimeAgo(member.lastUpdated)}
-            </span>
-          </div>
-        </div>
-      </motion.div>
-
-      <Dialog open={isProjectDialogOpen} onOpenChange={setIsProjectDialogOpen}>
+      <Dialog open={isEditingProjects} onOpenChange={setIsEditingProjects}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>Manage Projects</DialogTitle>
+            <DialogTitle>Edit Projects</DialogTitle>
           </DialogHeader>
-          <div className="space-y-4 py-2">
-            <p className="text-sm text-muted-foreground">
-              Enter projects separated by semicolons or commas.
-            </p>
-            <Textarea 
-              value={newProject} 
-              onChange={(e) => setNewProject(e.target.value)}
-              placeholder="Project 1; Project 2; Project 3"
-              className="h-24"
+          <div className="py-4">
+            <Input
+              value={projects}
+              onChange={(e) => setProjects(e.target.value)}
+              placeholder="Projects (comma or semicolon separated)"
+              className="w-full"
             />
-            <div className="flex justify-end space-x-2">
-              <Button 
-                variant="outline" 
-                onClick={() => setIsProjectDialogOpen(false)}
-              >
-                Cancel
-              </Button>
-              <Button onClick={handleAddProject}>Save Projects</Button>
-            </div>
+            <p className="mt-2 text-sm text-muted-foreground">
+              Separate projects with commas or semicolons
+            </p>
           </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsEditingProjects(false)}>
+              Cancel
+            </Button>
+            <Button onClick={handleProjectsChange}>Save</Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
 
-      {isPremium && (
-        <Dialog open={isCustomizationOpen} onOpenChange={setIsCustomizationOpen}>
-          <DialogContent className="sm:max-w-md">
-            <DialogHeader>
-              <DialogTitle>Customize Profile</DialogTitle>
-            </DialogHeader>
-            <div className="space-y-4 py-2">
-              <p className="text-sm text-muted-foreground">
-                Personalize your team member card with custom colors and details.
-              </p>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="text-sm font-medium">Custom Color</label>
-                  <div className="grid grid-cols-4 gap-2 mt-1">
-                    {["bg-blue-50", "bg-green-50", "bg-purple-50", "bg-orange-50", "bg-pink-50", "bg-cyan-50", "bg-amber-50", "bg-emerald-50"].map(color => (
-                      <Toggle
-                        key={color}
-                        size="sm"
-                        pressed={premiumCustomization.color === color}
-                        onPressedChange={() => onUpdate(member.id, "customization", { ...premiumCustomization, color })}
-                        className={cn(
-                          color,
-                          "h-8 w-8 p-0 rounded-full data-[state=on]:ring-2 data-[state=on]:ring-primary"
-                        )}
-                      />
-                    ))}
-                  </div>
-                </div>
-                <div>
-                  <label className="text-sm font-medium">Emoji</label>
-                  <div className="grid grid-cols-4 gap-2 mt-1">
-                    {["🚀", "💻", "✨", "🔥", "🌟", "🎯", "⚡", "🧠"].map(emoji => (
-                      <Toggle
-                        key={emoji}
-                        size="sm"
-                        pressed={premiumCustomization.emoji === emoji}
-                        onPressedChange={() => onUpdate(member.id, "customization", { ...premiumCustomization, emoji })}
-                        className="h-8 w-8 p-0 rounded-full data-[state=on]:bg-accent data-[state=on]:text-accent-foreground"
-                      >
-                        {emoji}
-                      </Toggle>
-                    ))}
-                  </div>
-                </div>
-              </div>
-              <div className="flex justify-end space-x-2">
-                <Button 
-                  variant="outline" 
-                  onClick={() => setIsCustomizationOpen(false)}
-                >
-                  Close
-                </Button>
-              </div>
-            </div>
-          </DialogContent>
-        </Dialog>
-      )}
-    </Card>
+      <Dialog open={isConfirmingDelete} onOpenChange={setIsConfirmingDelete}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Confirm Deletion</DialogTitle>
+          </DialogHeader>
+          <div className="py-4">
+            <p>Are you sure you want to delete {member.name}?</p>
+            <p className="text-sm text-muted-foreground mt-2">
+              This action cannot be undone.
+            </p>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsConfirmingDelete(false)}>
+              Cancel
+            </Button>
+            <Button variant="destructive" onClick={handleDeleteMember}>
+              Delete
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={showCustomizer} onOpenChange={setShowCustomizer}>
+        <DialogContent className="sm:max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Customize Card</DialogTitle>
+          </DialogHeader>
+          <div className="py-4">
+            <CardCustomizer 
+              teamMember={member} 
+              onUpdate={() => setShowCustomizer(false)}
+            />
+          </div>
+        </DialogContent>
+      </Dialog>
+    </motion.div>
   );
 }

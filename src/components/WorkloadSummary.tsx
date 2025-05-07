@@ -64,6 +64,7 @@ const ROLE_COLORS: Record<string, string> = {
   'user': "#D6BCFA", // Same as Associate for consistency
   'admin': "#6E59A5", // Same as Partner for consistency
   'premium': "#9b87f5", // Same as Senior Associate for consistency
+  'Junior Associate': "#D6BCFA", // Same as Associate for consistency
 };
 
 // Fixed icons for roles
@@ -78,13 +79,15 @@ const ROLE_ICONS: Record<string, React.ElementType> = {
   'user': Briefcase, // Same as Associate
   'admin': Shield, // Same as Partner
   'premium': Star, // Same as Senior Associate
+  'Junior Associate': Briefcase, // Same as Associate
 };
 
 const ROLE_GROUPS = {
-  'Associate': 'Associate',
-  'Senior / Managing': 'Senior / Managing',
-  'Partner': 'Partner',
   'Assistant': 'Assistant',
+  'Junior Associate': 'Junior Associate',
+  'Senior Associate': 'Senior / Managing',
+  'Managing Associate': 'Senior / Managing',
+  'Partner': 'Partner',
 };
 
 // Move this function outside component to prevent recreation on each render
@@ -229,7 +232,7 @@ const DonutChart = ({ percentage, color, gradientColor, label, count, icon: Icon
           }}
         >{count}</motion.span>
         <motion.span 
-          className="text-sm text-gray-600 leading-tight max-w-full px-1"
+          className="text-sm text-gray-600 dark:text-gray-300 leading-tight max-w-full px-1"
           initial={{ opacity: 0 }}
           animate={{ 
             opacity: 1,
@@ -244,19 +247,6 @@ const DonutChart = ({ percentage, color, gradientColor, label, count, icon: Icon
     </motion.div>
   );
 };
-
-// This function determines the role from position consistently
-function determineRoleFromPosition(position: string): TeamMemberRole {
-  position = position.toLowerCase();
-  
-  if (position.includes('team lead')) return 'Partner';
-  if (position.includes('partner')) return 'Partner';
-  if (position.includes('senior') || position.includes('lead')) return 'Senior Associate';
-  if (position.includes('managing')) return 'Managing Associate';
-  if (position.includes('assistant') || position.includes('admin')) return 'Assistant';
-  
-  return 'Associate';
-}
 
 // Helper function to map role strings to consistent role colors
 function getRoleColor(role: string): string {
@@ -299,48 +289,37 @@ export default function WorkloadSummary({
     });
   }, [members]);
 
-  // Use useMemo for role metrics data with consistent role mappings
+  // Use useMemo for role metrics data but only include roles that have active members
   const roleMetricsData = useMemo(() => {
-    // Map members to their consistent roles
-    const membersWithRoles = members.map(member => ({
-      ...member,
-      // Use existing role or determine from position
-      role: member.role || determineRoleFromPosition(member.position)
-    }));
+    // Get the positions from active members (excluding away status)
+    const activeMembers = members.filter(m => m.status !== 'away');
+    const activePositions = new Set<string>(activeMembers.map(m => m.position));
+    
+    // Group members by their actual positions
+    const positionGroups: Record<string, TeamMember[]> = {};
+    
+    activeMembers.forEach(member => {
+      const position = member.position;
+      if (!positionGroups[position]) {
+        positionGroups[position] = [];
+      }
+      positionGroups[position].push(member);
+    });
 
-    // Group members by role categories
-    const roleGroups = {
-      'Associate': membersWithRoles.filter(m => 
-        m.role === 'Associate' || m.role === 'user'
-      ),
-      'Senior / Managing': membersWithRoles.filter(m => 
-        m.role === 'Senior Associate' || m.role === 'Managing Associate' || 
-        m.role === 'premium' || m.role === 'Senior Member'
-      ),
-      'Partner': membersWithRoles.filter(m => 
-        m.role === 'Partner' || m.role === 'admin' || m.role === 'Team Lead'
-      ),
-      'Assistant': membersWithRoles.filter(m => 
-        m.role === 'Assistant'
-      ),
-    };
-
-    return Object.entries(roleGroups)
-      .filter(([_, groupMembers]) => groupMembers.length > 0)
-      .map(([groupName, groupMembers], index) => {
+    // Create data for each active position
+    return Object.entries(positionGroups)
+      .map(([position, groupMembers], index) => {
         const totalCapacity = groupMembers.reduce((acc, member) => {
           return acc + (member.status !== 'away' ? STATUS_WEIGHTS[member.status] : 0);
         }, 0);
         
-        const maxPossibleCapacity = groupMembers.filter(m => m.status !== 'away').length * 100;
+        const maxPossibleCapacity = groupMembers.length * 100;
         const capacityPercentage = maxPossibleCapacity > 0 
           ? Math.min((totalCapacity / maxPossibleCapacity) * 100, 100) 
           : 0;
         
-        // FIXED: Use string-based comparison instead of type comparison for safety
-        const roleColor = groupName === 'Senior / Managing' 
-          ? getRoleColor('Senior Associate')
-          : getRoleColor(groupName.split(' /')[0]);
+        // Use role color based on position
+        const roleColor = getRoleColor(position);
         
         const darkerRoleColor = roleColor.replace(
           /^#([a-f0-9]{2})([a-f0-9]{2})([a-f0-9]{2})$/i,
@@ -353,18 +332,13 @@ export default function WorkloadSummary({
           }
         );
 
-        // FIXED: Use string-based comparison instead of type comparison for safety
-        const roleIcon = groupName === 'Senior / Managing'
-          ? getRoleIcon('Senior Associate')
-          : getRoleIcon(groupName.split(' /')[0]);
-
         return {
-          role: groupName,
+          role: position,
           count: groupMembers.length,
           percentage: capacityPercentage,
           color: roleColor,
           gradientColor: darkerRoleColor,
-          icon: roleIcon,
+          icon: getRoleIcon(position),
           index,
         };
       });
@@ -424,17 +398,17 @@ export default function WorkloadSummary({
     return (
       <div>
         <div className="flex items-center justify-between mb-6">
-          <h3 className="text-xl font-semibold text-gray-800 flex items-center">
+          <h3 className="text-xl font-semibold text-gray-800 dark:text-gray-100 flex items-center">
             <div className="h-3 w-3 rounded-full bg-[#D3E4FD] mr-2"></div>
             Team Status
           </h3>
           <div className="flex items-center space-x-2">
-            <span className="text-sm text-gray-600 mr-2">View by:</span>
+            <span className="text-sm text-gray-600 dark:text-gray-400 mr-2">View by:</span>
             <ToggleGroup 
               type="single" 
               value={showRoleMetrics ? "roles" : "status"} 
               onValueChange={(value) => value && setShowRoleMetrics(value === "roles")}
-              className="bg-white/5 backdrop-blur-sm rounded-xl border border-white/10 p-1"
+              className="bg-white/5 dark:bg-black/20 backdrop-blur-sm rounded-xl border border-white/10 p-1"
             >
               <ToggleGroupItem value="status" aria-label="Status view" className="data-[state=on]:bg-white/10 text-xs px-3">
                 Status
@@ -500,7 +474,7 @@ export default function WorkloadSummary({
     return (
       <div>
         <div className="flex items-center justify-between mb-5">
-          <h3 className="text-xl font-semibold text-gray-800 flex items-center">
+          <h3 className="text-xl font-semibold text-gray-800 dark:text-gray-100 flex items-center">
             <div className="h-3 w-3 rounded-full bg-[#D3E4FD] mr-2"></div>
             Historical Capacity
           </h3>
@@ -508,7 +482,7 @@ export default function WorkloadSummary({
             type="single" 
             value={timeRange} 
             onValueChange={(value) => value && setTimeRange(value as 'month' | 'year')}
-            className="bg-white/5 backdrop-blur-sm rounded-xl border border-white/10 p-1"
+            className="bg-white/5 dark:bg-black/20 backdrop-blur-sm rounded-xl border border-white/10 p-1"
           >
             <ToggleGroupItem value="month" aria-label="Month view" className="data-[state=on]:bg-white/10">
               Month

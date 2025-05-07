@@ -20,12 +20,15 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { UserPlus, Users, LogOut, ArrowUpDown, Trash2 } from "lucide-react";
+import { UserPlus, Users, LogOut, ArrowUpDown, Trash2, Download, Upload, Eye } from "lucide-react";
 import { useTheme } from "@/contexts/ThemeContext";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { v4 as uuidv4 } from "uuid";
 import { getOrCreateTeamMemberForUser, deleteTeamMember } from "@/lib/teamMemberUtils";
+import * as XLSX from "xlsx";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Badge } from "@/components/ui/badge";
 
 interface User {
   id: string;
@@ -33,6 +36,16 @@ interface User {
   role: string;
   seniority: "Assistant" | "Junior Associate" | "Senior Associate" | "Managing Associate" | "Partner" | "Other";
   lastUpdated?: Date;
+}
+
+interface ExcelUser {
+  name?: string;
+  email: string;
+  password?: string;
+  role?: string;
+  seniority?: string;
+  action?: 'add' | 'update' | 'delete' | 'no_change' | 'error';
+  error?: string;
 }
 
 type SortField = "lastUpdated" | "seniority" | "name";
@@ -45,6 +58,8 @@ export default function Admin() {
   const [loading, setLoading] = useState(true);
   const [sortField, setSortField] = useState<SortField>("lastUpdated");
   const [sortOrder, setSortOrder] = useState<SortOrder>("desc");
+  const [excelUsers, setExcelUsers] = useState<ExcelUser[]>([]);
+  const [showPreview, setShowPreview] = useState(false);
   const { user, isAdmin, signup } = useAuth();
   const { toast: uiToast } = useToast();
   const { theme, setTheme } = useTheme();
@@ -91,11 +106,11 @@ export default function Admin() {
             id: 'b82c63f6-1aa9-4150-a857-eeac0b9c921b',
             email: 'aykut.yucel@snellman.com',
             role: 'admin',
-            seniority: 'Partners' as const,
+            seniority: 'Partner' as const, // FIXED: Changed from 'Partners' to 'Partner'
             lastUpdated: new Date(2023, 1, 15)
           },
           {
-            id: '35fa5e15-e3f2-48c5-900d-63d17fae865c', // Updated UUID for Klara
+            id: '35fa5e15-e3f2-48c5-900d-63d17fae865c',
             email: 'klara.hasselberg@snellman.com',
             role: 'user',
             seniority: 'Senior Associate' as const,
@@ -335,7 +350,255 @@ export default function Admin() {
     setLoading(false);
   };
 
-  // Helper function to format name from email
+  // Excel export functionality
+  const exportToExcel = () => {
+    const dataToExport = users.map(user => ({
+      email: user.email,
+      name: formatNameFromEmail(user.email),
+      role: user.role,
+      seniority: user.seniority,
+      password: "" // Empty password field for template
+    }));
+
+    const ws = XLSX.utils.json_to_sheet(dataToExport);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Users");
+    XLSX.writeFile(wb, "snellman-users.xlsx");
+
+    toast("Export successful", {
+      description: "User data has been exported to Excel"
+    });
+  };
+
+  // Excel import functionality
+  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
+
+    const file = files[0];
+    const reader = new FileReader();
+
+    reader.onload = (event) => {
+      try {
+        const data = event.target?.result;
+        const workbook = XLSX.read(data, { type: 'binary' });
+        const sheetName = workbook.SheetNames[0];
+        const sheet = workbook.Sheets[sheetName];
+        const parsedData = XLSX.utils.sheet_to_json(sheet) as any[];
+
+        // Process and validate the Excel data
+        const processedData: ExcelUser[] = parsedData.map(row => {
+          const user: ExcelUser = {
+            email: row.email || '',
+            name: row.name || formatNameFromEmail(row.email || ''),
+            role: row.role || 'user',
+            seniority: row.seniority || 'Other',
+            password: row.password || '',
+            action: 'no_change',
+            error: ''
+          };
+
+          // Validate data
+          if (!user.email) {
+            user.action = 'error';
+            user.error = 'Email is required';
+            return user;
+          }
+
+          if (!user.email.endsWith('@snellman.com')) {
+            user.action = 'error';
+            user.error = 'Email must end with @snellman.com';
+            return user;
+          }
+
+          // Validate role
+          if (user.role && !['user', 'admin', 'premium'].includes(user.role)) {
+            user.action = 'error';
+            user.error = 'Role must be user, admin, or premium';
+            return user;
+          }
+
+          // Validate seniority
+          if (user.seniority && !['Assistant', 'Junior Associate', 'Senior Associate', 'Managing Associate', 'Partner', 'Other'].includes(user.seniority)) {
+            user.action = 'error';
+            user.error = 'Invalid seniority level';
+            return user;
+          }
+
+          // Check if user exists
+          const existingUser = users.find(u => u.email === user.email);
+          if (existingUser) {
+            user.action = 'update';
+          } else {
+            if (!user.password || user.password.length < 6) {
+              user.action = 'error';
+              user.error = 'New users require a password (min 6 characters)';
+              return user;
+            }
+            user.action = 'add';
+          }
+
+          return user;
+        });
+
+        // Find users to delete (in DB but not in Excel)
+        const emailsInExcel = processedData.map(u => u.email);
+        const usersToDelete = users
+          .filter(u => !emailsInExcel.includes(u.email))
+          .map(u => ({
+            email: u.email,
+            name: formatNameFromEmail(u.email),
+            role: u.role,
+            seniority: u.seniority,
+            action: 'delete' as const
+          }));
+
+        setExcelUsers([...processedData, ...usersToDelete]);
+        setShowPreview(true);
+      } catch (error) {
+        console.error("Error reading Excel file:", error);
+        uiToast({
+          title: "Error",
+          description: "Failed to process Excel file. Please check the format.",
+          variant: "destructive",
+        });
+      }
+    };
+
+    reader.readAsBinaryString(file);
+    e.target.value = ''; // Reset input
+  };
+
+  const applyExcelChanges = async () => {
+    setLoading(true);
+    const errors: string[] = [];
+    let successCount = 0;
+
+    try {
+      // Process each user
+      for (const excelUser of excelUsers) {
+        if (excelUser.action === 'error' || excelUser.action === 'no_change') {
+          continue;
+        }
+
+        try {
+          if (excelUser.action === 'add') {
+            // Create new user
+            const userId = uuidv4();
+            
+            // Insert into profiles table
+            await supabase
+              .from('profiles')
+              .insert({
+                id: userId,
+                email: excelUser.email,
+                name: excelUser.name,
+                role: excelUser.role || 'user',
+                seniority: excelUser.seniority || 'Other',
+                updated_at: new Date().toISOString()
+              });
+            
+            // Sign up user
+            if (excelUser.password) {
+              await signup(excelUser.email, excelUser.password, excelUser.role || 'user');
+            }
+            
+            // Create team member
+            await getOrCreateTeamMemberForUser(
+              userId, 
+              excelUser.email, 
+              excelUser.role || 'user'
+            );
+            
+            successCount++;
+          } 
+          else if (excelUser.action === 'update') {
+            // Update existing user
+            const existingUser = users.find(u => u.email === excelUser.email);
+            
+            if (existingUser) {
+              const updates: any = {};
+              if (excelUser.role) updates.role = excelUser.role;
+              if (excelUser.seniority) updates.seniority = excelUser.seniority;
+              if (excelUser.name) updates.name = excelUser.name;
+              
+              await supabase
+                .from('profiles')
+                .update(updates)
+                .eq('id', existingUser.id);
+              
+              // Update team member
+              const { data: teamMember } = await supabase
+                .from('team_members')
+                .select('*')
+                .eq('user_id', existingUser.id)
+                .maybeSingle();
+                
+              if (teamMember) {
+                const teamUpdates: any = {};
+                if (excelUser.role) teamUpdates.role = excelUser.role;
+                if (excelUser.seniority) teamUpdates.position = excelUser.seniority;
+                if (excelUser.name) teamUpdates.name = excelUser.name;
+                
+                await supabase
+                  .from('team_members')
+                  .update(teamUpdates)
+                  .eq('id', teamMember.id);
+              }
+              
+              successCount++;
+            }
+          }
+          else if (excelUser.action === 'delete') {
+            // Delete user
+            const existingUser = users.find(u => u.email === excelUser.email);
+            
+            if (existingUser) {
+              await handleDeleteUser(existingUser.id);
+              successCount++;
+            }
+          }
+        } catch (error) {
+          console.error(`Error processing ${excelUser.email}:`, error);
+          errors.push(`${excelUser.email}: ${(error as Error).message}`);
+        }
+      }
+
+      // Refresh user list
+      const { data: profiles } = await supabase
+        .from('profiles')
+        .select('*');
+        
+      if (profiles) {
+        const mappedUsers = profiles.map(profile => ({
+          id: profile.id,
+          email: profile.email,
+          role: profile.role || 'user',
+          seniority: (profile.seniority as any) || 'Other',
+          lastUpdated: profile.updated_at ? new Date(profile.updated_at) : new Date()
+        }));
+        
+        setUsers(mappedUsers);
+      }
+
+      // Show success message
+      toast("Import completed", {
+        description: `Successfully processed ${successCount} users. ${errors.length > 0 ? `${errors.length} errors occurred.` : ''}`
+      });
+
+      setShowPreview(false);
+    } catch (error) {
+      console.error("Error applying changes:", error);
+      uiToast({
+        title: "Error",
+        description: "Failed to apply changes from Excel import.",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const formatNameFromEmail = (email: string): string => {
     const namePart = email.split('@')[0];
     return namePart
@@ -410,7 +673,28 @@ export default function Admin() {
       </Card>
 
       <Card className="p-6">
-        <h2 className="text-xl font-semibold mb-4">Manage Users</h2>
+        <div className="flex justify-between items-center mb-4">
+          <h2 className="text-xl font-semibold">Manage Users</h2>
+          <div className="flex gap-2">
+            <Button variant="outline" onClick={exportToExcel} className="gap-2">
+              <Download className="h-4 w-4" />
+              Export to Excel
+            </Button>
+            <label htmlFor="excel-upload" className="cursor-pointer">
+              <div className="flex items-center gap-2 bg-primary text-primary-foreground hover:bg-primary/90 h-10 px-4 py-2 rounded-md">
+                <Upload className="h-4 w-4" />
+                <span>Import from Excel</span>
+              </div>
+              <input
+                id="excel-upload"
+                type="file"
+                accept=".xlsx, .xls"
+                className="hidden"
+                onChange={handleFileUpload}
+              />
+            </label>
+          </div>
+        </div>
         {loading ? (
           <div className="text-center py-8">
             <div className="animate-spin h-10 w-10 border-4 border-primary border-t-transparent rounded-full mx-auto mb-2"></div>
@@ -488,6 +772,63 @@ export default function Admin() {
           </Table>
         )}
       </Card>
+
+      {/* Excel import preview dialog */}
+      <Dialog open={showPreview} onOpenChange={setShowPreview}>
+        <DialogContent className="max-w-4xl max-h-[80vh] overflow-auto">
+          <DialogHeader>
+            <DialogTitle>Preview Changes</DialogTitle>
+            <DialogDescription>
+              Review the changes before applying them to your user database.
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="py-4">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Email</TableHead>
+                  <TableHead>Name</TableHead>
+                  <TableHead>Role</TableHead>
+                  <TableHead>Seniority</TableHead>
+                  <TableHead>Action</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {excelUsers.map((user, index) => (
+                  <TableRow key={index} className={user.action === 'error' ? 'bg-red-50 dark:bg-red-900/20' : ''}>
+                    <TableCell>{user.email}</TableCell>
+                    <TableCell>{user.name}</TableCell>
+                    <TableCell>{user.role}</TableCell>
+                    <TableCell>{user.seniority}</TableCell>
+                    <TableCell>
+                      {user.action === 'add' && <Badge className="bg-green-500">Add</Badge>}
+                      {user.action === 'update' && <Badge className="bg-blue-500">Update</Badge>}
+                      {user.action === 'delete' && <Badge className="bg-red-500">Delete</Badge>}
+                      {user.action === 'error' && (
+                        <div className="flex flex-col gap-1">
+                          <Badge className="bg-red-500">Error</Badge>
+                          <span className="text-xs text-red-500">{user.error}</span>
+                        </div>
+                      )}
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
+          
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowPreview(false)}>Cancel</Button>
+            <Button 
+              onClick={applyExcelChanges} 
+              disabled={excelUsers.every(u => u.action === 'error' || u.action === 'no_change')}
+            >
+              Apply Changes
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

@@ -1,3 +1,4 @@
+
 import { TeamMember, TeamMemberStatus, TeamMemberRole } from "@/types/TeamMemberTypes";
 import { supabase } from "@/integrations/supabase/client";
 import { validate as isValidUUID } from 'uuid';
@@ -21,7 +22,8 @@ export const mapDbToTeamMember = (dbTeamMember: any): TeamMember => {
     projects: dbTeamMember.projects || [],
     lastUpdated: new Date(dbTeamMember.last_updated),
     user_id: dbTeamMember.user_id,
-    role: dbTeamMember.role || 'user' // Default role
+    role: dbTeamMember.role || 'user',
+    customization: dbTeamMember.customization
   };
 };
 
@@ -35,7 +37,8 @@ export const mapTeamMemberToDb = (teamMember: TeamMember) => {
     projects: teamMember.projects,
     last_updated: teamMember.lastUpdated ? teamMember.lastUpdated.toISOString() : new Date().toISOString(),
     user_id: teamMember.user_id,
-    role: teamMember.role
+    role: teamMember.role,
+    customization: teamMember.customization
   };
 };
 
