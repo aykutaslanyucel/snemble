@@ -3,8 +3,9 @@ import React from "react";
 import { CardContent } from "@/components/ui/card";
 import { StatusSelector } from "./StatusSelector";
 import { TeamMemberStatus } from "@/types/TeamMemberTypes";
-import { Plus } from "lucide-react";
+import { Plus, Check, User, Clock, X, Coffee } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 
 interface MemberCardContentProps {
   position: string;
@@ -13,6 +14,7 @@ interface MemberCardContentProps {
   onStatusChange: (status: TeamMemberStatus) => void;
   currentStatus: TeamMemberStatus;
   onEditProjects?: () => void;
+  lastUpdated: Date;
 }
 
 export function MemberCardContent({
@@ -21,10 +23,80 @@ export function MemberCardContent({
   canEdit,
   onStatusChange,
   currentStatus,
-  onEditProjects
+  onEditProjects,
+  lastUpdated
 }: MemberCardContentProps) {
+  // Time since last update
+  const getTimeAgo = () => {
+    const now = new Date();
+    const diffMinutes = Math.floor((now.getTime() - lastUpdated.getTime()) / 60000);
+    
+    if (diffMinutes < 1) return "less than a minute ago";
+    if (diffMinutes === 1) return "1 minute ago";
+    if (diffMinutes < 60) return `${diffMinutes} minutes ago`;
+    
+    const diffHours = Math.floor(diffMinutes / 60);
+    if (diffHours === 1) return "1 hour ago";
+    if (diffHours < 24) return `${diffHours} hours ago`;
+    
+    return "more than a day ago";
+  };
+
+  // Get status icon and text
+  const getStatusIcon = (status: TeamMemberStatus) => {
+    switch (status) {
+      case "available":
+        return <Check className="h-3.5 w-3.5 text-green-600" />;
+      case "someAvailability":
+        return <User className="h-3.5 w-3.5 text-blue-600" />;
+      case "busy":
+        return <Clock className="h-3.5 w-3.5 text-yellow-600" />;
+      case "seriouslyBusy":
+        return <X className="h-3.5 w-3.5 text-red-600" />;
+      case "away":
+        return <Coffee className="h-3.5 w-3.5 text-gray-600" />;
+      default:
+        return null;
+    }
+  };
+
+  const getStatusText = (status: TeamMemberStatus) => {
+    switch (status) {
+      case "available":
+        return "Available";
+      case "someAvailability":
+        return "Some Availability";
+      case "busy":
+        return "Busy";
+      case "seriouslyBusy":
+        return "Seriously Busy";
+      case "away":
+        return "Away";
+      default:
+        return "Unknown";
+    }
+  };
+
+  // Get status badge color
+  const getStatusBadgeColor = (status: TeamMemberStatus) => {
+    switch (status) {
+      case "available":
+        return "bg-green-100 border-green-200";
+      case "someAvailability":
+        return "bg-blue-100 border-blue-200";
+      case "busy":
+        return "bg-yellow-100 border-yellow-200";
+      case "seriouslyBusy":
+        return "bg-red-100 border-red-200";
+      case "away":
+        return "bg-gray-100 border-gray-200";
+      default:
+        return "bg-white border-gray-100";
+    }
+  };
+
   return (
-    <CardContent className="px-6 pt-0 pb-6 space-y-6">
+    <CardContent className="px-6 pt-0 pb-6 space-y-6 relative">
       <div className="mb-2">
         <div className="text-gray-600 dark:text-gray-300 text-md">
           {position}
@@ -63,15 +135,41 @@ export function MemberCardContent({
         </div>
       </div>
       
-      {canEdit && (
+      {canEdit ? (
         <div className="space-y-3">
           <h4 className="text-gray-700 font-medium">Status</h4>
-          <StatusSelector
-            currentStatus={currentStatus}
-            onStatusChange={onStatusChange}
-          />
+          <div>
+            <StatusSelector
+              currentStatus={currentStatus}
+              onStatusChange={onStatusChange}
+            />
+            <div className="mt-2">
+              <Badge 
+                className={`inline-flex items-center gap-1 px-3 py-1.5 ${getStatusBadgeColor(currentStatus)}`}
+                variant="outline"
+              >
+                <span className="flex-shrink-0">{getStatusIcon(currentStatus)}</span>
+                <span className="text-xs font-medium">{getStatusText(currentStatus)}</span>
+              </Badge>
+            </div>
+          </div>
+        </div>
+      ) : (
+        <div className="space-y-3">
+          <h4 className="text-gray-700 font-medium">Status</h4>
+          <Badge 
+            className={`inline-flex items-center gap-1.5 px-3 py-1.5 ${getStatusBadgeColor(currentStatus)}`}
+            variant="outline"
+          >
+            <span className="flex-shrink-0">{getStatusIcon(currentStatus)}</span>
+            <span className="text-xs font-medium">{getStatusText(currentStatus)}</span>
+          </Badge>
         </div>
       )}
+
+      <div className="absolute bottom-4 right-6">
+        <span className="text-xs text-gray-400">{getTimeAgo()}</span>
+      </div>
     </CardContent>
   );
 }

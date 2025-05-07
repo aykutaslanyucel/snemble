@@ -16,15 +16,15 @@ export function StatusButton({ status, currentStatus, onClick, color, tooltip }:
   const getIcon = () => {
     switch (status) {
       case "available":
-        return <Check className="h-5 w-5 text-gray-700" />;
+        return <Check className="h-4 w-4 text-gray-700" />;
       case "someAvailability":
-        return <User className="h-5 w-5 text-gray-700" />;
+        return <User className="h-4 w-4 text-gray-700" />;
       case "busy":
-        return <Clock className="h-5 w-5 text-gray-700" />;
+        return <Clock className="h-4 w-4 text-gray-700" />;
       case "seriouslyBusy":
-        return <X className="h-5 w-5 text-gray-700" />;
+        return <X className="h-4 w-4 text-gray-700" />;
       case "away":
-        return <Coffee className="h-5 w-5 text-gray-700" />;
+        return <Coffee className="h-4 w-4 text-gray-700" />;
       default:
         return null;
     }
@@ -39,9 +39,9 @@ export function StatusButton({ status, currentStatus, onClick, color, tooltip }:
             e.preventDefault();
             onClick(status);
           }}
-          className={`w-12 h-12 rounded-full bg-white flex items-center justify-center transition-all ${
+          className={`w-10 h-10 rounded-full bg-white flex items-center justify-center transition-all ${
             currentStatus === status 
-              ? 'ring-2 ring-blue-400 transform scale-110 shadow-md' 
+              ? 'shadow-md transform scale-105' 
               : 'shadow-sm hover:scale-105'
           }`}
           aria-label={tooltip}

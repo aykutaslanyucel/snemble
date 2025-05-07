@@ -9,9 +9,7 @@ import { MemberCardContent } from "./TeamMember/MemberCardContent";
 import { ProjectsDialog } from "@/components/TeamMember/ProjectsDialog";
 import { DeleteConfirmationDialog } from "@/components/TeamMember/DeleteConfirmationDialog";
 import { CustomizerDialog } from "@/components/TeamMember/CustomizerDialog";
-import { getCardBackground, getStatusText } from "./TeamMember/CardBackground";
-import { Badge } from "@/components/ui/badge";
-import { Check, User, Clock, X, Coffee } from "lucide-react";
+import { getCardBackground } from "./TeamMember/CardBackground";
 
 interface MemberCardProps {
   member: TeamMember;
@@ -63,41 +61,6 @@ export function MemberCard({ member, onUpdate, onDelete, canEdit }: MemberCardPr
     setIsConfirmingDelete(false);
   };
 
-  // Time since last update
-  const getTimeAgo = () => {
-    const now = new Date();
-    const lastUpdated = new Date(member.lastUpdated);
-    const diffMinutes = Math.floor((now.getTime() - lastUpdated.getTime()) / 60000);
-    
-    if (diffMinutes < 1) return "less than a minute ago";
-    if (diffMinutes === 1) return "1 minute ago";
-    if (diffMinutes < 60) return `${diffMinutes} minutes ago`;
-    
-    const diffHours = Math.floor(diffMinutes / 60);
-    if (diffHours === 1) return "1 hour ago";
-    if (diffHours < 24) return `${diffHours} hours ago`;
-    
-    return "more than a day ago";
-  };
-
-  // Get status icon based on status
-  const getStatusIcon = () => {
-    switch (member.status) {
-      case "available":
-        return <Check className="h-3.5 w-3.5 text-gray-700" />;
-      case "someAvailability":
-        return <User className="h-3.5 w-3.5 text-gray-700" />;
-      case "busy":
-        return <Clock className="h-3.5 w-3.5 text-gray-700" />;
-      case "seriouslyBusy":
-        return <X className="h-3.5 w-3.5 text-gray-700" />;
-      case "away":
-        return <Coffee className="h-3.5 w-3.5 text-gray-700" />;
-      default:
-        return null;
-    }
-  };
-
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
@@ -106,10 +69,10 @@ export function MemberCard({ member, onUpdate, onDelete, canEdit }: MemberCardPr
       className="h-full"
     >
       <Card 
-        className="h-full overflow-hidden rounded-lg shadow-sm"
+        className="h-full overflow-hidden rounded-2xl shadow-md"
         style={{ 
           background: cardStyle.background,
-          boxShadow: "0px 1px 2px rgba(0, 0, 0, 0.05)"
+          boxShadow: "0 4px 20px rgba(0, 0, 0, 0.08)"
         }}
       >
         <MemberCardHeader
@@ -133,20 +96,8 @@ export function MemberCard({ member, onUpdate, onDelete, canEdit }: MemberCardPr
           onStatusChange={handleStatusChange}
           currentStatus={member.status}
           onEditProjects={() => setIsEditingProjects(true)}
+          lastUpdated={new Date(member.lastUpdated)}
         />
-        
-        {/* Status information */}
-        <div className="flex items-center justify-between px-4 pb-4 pt-1">
-          {!canEdit && (
-            <div className="flex items-center gap-1.5 bg-white/80 border border-gray-100 px-2.5 py-1 rounded-full">
-              <span className="w-5 h-5 flex items-center justify-center bg-white rounded-full shadow-sm">
-                {getStatusIcon()}
-              </span>
-              <span className="text-xs font-medium text-gray-700">{getStatusText(member.status)}</span>
-            </div>
-          )}
-          <span className="text-xs text-gray-500 ml-auto">{getTimeAgo()}</span>
-        </div>
       </Card>
       
       {/* Dialogs */}

@@ -36,7 +36,7 @@ export function MemberCardHeader({
   return (
     <CardHeader className="p-4 flex-row items-start justify-between space-y-0">
       <div className="mr-2">
-        <CardTitle className="text-gray-800 dark:text-gray-200 text-base font-semibold mb-0.5">
+        <CardTitle className="text-gray-800 dark:text-gray-200 text-xl font-semibold mb-0.5">
           {isEditingName ? (
             <div className="flex items-center gap-1">
               <Input
@@ -57,9 +57,6 @@ export function MemberCardHeader({
             </span>
           )}
         </CardTitle>
-        <div className="text-sm text-gray-600 dark:text-gray-300 font-normal">
-          {/* Position will be added in MemberCardContent */}
-        </div>
       </div>
       
       {canEdit && (
