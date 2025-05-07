@@ -36,6 +36,7 @@ export default function Index() {
     
     // Set up a real-time subscription to team members
     const unsubscribe = subscribeToTeamMembers(updatedMembers => {
+      console.log("Team members updated via subscription", updatedMembers.length);
       setMembers(updatedMembers);
       setLoading(false);
     });
@@ -118,7 +119,7 @@ export default function Index() {
     }
   };
 
-  // Improved update handler with better permission checking and error handling
+  // Improved update handler that updates UI optimistically for better UX
   const handleUpdateMember = async (id: string, field: string, value: any) => {
     try {
       // Find the member to update
@@ -167,7 +168,32 @@ export default function Index() {
       
       console.info(`Updating ${field} for member ${memberToUpdate.name} (${id})`, updates);
       
-      // Perform the update
+      // Create an optimistic update locally first for immediate feedback
+      const updatedMembers = members.map(m => {
+        if (m.id === id) {
+          // Create a shallow copy of the member
+          const updatedMember = { ...m };
+          
+          // Apply the field updates
+          if (field === 'projects' && typeof value === 'string') {
+            updatedMember.projects = value.split(/[;,]/).map(p => p.trim()).filter(p => p.length > 0);
+          } else {
+            // @ts-ignore - dynamic field assignment
+            updatedMember[field] = value;
+          }
+          
+          // Update the timestamp
+          updatedMember.lastUpdated = new Date();
+          
+          return updatedMember;
+        }
+        return m;
+      });
+      
+      // Update UI immediately for better UX
+      setMembers(updatedMembers);
+      
+      // Perform the actual update in the background
       await updateTeamMember(id, updates);
       
       // Show success message
@@ -178,6 +204,14 @@ export default function Index() {
     } catch (error: any) {
       console.error("Update team member error:", error);
       console.error("Stack trace:", error?.stack);
+      
+      // If the update fails, refetch the current state to ensure UI consistency
+      try {
+        const currentMembers = await fetchTeamMembers();
+        setMembers(currentMembers);
+      } catch (fetchError) {
+        console.error("Failed to fetch current members after update error", fetchError);
+      }
       
       toast({
         title: "Error updating team member",

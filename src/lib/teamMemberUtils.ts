@@ -1,3 +1,4 @@
+
 import { TeamMember, TeamMemberStatus, TeamMemberRole } from "@/types/TeamMemberTypes";
 import { supabase } from "@/integrations/supabase/client";
 import { validate as isValidUUID } from 'uuid';
@@ -203,12 +204,13 @@ export const getOrCreateTeamMemberForUser = async (userId: string, email: string
   // If no existing member, create a new one
   const formattedName = formatNameFromEmail(email);
   
-  // FIXED: Set position based on role without hardcoding specific roles
-  let position = "Team Member";
+  // Map role to appropriate position title
+  let position = "Junior Associate";  // Default position for all team members
+  
   if (role === 'admin') {
-    position = "Administrator"; // Changed from "Team Lead" to more accurately reflect role
+    position = "Senior Associate";
   } else if (role === 'premium') {
-    position = "Senior Team Member"; // More generic position name
+    position = "Managing Associate";
   }
   
   // Convert role string to TeamMemberRole type
@@ -312,3 +314,4 @@ export const subscribeToTeamMembers = (
     supabase.removeChannel(subscription);
   };
 };
+

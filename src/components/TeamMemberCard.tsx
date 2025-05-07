@@ -73,6 +73,7 @@ export default function TeamMemberCard({
   const [editingProjects, setEditingProjects] = useState("");
   const [isProjectDialogOpen, setIsProjectDialogOpen] = useState(false);
   const [isCustomizationOpen, setIsCustomizationOpen] = useState(false);
+  const [statusChangeInProgress, setStatusChangeInProgress] = useState<string | null>(null);
   
   const handleSave = () => {
     onUpdate(member.id, "name", editedName);
@@ -81,7 +82,16 @@ export default function TeamMemberCard({
   };
   
   const handleStatusChange = (newStatus: TeamMemberStatus) => {
+    // Set the status that is currently being updated
+    setStatusChangeInProgress(newStatus);
+    
+    // Optimistically update the UI with the new status
     onUpdate(member.id, "status", newStatus);
+    
+    // Clear the in-progress status after a short delay to show the animation
+    setTimeout(() => {
+      setStatusChangeInProgress(null);
+    }, 500);
   };
   
   const handleAddProject = () => {
@@ -363,8 +373,10 @@ export default function TeamMemberCard({
                     onPressedChange={() => handleStatusChange(status as TeamMemberStatus)}
                     className={cn(
                       "data-[state=on]:bg-white/50 border",
-                      member.status === status && "ring-1 ring-primary"
+                      member.status === status && "ring-1 ring-primary",
+                      statusChangeInProgress === status && "animate-pulse"
                     )}
+                    disabled={statusChangeInProgress !== null}
                   >
                     <motion.div 
                       initial={{scale: 0.8, opacity: 0}}

@@ -12,7 +12,8 @@ export type TeamMemberRole =
   | 'user' 
   | 'premium' 
   | 'Team Lead' 
-  | 'Senior Member';
+  | 'Senior Member'
+  | 'Junior Associate';
 
 export interface TeamMember {
   id: string;
