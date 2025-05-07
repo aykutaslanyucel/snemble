@@ -40,7 +40,7 @@ export function ColorPickerComponent({
                 Pick Color
               </Button>
             </PopoverTrigger>
-            <PopoverContent className="w-auto p-4">
+            <PopoverContent className="w-auto p-4" side="right">
               <div className="space-y-4">
                 <HexColorPicker 
                   color={color} 
