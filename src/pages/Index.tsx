@@ -133,30 +133,31 @@ export default function Index() {
       });
       
       // Check if user has permission to update this member
-      if (!canEditTeamMember(memberToUpdate, user?.id, isAdmin)) {
+      // For admins, we'll always allow updates regardless of user_id
+      if (isAdmin || memberToUpdate.user_id === user?.id) {
+        const updates: { [key: string]: any } = {};
+        
+        if (field === 'projects' && typeof value === 'string') {
+          updates.projects = value.split(/[;,]/).map(p => p.trim()).filter(p => p.length > 0);
+        } else {
+          updates[field] = value;
+        }
+        
+        await updateTeamMember(id, updates);
+        
+        if (field === 'projects') {
+          toast({
+            title: "Projects updated",
+            description: "Team member's projects have been updated successfully.",
+          });
+        }
+      } else {
         toast({
           title: "Permission denied",
           description: "You can only update your own profile unless you're an admin.",
           variant: "destructive",
         });
         return;
-      }
-      
-      const updates: { [key: string]: any } = {};
-      
-      if (field === 'projects' && typeof value === 'string') {
-        updates.projects = value.split(/[;,]/).map(p => p.trim()).filter(p => p.length > 0);
-      } else {
-        updates[field] = value;
-      }
-      
-      await updateTeamMember(id, updates);
-      
-      if (field === 'projects') {
-        toast({
-          title: "Projects updated",
-          description: "Team member's projects have been updated successfully.",
-        });
       }
     } catch (error) {
       console.error("Update team member error:", error);

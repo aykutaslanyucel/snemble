@@ -17,6 +17,7 @@ interface Props {
   showHistoricalOnly?: boolean;
 }
 
+// Fixed colors for statuses - these will always be consistent
 const statusColors = {
   available: "#D3E4FD",       // Blue
   someAvailability: "#F2FCE2", // Green
@@ -25,6 +26,7 @@ const statusColors = {
   away: "#F1F0FB",           // Gray
 };
 
+// Fixed gradient colors for statuses - these will always be consistent
 const statusGradientColors = {
   available: "#B3D4FF",       // Slightly darker blue
   someAvailability: "#D2ECB2", // Slightly darker green
@@ -49,20 +51,22 @@ const statusWeights = {
   away: 0,
 };
 
-const roleIcons = {
-  'Associate': Briefcase,
-  'Senior Associate': Star,
-  'Managing Associate': Star,
-  'Partner': Shield,
-  'Assistant': UserCog,
-};
-
+// Fixed colors for roles - these will always be consistent
 const roleColors = {
   'Associate': "#D6BCFA",
   'Senior Associate': "#9b87f5",
   'Managing Associate': "#7E69AB",
   'Partner': "#6E59A5",
   'Assistant': "#F1F0FB",
+};
+
+// Fixed icons for roles
+const roleIcons = {
+  'Associate': Briefcase,
+  'Senior Associate': Star,
+  'Managing Associate': Star,
+  'Partner': Shield,
+  'Assistant': UserCog,
 };
 
 const roleGroups = {
