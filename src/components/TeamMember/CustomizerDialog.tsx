@@ -12,36 +12,44 @@ interface CustomizerDialogProps {
 }
 
 export function CustomizerDialog({ isOpen, setIsOpen, member, onUpdate }: CustomizerDialogProps) {
+  // This function will help us debug click events
+  const handleDialogClick = (e: React.MouseEvent) => {
+    // Stop propagation for all clicks inside dialog
+    e.stopPropagation();
+  };
+
   return (
-    <Dialog open={isOpen} onOpenChange={setIsOpen}>
+    <Dialog 
+      open={isOpen} 
+      onOpenChange={setIsOpen}
+    >
       <DialogContent 
-        className="sm:max-w-lg max-h-[80vh] overflow-y-auto flex flex-col"
-        // Prevent dialog from closing when interacting with color pickers
-        onClick={(e) => e.stopPropagation()}
+        className="sm:max-w-lg max-h-[90vh] overflow-y-auto flex flex-col"
+        onClick={handleDialogClick}
+        // Complete override of the pointer/interact outside behavior
         onPointerDownOutside={(e) => {
-          // Prevent dialog from closing when clicking inside color pickers
-          if (e.target instanceof Element) {
-            const target = e.target as Element;
-            if (
-              target.closest('.react-colorful') || 
-              target.closest('[data-radix-popper-content-wrapper]')
-            ) {
-              e.preventDefault();
-            }
+          const target = e.target as Element;
+          // Prevent closing when clicking color pickers or popover content
+          if (
+            target.closest('.react-colorful') || 
+            target.closest('[data-radix-popper-content-wrapper]') ||
+            target.closest('.color-picker-container')
+          ) {
+            e.preventDefault();
           }
         }}
         onInteractOutside={(e) => {
-          // Prevent closing when clicking inside color pickers
-          if (e.target instanceof Element) {
-            const target = e.target as Element;
-            if (
-              target.closest('.react-colorful') || 
-              target.closest('[data-radix-popper-content-wrapper]')
-            ) {
-              e.preventDefault();
-            }
+          const target = e.target as Element;
+          // Prevent closing when interacting with color pickers or popover content
+          if (
+            target.closest('.react-colorful') || 
+            target.closest('[data-radix-popper-content-wrapper]') ||
+            target.closest('.color-picker-container')
+          ) {
+            e.preventDefault();
           }
         }}
+        style={{ zIndex: 50 }} // Ensure dialog is at a high z-index
       >
         <DialogHeader>
           <DialogTitle>Customize Card</DialogTitle>
