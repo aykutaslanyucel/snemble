@@ -15,6 +15,16 @@ export type TeamMemberRole =
   | 'Senior Member'
   | 'Junior Associate';
 
+// Define a consistent customization interface
+export interface TeamMemberCustomization {
+  color?: string;
+  gradient?: string;
+  animate?: boolean;
+  texture?: string;
+  hat?: string;
+  emoji?: string;
+}
+
 export interface TeamMember {
   id?: string;
   name: string;
@@ -24,14 +34,7 @@ export interface TeamMember {
   lastUpdated: Date;
   user_id: string;
   role?: TeamMemberRole;
-  customization?: {
-    color?: string;
-    texture?: string;
-    hat?: string;
-    emoji?: string;
-    gradient?: string;
-    animate?: boolean;
-  };
+  customization?: TeamMemberCustomization;
 }
 
 export interface Announcement {

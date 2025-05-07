@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { Card, CardHeader, CardTitle, CardContent, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -6,18 +5,12 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Check } from "lucide-react";
-import { TeamMember } from "@/types/TeamMemberTypes";
+import { TeamMember, TeamMemberCustomization } from "@/types/TeamMemberTypes";
 import { useToast } from "@/hooks/use-toast";
-
-interface CardCustomizationOptions {
-  color?: string;
-  gradient?: string;
-  animate?: boolean;
-}
 
 interface CardCustomizerProps {
   teamMember: TeamMember;
-  onUpdate: (customization: CardCustomizationOptions) => void;
+  onUpdate: (customization: TeamMemberCustomization) => void;
 }
 
 // Predefined gradients
@@ -40,7 +33,8 @@ const COLORS = [
 ];
 
 export function CardCustomizer({ teamMember, onUpdate }: CardCustomizerProps) {
-  const [customization, setCustomization] = useState<CardCustomizationOptions>(
+  // Initialize with current customization or empty object with correct type
+  const [customization, setCustomization] = useState<TeamMemberCustomization>(
     teamMember.customization || {}
   );
   const [customColor, setCustomColor] = useState(customization.color || "");

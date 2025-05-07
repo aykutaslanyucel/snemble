@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -71,22 +70,20 @@ export function TeamMemberCard({ member, onUpdate, onDelete, canEdit }: TeamMemb
 
   // Get the appropriate background based on member's customization or status
   const getCardBackground = () => {
-    // Add a console log to check the member's customization
-    console.log("Member customization:", member.customization);
+    // Safe access to member.customization with proper typing
+    const customization = member.customization || {};
     
-    if (member.customization) {
-      if (member.customization.gradient) {
-        return {
-          background: member.customization.gradient,
-          className: member.customization.animate ? "animate-gradient" : ""
-        };
-      }
-      if (member.customization.color) {
-        return {
-          background: member.customization.color,
-          className: ""
-        };
-      }
+    if (customization.gradient) {
+      return {
+        background: customization.gradient,
+        className: customization.animate ? "animate-gradient" : ""
+      };
+    }
+    if (customization.color) {
+      return {
+        background: customization.color,
+        className: ""
+      };
     }
     
     // Default color based on status
@@ -281,6 +278,3 @@ export function TeamMemberCard({ member, onUpdate, onDelete, canEdit }: TeamMemb
     </motion.div>
   );
 }
-
-// Add this for backward compatibility if needed
-export default TeamMemberCard;

@@ -13,11 +13,17 @@ import Signup from "./pages/Signup";
 import Admin from "./pages/Admin";
 import NotFound from "./pages/NotFound";
 
+// Create a more robust query client with better error handling
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
       retry: 1,
       refetchOnWindowFocus: false,
+      staleTime: 60 * 1000, // 1 minute
+      // Add error handling
+      onError: (error) => {
+        console.error("Query error:", error);
+      },
     },
   },
 });
@@ -25,7 +31,7 @@ const queryClient = new QueryClient({
 // Helper function to log app initialization for debugging
 function useAppDebug() {
   useEffect(() => {
-    console.log("App initialized");
+    console.log("App initialized at:", new Date().toISOString());
     console.log("React version:", React.version);
     console.log("Environment:", import.meta.env.MODE);
     

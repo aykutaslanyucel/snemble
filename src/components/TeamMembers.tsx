@@ -2,6 +2,7 @@
 import { motion, AnimatePresence } from "framer-motion";
 import { TeamMemberCard } from "@/components/TeamMemberCard";
 import { TeamMember } from "@/types/TeamMemberTypes";
+import { Skeleton } from "@/components/ui/skeleton";
 
 interface TeamMembersProps {
   members: TeamMember[];
@@ -34,7 +35,7 @@ export function TeamMembers({ members, onUpdate, onDelete, currentUserId, isAdmi
       <AnimatePresence>
         {members.map((member) => {
           // Simplified permission logic - admin can edit all, users can edit their own
-          const canEdit = isAdmin || member.user_id === currentUserId;
+          const canEdit = isAdmin || (member.user_id === currentUserId);
           
           console.log(`Member ${member.name}:`, {
             memberId: member.id,
