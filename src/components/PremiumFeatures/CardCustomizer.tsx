@@ -12,6 +12,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { BadgeSelector } from './BadgeSelector';
 import { supabase } from "@/integrations/supabase/client";
 import { Badge } from "@/types/TeamMemberTypes";
+import "@/styles/animations.css";
 
 interface CardCustomizerProps {
   teamMember: TeamMember;

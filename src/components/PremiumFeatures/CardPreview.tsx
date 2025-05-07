@@ -25,10 +25,10 @@ export function CardPreview({
   badgeSize = "medium"
 }: CardPreviewProps) {
   // Determine the animation class based on the type
-  const animationClass = animate ? 
+  const animationClass = animate && previewStyle.background.includes('gradient') ? 
     (animationType && animationType !== "none" ? 
       `animate-gradient-${animationType}` : 
-      "animate-gradient") : 
+      "animate-gradient-gentle") : 
     "";
 
   // Define size classes for badges
@@ -54,7 +54,10 @@ export function CardPreview({
   return (
     <Card 
       className={`border relative ${animationClass}`}
-      style={previewStyle}
+      style={{
+        ...previewStyle,
+        backgroundSize: "200% 200%"
+      }}
     >
       {badge && (
         <div className={`absolute ${positionClass} ${sizeClass} rounded-full overflow-hidden z-10`}>

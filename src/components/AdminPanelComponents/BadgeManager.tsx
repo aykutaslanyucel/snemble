@@ -144,31 +144,17 @@ export function BadgeManager() {
       // 1. Upload image to Storage
       const fileExt = badgeImage.name.split('.').pop();
       const fileName = `${Math.random().toString(36).substring(2)}.${fileExt}`;
-      const filePath = `badges/${fileName}`;
+      const filePath = `${fileName}`; // Simplified path - no subfolder
       
-      // Check if badges storage bucket exists, create if not
-      try {
-        const { data: bucketData } = await supabase.storage.getBucket('badges');
-        if (!bucketData) {
-          await supabase.storage.createBucket('badges', {
-            public: true,
-            fileSizeLimit: 2097152 // 2MB
-          });
-        }
-      } catch (error) {
-        console.log("Creating badges bucket...");
-        await supabase.storage.createBucket('badges', {
-          public: true,
-          fileSizeLimit: 2097152 // 2MB
-        });
-      }
-      
-      // Upload the file
-      const { error: uploadError } = await supabase.storage
+      // Upload the file directly to the badges bucket
+      const { error: uploadError, data: uploadData } = await supabase.storage
         .from('badges')
         .upload(filePath, badgeImage);
         
-      if (uploadError) throw uploadError;
+      if (uploadError) {
+        console.error("Upload error:", uploadError);
+        throw new Error(`Upload failed: ${uploadError.message}`);
+      }
       
       // Get public URL
       const { data: publicUrlData } = supabase.storage
@@ -249,7 +235,7 @@ export function BadgeManager() {
       try {
         await supabase.storage
           .from('badges')
-          .remove([`badges/${filePath}`]);
+          .remove([filePath]); // No subfolder needed
       } catch (storageError) {
         console.error("Error removing badge image:", storageError);
         // Continue even if image deletion fails

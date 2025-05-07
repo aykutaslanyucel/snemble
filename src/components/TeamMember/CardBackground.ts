@@ -15,16 +15,11 @@ export function getCardBackground(member: TeamMember) {
   const customization = member.customization || {};
   
   if (customization.gradient) {
-    // Handle the animation class based on animationType
-    let animationClass = "";
-    if (customization.animate) {
-      const animationType = customization.animationType || "gentle";
-      animationClass = `animate-gradient-${animationType}`;
-    }
-    
+    // We don't handle animations here, just return the gradient
+    // Animation classes will be applied by the component
     return {
       background: customization.gradient,
-      className: animationClass
+      className: ""
     };
   }
   
