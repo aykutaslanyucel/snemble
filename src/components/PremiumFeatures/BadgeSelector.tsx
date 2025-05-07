@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
@@ -129,8 +130,8 @@ export function BadgeSelector({
               >
                 {/* Top Left */}
                 <div className="flex flex-col items-center space-y-1">
-                  <div className="p-2 border rounded-md relative h-24 w-24 bg-slate-50">
-                    <div className="absolute top-0 left-0 h-8 w-8 rounded-full border overflow-visible flex items-center justify-center" style={{ top: "-40%", left: "-25%" }}>
+                  <div className="p-2 border rounded-md relative h-24 w-24 bg-slate-50 overflow-visible">
+                    <div className="absolute top-0 left-0 h-8 w-8 rounded-full border overflow-visible flex items-center justify-center" style={{ top: "-40%", left: "-25%", zIndex: 50 }}>
                       <div className="h-6 w-6 rounded-full bg-primary"></div>
                     </div>
                   </div>
@@ -142,8 +143,8 @@ export function BadgeSelector({
                 
                 {/* Top Right */}
                 <div className="flex flex-col items-center space-y-1">
-                  <div className="p-2 border rounded-md relative h-24 w-24 bg-slate-50">
-                    <div className="absolute top-0 right-0 h-8 w-8 rounded-full border overflow-visible flex items-center justify-center" style={{ top: "-40%", right: "-25%" }}>
+                  <div className="p-2 border rounded-md relative h-24 w-24 bg-slate-50 overflow-visible">
+                    <div className="absolute top-0 right-0 h-8 w-8 rounded-full border overflow-visible flex items-center justify-center" style={{ top: "-40%", right: "-25%", zIndex: 50 }}>
                       <div className="h-6 w-6 rounded-full bg-primary"></div>
                     </div>
                   </div>
@@ -155,8 +156,8 @@ export function BadgeSelector({
                 
                 {/* Bottom Left */}
                 <div className="flex flex-col items-center space-y-1">
-                  <div className="p-2 border rounded-md relative h-24 w-24 bg-slate-50">
-                    <div className="absolute bottom-0 left-0 h-8 w-8 rounded-full border overflow-visible flex items-center justify-center" style={{ bottom: "-40%", left: "-25%" }}>
+                  <div className="p-2 border rounded-md relative h-24 w-24 bg-slate-50 overflow-visible">
+                    <div className="absolute bottom-0 left-0 h-8 w-8 rounded-full border overflow-visible flex items-center justify-center" style={{ bottom: "-40%", left: "-25%", zIndex: 50 }}>
                       <div className="h-6 w-6 rounded-full bg-primary"></div>
                     </div>
                   </div>
@@ -168,8 +169,8 @@ export function BadgeSelector({
                 
                 {/* Bottom Right */}
                 <div className="flex flex-col items-center space-y-1">
-                  <div className="p-2 border rounded-md relative h-24 w-24 bg-slate-50">
-                    <div className="absolute bottom-0 right-0 h-8 w-8 rounded-full border overflow-visible flex items-center justify-center" style={{ bottom: "-40%", right: "-25%" }}>
+                  <div className="p-2 border rounded-md relative h-24 w-24 bg-slate-50 overflow-visible">
+                    <div className="absolute bottom-0 right-0 h-8 w-8 rounded-full border overflow-visible flex items-center justify-center" style={{ bottom: "-40%", right: "-25%", zIndex: 50 }}>
                       <div className="h-6 w-6 rounded-full bg-primary"></div>
                     </div>
                   </div>

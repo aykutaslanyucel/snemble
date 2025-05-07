@@ -60,28 +60,28 @@ export function TeamMemberCard({ member, onUpdate, onDelete, canEdit }: TeamMemb
         top: "-40%", 
         left: "-25%", 
         transform: "none",
-        zIndex: 10
+        zIndex: 50
       },
       "top-right": { 
         position: "absolute", 
         top: "-40%", 
         right: "-25%", 
         transform: "none",
-        zIndex: 10
+        zIndex: 50
       },
       "bottom-left": { 
         position: "absolute", 
         bottom: "-40%", 
         left: "-25%", 
         transform: "none",
-        zIndex: 10
+        zIndex: 50
       },
       "bottom-right": { 
         position: "absolute", 
         bottom: "-40%", 
         right: "-25%", 
         transform: "none",
-        zIndex: 10
+        zIndex: 50
       }
     };
     
@@ -177,9 +177,9 @@ export function TeamMemberCard({ member, onUpdate, onDelete, canEdit }: TeamMemb
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.3 }}
-      className="h-full"
+      className="h-full overflow-visible"
     >
-      <div className="relative h-full">
+      <div className="relative h-full overflow-visible">
         {/* Badge placed outside card for "hat" effect */}
         {member.customization?.badge && (
           <div 

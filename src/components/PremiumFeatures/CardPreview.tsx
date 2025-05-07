@@ -50,25 +50,29 @@ export function CardPreview({
         position: "absolute", 
         top: "-40%", 
         left: "-25%", 
-        transform: "none"
+        transform: "none",
+        zIndex: 50
       },
       "top-right": { 
         position: "absolute", 
         top: "-40%", 
         right: "-25%", 
-        transform: "none"
+        transform: "none",
+        zIndex: 50
       },
       "bottom-left": { 
         position: "absolute", 
         bottom: "-40%", 
         left: "-25%", 
-        transform: "none"
+        transform: "none",
+        zIndex: 50
       },
       "bottom-right": { 
         position: "absolute", 
         bottom: "-40%", 
         right: "-25%", 
-        transform: "none"
+        transform: "none",
+        zIndex: 50
       }
     };
     
@@ -76,11 +80,11 @@ export function CardPreview({
   };
 
   return (
-    <div className="relative">
+    <div className="relative overflow-visible">
       {/* Badge placed outside card for "hat" effect */}
       {badge && (
         <div 
-          className={`${sizeClass} pointer-events-none z-10`}
+          className={`${sizeClass} pointer-events-none z-50`}
           style={getBadgeStyle()}
         >
           <img 

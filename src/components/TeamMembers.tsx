@@ -1,4 +1,3 @@
-
 import { motion, AnimatePresence } from "framer-motion";
 import { useState, useEffect } from "react";
 import { TeamMemberCard } from "@/components/TeamMemberCard";
@@ -85,7 +84,7 @@ export function TeamMembers({ members, onUpdate, onDelete, currentUserId, isAdmi
   }
   
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 overflow-visible">
       {/* Sorting Controls */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
@@ -133,7 +132,7 @@ export function TeamMembers({ members, onUpdate, onDelete, currentUserId, isAdmi
     
       <motion.div 
         layout
-        className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
+        className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 overflow-visible"
       >
         <AnimatePresence>
           {sortedMembers.map((member) => {
@@ -156,6 +155,7 @@ export function TeamMembers({ members, onUpdate, onDelete, currentUserId, isAdmi
                 animate={{ opacity: 1, scale: 1 }}
                 exit={{ opacity: 0, scale: 0.9 }}
                 transition={{ duration: 0.2 }}
+                className="overflow-visible"
               >
                 <TeamMemberCard
                   member={member}
