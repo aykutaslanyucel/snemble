@@ -46,20 +46,19 @@ export function MemberCard({ member, onUpdate, onDelete, canEdit }: MemberCardPr
     }
   };
 
-  // Calculate badge position styles with reasonable fixed pixel values
+  // Calculate badge position with reduced offsets
   const getBadgePosition = () => {
     if (!member.customization?.badge || !member.customization?.badgePosition) return null;
     
-    // Define offsets based on badge size
+    // Define offsets based on badge size - more compact to reduce needed padding
     const getBadgeOffsets = () => {
       const size = member.customization?.badgeSize || 'medium';
       
-      // Adjust offset based on badge size
-      // Smaller offsets to keep badges closer to the card edges
+      // Smaller offsets to keep badges closer to card edges
       const offsets = {
-        small: { top: "-10px", right: "-10px", bottom: "-10px", left: "-10px" },
-        medium: { top: "-15px", right: "-15px", bottom: "-15px", left: "-15px" },
-        large: { top: "-20px", right: "-20px", bottom: "-20px", left: "-20px" }
+        small: { top: "-8px", right: "-8px", bottom: "-8px", left: "-8px" },
+        medium: { top: "-10px", right: "-10px", bottom: "-10px", left: "-10px" },
+        large: { top: "-12px", right: "-12px", bottom: "-12px", left: "-12px" }
       };
       
       return offsets[size as keyof typeof offsets] || offsets.medium;
@@ -82,7 +81,7 @@ export function MemberCard({ member, onUpdate, onDelete, canEdit }: MemberCardPr
         className={`${getBadgeSizeClass()} absolute`}
         style={{
           ...positionStyle,
-          zIndex: 5, // Higher than card but lower than popover menus
+          zIndex: 5,
           pointerEvents: "none" // Make badge non-interactive
         }}
       >
@@ -131,7 +130,7 @@ export function MemberCard({ member, onUpdate, onDelete, canEdit }: MemberCardPr
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.3 }}
-      className="h-full py-10 px-6 relative"
+      className="h-full py-3 px-6 relative"
     >
       {/* Render badge outside card with proper positioning */}
       {member.customization?.badge && getBadgePosition()}

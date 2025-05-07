@@ -41,17 +41,17 @@ export function CardPreview({
   // Get badge size class
   const sizeClass = badgeSizeClasses[badgeSize as keyof typeof badgeSizeClasses] || badgeSizeClasses.medium;
 
-  // Calculate badge position styles with reasonable pixel values based on badge size
+  // Calculate badge position styles with size-specific offsets
   const getBadgePosition = () => {
     if (!badge || !badgePosition) return null;
     
     // Adjust offset based on badge size
     const getPositionStyles = () => {
-      // Base offsets for different badge sizes
+      // More compact offsets to reduce spacing needs
       const offsets = {
-        small: { top: "-10px", right: "-10px", bottom: "-10px", left: "-10px" },
-        medium: { top: "-15px", right: "-15px", bottom: "-15px", left: "-15px" },
-        large: { top: "-20px", right: "-20px", bottom: "-20px", left: "-20px" }
+        small: { top: "-8px", right: "-8px", bottom: "-8px", left: "-8px" },
+        medium: { top: "-10px", right: "-10px", bottom: "-10px", left: "-10px" },
+        large: { top: "-12px", right: "-12px", bottom: "-12px", left: "-12px" }
       };
       
       const offsetsBySize = offsets[badgeSize as keyof typeof offsets] || offsets.medium;
@@ -88,7 +88,7 @@ export function CardPreview({
   };
 
   return (
-    <div className="w-full py-10 px-6 relative">
+    <div className="w-full py-3 px-6 relative">
       {/* Render the badge separately outside the card */}
       {badge && getBadgePosition()}
       
