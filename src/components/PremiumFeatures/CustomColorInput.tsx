@@ -10,6 +10,7 @@ interface CustomColorInputProps {
 }
 
 export function CustomColorInput({ customColor, setCustomColor, handleApplyCustomColor }: CustomColorInputProps) {
+  // This component is kept for backward compatibility but is no longer actively used
   return (
     <div className="flex items-end gap-2">
       <div className="flex-1">

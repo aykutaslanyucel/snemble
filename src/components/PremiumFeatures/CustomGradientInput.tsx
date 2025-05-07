@@ -14,6 +14,7 @@ export function CustomGradientInput({
   setCustomGradient, 
   handleApplyCustomGradient 
 }: CustomGradientInputProps) {
+  // This component is kept for backward compatibility but is no longer actively used
   return (
     <div className="flex items-end gap-2">
       <div className="flex-1">

@@ -6,9 +6,10 @@ import { useToast } from "@/hooks/use-toast";
 import { CardPreview } from './CardPreview';
 import { ColorSelector } from './ColorSelector';
 import { GradientSelector } from './GradientSelector';
-import { CustomColorInput } from './CustomColorInput';
-import { CustomGradientInput } from './CustomGradientInput';
 import { AnimationToggle } from './AnimationToggle';
+import { ColorPickerComponent } from './ColorPickerComponent';
+import { GradientPickerComponent } from './GradientPickerComponent';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 interface CardCustomizerProps {
   teamMember: TeamMember;
@@ -20,8 +21,6 @@ export function CardCustomizer({ teamMember, onUpdate }: CardCustomizerProps) {
   const [customization, setCustomization] = useState<TeamMemberCustomization>(
     teamMember.customization || {}
   );
-  const [customColor, setCustomColor] = useState(customization.color || "");
-  const [customGradient, setCustomGradient] = useState(customization.gradient || "");
   const { toast } = useToast();
 
   // Used for preview
@@ -52,8 +51,6 @@ export function CardCustomizer({ teamMember, onUpdate }: CardCustomizerProps) {
     };
     
     setCustomization(newCustomization);
-    setCustomColor(color);
-    setCustomGradient("");
   };
 
   const handleSelectGradient = (gradient: string) => {
@@ -64,68 +61,14 @@ export function CardCustomizer({ teamMember, onUpdate }: CardCustomizerProps) {
     };
     
     setCustomization(newCustomization);
-    setCustomGradient(gradient);
-    setCustomColor("");
   };
 
-  const handleApplyCustomColor = () => {
-    if (!customColor) return;
-    
-    try {
-      // Very basic validation
-      if (!/^#[0-9A-F]{6}$/i.test(customColor)) {
-        toast({
-          title: "Invalid color format",
-          description: "Please use a valid hex color (e.g., #FF5500)",
-          variant: "destructive"
-        });
-        return;
-      }
-      
-      const newCustomization = {
-        ...customization,
-        color: customColor,
-        gradient: undefined
-      };
-      
-      setCustomization(newCustomization);
-    } catch (error) {
-      toast({
-        title: "Invalid color",
-        description: "Please use a valid hex color (e.g., #FF5500)",
-        variant: "destructive"
-      });
-    }
+  const handleColorPickerChange = (color: string) => {
+    handleSelectColor(color);
   };
 
-  const handleApplyCustomGradient = () => {
-    if (!customGradient) return;
-    
-    try {
-      // Basic check if it includes the word gradient
-      if (!customGradient.includes("gradient")) {
-        toast({
-          title: "Invalid gradient format",
-          description: "Please use a valid CSS gradient",
-          variant: "destructive"
-        });
-        return;
-      }
-      
-      const newCustomization = {
-        ...customization, 
-        gradient: customGradient,
-        color: undefined
-      };
-      
-      setCustomization(newCustomization);
-    } catch (error) {
-      toast({
-        title: "Invalid gradient",
-        description: "Please use a valid CSS gradient",
-        variant: "destructive"
-      });
-    }
+  const handleGradientPickerChange = (gradient: string) => {
+    handleSelectGradient(gradient);
   };
 
   const handleToggleAnimate = (checked: boolean) => {
@@ -150,31 +93,42 @@ export function CardCustomizer({ teamMember, onUpdate }: CardCustomizerProps) {
         animate={!!customization.animate}
       />
       
-      {/* Color Presets */}
-      <ColorSelector 
-        customization={customization} 
-        onSelectColor={handleSelectColor} 
-      />
-      
-      {/* Gradient Presets */}
-      <GradientSelector 
-        customization={customization} 
-        onSelectGradient={handleSelectGradient} 
-      />
-      
-      {/* Custom Color Input */}
-      <CustomColorInput 
-        customColor={customColor}
-        setCustomColor={setCustomColor}
-        handleApplyCustomColor={handleApplyCustomColor}
-      />
-      
-      {/* Custom Gradient Input */}
-      <CustomGradientInput 
-        customGradient={customGradient}
-        setCustomGradient={setCustomGradient}
-        handleApplyCustomGradient={handleApplyCustomGradient}
-      />
+      <Tabs defaultValue="presets" className="w-full">
+        <TabsList className="grid w-full grid-cols-2">
+          <TabsTrigger value="presets">Presets</TabsTrigger>
+          <TabsTrigger value="advanced">Advanced</TabsTrigger>
+        </TabsList>
+        
+        <TabsContent value="presets" className="space-y-6 py-4">
+          {/* Color Presets */}
+          <ColorSelector 
+            customization={customization} 
+            onSelectColor={handleSelectColor} 
+          />
+          
+          {/* Gradient Presets */}
+          <GradientSelector 
+            customization={customization} 
+            onSelectGradient={handleSelectGradient} 
+          />
+        </TabsContent>
+        
+        <TabsContent value="advanced" className="space-y-6 py-4">
+          {/* Color Picker */}
+          <ColorPickerComponent
+            currentColor={customization.color || "#ffffff"}
+            onChange={handleColorPickerChange}
+            label="Custom Color"
+          />
+          
+          {/* Gradient Picker */}
+          <GradientPickerComponent
+            currentGradient={customization.gradient || ""}
+            onChange={handleGradientPickerChange}
+            label="Custom Gradient"
+          />
+        </TabsContent>
+      </Tabs>
       
       {/* Animation Toggle */}
       <AnimationToggle 
@@ -195,5 +149,3 @@ export function CardCustomizer({ teamMember, onUpdate }: CardCustomizerProps) {
     </div>
   );
 }
-
-export default CardCustomizer;
