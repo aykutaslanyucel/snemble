@@ -80,7 +80,7 @@ export function CardPreview({
   };
 
   return (
-    <div className="relative overflow-visible w-full">
+    <div className="relative w-full" style={{ position: "relative", overflow: "visible" }}>
       {/* Badge placed outside card for "hat" effect */}
       {badge && (
         <div 

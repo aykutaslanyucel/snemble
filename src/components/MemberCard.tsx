@@ -121,14 +121,14 @@ export function MemberCard({ member, onUpdate, onDelete, canEdit }: MemberCardPr
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.3 }}
-      className="h-full overflow-visible"
-      style={{ minHeight: "100%", overflow: "visible" }}
+      className="h-full"
+      style={{ minHeight: "100%", position: "relative", overflow: "visible" }}
     >
-      <div className="relative h-full overflow-visible" style={{ overflow: "visible" }}>
+      <div className="relative h-full" style={{ position: "relative", overflow: "visible" }}>
         {/* Badge placed outside card for "hat" effect */}
         {member.customization?.badge && (
           <div 
-            className={`${getBadgeSizeClass()} pointer-events-none`}
+            className={`${getBadgeSizeClass()} pointer-events-none badge-container`}
             style={getBadgeStyle()}
           >
             <img 
@@ -145,7 +145,8 @@ export function MemberCard({ member, onUpdate, onDelete, canEdit }: MemberCardPr
             background: cardStyle.background,
             boxShadow: "0 4px 20px rgba(0, 0, 0, 0.08)",
             backgroundSize: "200% 200%",
-            overflow: "visible" // Explicitly set overflow to visible
+            overflow: "visible", // Explicitly set overflow to visible
+            position: "relative"
           }}
         >
           <MemberCardHeader
