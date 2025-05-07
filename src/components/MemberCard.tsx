@@ -35,7 +35,7 @@ export function MemberCard({ member, onUpdate, onDelete, canEdit }: MemberCardPr
   const animationClass = member.customization?.animate && member.customization?.gradient ? 
     `animate-gradient-${member.customization.animationType || 'gentle'}` : '';
   
-  // Calculate badge position styles with much larger offsets
+  // Calculate badge position styles with percentage-based positioning to prevent cropping
   const getBadgePositionStyle = () => {
     if (!member.customization?.badge) return {};
     
@@ -49,11 +49,12 @@ export function MemberCard({ member, onUpdate, onDelete, canEdit }: MemberCardPr
       };
     }
     
+    // Use percentage-based positioning to ensure badges are fully visible
     return {
-      top: position.includes('top') ? '-40px' : 'auto',
-      bottom: position.includes('bottom') ? '-40px' : 'auto',
-      right: position.includes('right') ? '-40px' : 'auto',
-      left: position.includes('left') ? '-40px' : 'auto'
+      top: position.includes('top') ? '-50%' : 'auto',
+      bottom: position.includes('bottom') ? '-50%' : 'auto',
+      right: position.includes('right') ? '-50%' : 'auto',
+      left: position.includes('left') ? '-50%' : 'auto'
     };
   };
   
@@ -107,18 +108,11 @@ export function MemberCard({ member, onUpdate, onDelete, canEdit }: MemberCardPr
       transition={{ duration: 0.3 }}
       className="h-full"
     >
-      <Card 
-        className={`h-full overflow-hidden rounded-2xl shadow-md ${cardStyle.className} ${animationClass}`}
-        style={{ 
-          background: cardStyle.background,
-          boxShadow: "0 4px 20px rgba(0, 0, 0, 0.08)",
-          backgroundSize: "200% 200%"
-        }}
-      >
-        {/* Add badge display with improved positioning - outside the card as a "hat" */}
+      <div className="relative h-full">
+        {/* Badge added outside the card container for full visibility */}
         {member.customization?.badge && (
           <div 
-            className={`absolute ${getBadgeSizeClass()} rounded-full overflow-hidden z-20 pointer-events-none`}
+            className={`absolute ${getBadgeSizeClass()} overflow-visible z-20 pointer-events-none`}
             style={getBadgePositionStyle()}
           >
             <img 
@@ -129,30 +123,39 @@ export function MemberCard({ member, onUpdate, onDelete, canEdit }: MemberCardPr
           </div>
         )}
         
-        <MemberCardHeader
-          name={name}
-          isEditingName={isEditingName}
-          setIsEditingName={setIsEditingName}
-          nameValue={name}
-          setNameValue={setName}
-          handleNameChange={handleNameChange}
-          canEdit={canEdit}
-          isPremium={isPremium}
-          onEditProjects={() => setIsEditingProjects(true)}
-          onCustomize={() => setShowCustomizer(true)}
-          onDelete={() => setIsConfirmingDelete(true)}
-        />
-        
-        <MemberCardContent
-          position={member.position}
-          projects={member.projects}
-          canEdit={canEdit}
-          onStatusChange={handleStatusChange}
-          currentStatus={member.status}
-          onEditProjects={() => setIsEditingProjects(true)}
-          lastUpdated={new Date(member.lastUpdated)}
-        />
-      </Card>
+        <Card 
+          className={`h-full overflow-hidden rounded-2xl shadow-md ${cardStyle.className} ${animationClass}`}
+          style={{ 
+            background: cardStyle.background,
+            boxShadow: "0 4px 20px rgba(0, 0, 0, 0.08)",
+            backgroundSize: "200% 200%"
+          }}
+        >
+          <MemberCardHeader
+            name={name}
+            isEditingName={isEditingName}
+            setIsEditingName={setIsEditingName}
+            nameValue={name}
+            setNameValue={setName}
+            handleNameChange={handleNameChange}
+            canEdit={canEdit}
+            isPremium={isPremium}
+            onEditProjects={() => setIsEditingProjects(true)}
+            onCustomize={() => setShowCustomizer(true)}
+            onDelete={() => setIsConfirmingDelete(true)}
+          />
+          
+          <MemberCardContent
+            position={member.position}
+            projects={member.projects}
+            canEdit={canEdit}
+            onStatusChange={handleStatusChange}
+            currentStatus={member.status}
+            onEditProjects={() => setIsEditingProjects(true)}
+            lastUpdated={new Date(member.lastUpdated)}
+          />
+        </Card>
+      </div>
       
       {/* Dialogs */}
       <ProjectsDialog 

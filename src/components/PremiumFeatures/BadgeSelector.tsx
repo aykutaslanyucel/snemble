@@ -128,9 +128,10 @@ export function BadgeSelector({
                 onValueChange={(value) => onPositionChange(value as any)} 
                 className="grid grid-cols-3 gap-2"
               >
+                {/* Top Left */}
                 <div className="flex flex-col items-center space-y-1">
                   <div className="p-2 border rounded-md relative h-24 w-24 bg-slate-50">
-                    <div className="absolute top-0 left-0 h-8 w-8 rounded-full border border-dashed flex items-center justify-center translate-x-[-120%] translate-y-[-120%]">
+                    <div className="absolute top-0 left-0 h-8 w-8 rounded-full border overflow-visible flex items-center justify-center" style={{ transform: 'translate(-50%, -50%)' }}>
                       <div className="h-6 w-6 rounded-full bg-primary"></div>
                     </div>
                   </div>
@@ -140,9 +141,10 @@ export function BadgeSelector({
                   </div>
                 </div>
                 
+                {/* Top Right */}
                 <div className="flex flex-col items-center space-y-1">
                   <div className="p-2 border rounded-md relative h-24 w-24 bg-slate-50">
-                    <div className="absolute top-0 right-0 h-8 w-8 rounded-full border border-dashed flex items-center justify-center translate-x-[120%] translate-y-[-120%]">
+                    <div className="absolute top-0 right-0 h-8 w-8 rounded-full border overflow-visible flex items-center justify-center" style={{ transform: 'translate(50%, -50%)' }}>
                       <div className="h-6 w-6 rounded-full bg-primary"></div>
                     </div>
                   </div>
@@ -152,9 +154,10 @@ export function BadgeSelector({
                   </div>
                 </div>
                 
+                {/* Bottom Left */}
                 <div className="flex flex-col items-center space-y-1">
                   <div className="p-2 border rounded-md relative h-24 w-24 bg-slate-50">
-                    <div className="absolute bottom-0 left-0 h-8 w-8 rounded-full border border-dashed flex items-center justify-center translate-x-[-120%] translate-y-[120%]">
+                    <div className="absolute bottom-0 left-0 h-8 w-8 rounded-full border overflow-visible flex items-center justify-center" style={{ transform: 'translate(-50%, 50%)' }}>
                       <div className="h-6 w-6 rounded-full bg-primary"></div>
                     </div>
                   </div>
@@ -164,9 +167,10 @@ export function BadgeSelector({
                   </div>
                 </div>
                 
+                {/* Bottom Right */}
                 <div className="flex flex-col items-center space-y-1">
                   <div className="p-2 border rounded-md relative h-24 w-24 bg-slate-50">
-                    <div className="absolute bottom-0 right-0 h-8 w-8 rounded-full border border-dashed flex items-center justify-center translate-x-[120%] translate-y-[120%]">
+                    <div className="absolute bottom-0 right-0 h-8 w-8 rounded-full border overflow-visible flex items-center justify-center" style={{ transform: 'translate(50%, 50%)' }}>
                       <div className="h-6 w-6 rounded-full bg-primary"></div>
                     </div>
                   </div>
@@ -176,9 +180,10 @@ export function BadgeSelector({
                   </div>
                 </div>
                 
+                {/* Center */}
                 <div className="flex flex-col items-center space-y-1">
                   <div className="p-2 border rounded-md relative h-24 w-24 bg-slate-50">
-                    <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 h-8 w-8 rounded-full border border-dashed flex items-center justify-center">
+                    <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 h-8 w-8 rounded-full border overflow-visible flex items-center justify-center">
                       <div className="h-6 w-6 rounded-full bg-primary"></div>
                     </div>
                   </div>

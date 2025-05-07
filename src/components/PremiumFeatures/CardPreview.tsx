@@ -38,13 +38,12 @@ export function CardPreview({
     large: "w-28 h-28"
   };
 
-  // Calculate position values for badges with much larger offsets for "hat" effect
-  // We'll use much more extreme offset values to make them extend well beyond the card
+  // Calculate position values for badges with extreme offsets to prevent cropping
   const badgePositionValues = {
-    "top-left": { top: "-40px", left: "-40px", transform: "none" },
-    "top-right": { top: "-40px", right: "-40px", transform: "none" },
-    "bottom-left": { bottom: "-40px", left: "-40px", transform: "none" },
-    "bottom-right": { bottom: "-40px", right: "-40px", transform: "none" },
+    "top-left": { top: "-50%", left: "-50%", transform: "none" },
+    "top-right": { top: "-50%", right: "-50%", transform: "none" },
+    "bottom-left": { bottom: "-50%", left: "-50%", transform: "none" },
+    "bottom-right": { bottom: "-50%", right: "-50%", transform: "none" },
     "center": { top: "50%", left: "50%", transform: "translate(-50%, -50%)" }
   };
 
@@ -53,16 +52,10 @@ export function CardPreview({
   const positionStyle = badgePositionValues[badgePosition as keyof typeof badgePositionValues] || badgePositionValues["top-right"];
 
   return (
-    <Card 
-      className={`border relative ${animationClass}`}
-      style={{
-        ...previewStyle,
-        backgroundSize: "200% 200%"
-      }}
-    >
+    <div className="relative">
       {badge && (
         <div 
-          className={`absolute ${sizeClass} rounded-full overflow-hidden z-20 pointer-events-none`}
+          className={`absolute ${sizeClass} overflow-visible z-20 pointer-events-none`}
           style={positionStyle}
         >
           <img 
@@ -72,12 +65,20 @@ export function CardPreview({
           />
         </div>
       )}
-      <CardHeader className="p-4">
-        <CardTitle className="text-base">{teamMember.name}</CardTitle>
-      </CardHeader>
-      <CardContent className="p-4 pt-0">
-        <p className="text-sm">Card preview</p>
-      </CardContent>
-    </Card>
+      <Card 
+        className={`border relative ${animationClass}`}
+        style={{
+          ...previewStyle,
+          backgroundSize: "200% 200%"
+        }}
+      >
+        <CardHeader className="p-4">
+          <CardTitle className="text-base">{teamMember.name}</CardTitle>
+        </CardHeader>
+        <CardContent className="p-4 pt-0">
+          <p className="text-sm">Card preview</p>
+        </CardContent>
+      </Card>
+    </div>
   );
 }

@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { TeamMember, TeamMemberStatus } from "@/types/TeamMemberTypes";
 import { motion } from "framer-motion";
@@ -39,7 +38,7 @@ export function TeamMemberCard({ member, onUpdate, onDelete, canEdit }: TeamMemb
   const animationClass = member.customization?.animate && member.customization?.gradient ? 
     `animate-gradient-${member.customization.animationType || 'gentle'}` : '';
   
-  // Calculate badge position styles with much larger offsets to create "hat" effect
+  // Calculate badge position styles with percentage-based values to prevent cropping
   const getBadgePositionStyle = () => {
     if (!member.customization?.badge) return {};
     
@@ -53,11 +52,12 @@ export function TeamMemberCard({ member, onUpdate, onDelete, canEdit }: TeamMemb
       };
     }
     
+    // Use percentage-based positioning for full visibility
     return {
-      top: position.includes('top') ? '-40px' : 'auto',
-      bottom: position.includes('bottom') ? '-40px' : 'auto',
-      right: position.includes('right') ? '-40px' : 'auto',
-      left: position.includes('left') ? '-40px' : 'auto'
+      top: position.includes('top') ? '-50%' : 'auto',
+      bottom: position.includes('bottom') ? '-50%' : 'auto',
+      right: position.includes('right') ? '-50%' : 'auto',
+      left: position.includes('left') ? '-50%' : 'auto'
     };
   };
   
@@ -164,17 +164,11 @@ export function TeamMemberCard({ member, onUpdate, onDelete, canEdit }: TeamMemb
       transition={{ duration: 0.3 }}
       className="h-full"
     >
-      <div 
-        className={`rounded-2xl overflow-hidden h-full shadow-lg p-6 relative ${animationClass}`}
-        style={{ 
-          background: cardStyle.background,
-          backgroundSize: "200% 200%"
-        }}
-      >
-        {/* Add badge display with improved positioning - outside the card as a "hat" */}
+      <div className="relative h-full">
+        {/* Badge placed outside card container with overflow visible for full visibility */}
         {member.customization?.badge && (
           <div 
-            className={`absolute ${getBadgeSizeClass()} rounded-full overflow-hidden z-20 pointer-events-none`}
+            className={`absolute ${getBadgeSizeClass()} overflow-visible z-20 pointer-events-none`}
             style={getBadgePositionStyle()}
           >
             <img 
@@ -185,156 +179,164 @@ export function TeamMemberCard({ member, onUpdate, onDelete, canEdit }: TeamMemb
           </div>
         )}
         
-        {/* Card Header */}
-        <div className="flex justify-between items-start mb-6">
-          <div>
-            {isEditingName ? (
-              <div className="flex items-center">
-                <input
-                  type="text"
-                  className="bg-white/90 rounded-xl border border-gray-100 px-3 py-2 text-lg font-medium"
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  onBlur={handleNameChange}
-                  onKeyDown={(e) => e.key === "Enter" && handleNameChange()}
-                  autoFocus
-                />
-              </div>
-            ) : (
-              <h3 
-                className="font-semibold text-gray-800 text-2xl mb-1"
-                onClick={() => canEdit && setIsEditingName(true)}
-              >
-                {member.name}
-              </h3>
-            )}
-            <p className="text-gray-600 text-md">{member.position}</p>
-          </div>
-          
-          {canEdit && (
-            <Popover>
-              <PopoverTrigger asChild>
-                <button 
-                  className="rounded-full p-2 bg-white/80 hover:bg-white shadow-sm"
+        <div 
+          className={`rounded-2xl overflow-hidden h-full shadow-lg p-6 relative ${animationClass}`}
+          style={{ 
+            background: cardStyle.background,
+            backgroundSize: "200% 200%"
+          }}
+        >
+          {/* Card Header */}
+          <div className="flex justify-between items-start mb-6">
+            <div>
+              {isEditingName ? (
+                <div className="flex items-center">
+                  <input
+                    type="text"
+                    className="bg-white/90 rounded-xl border border-gray-100 px-3 py-2 text-lg font-medium"
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    onBlur={handleNameChange}
+                    onKeyDown={(e) => e.key === "Enter" && handleNameChange()}
+                    autoFocus
+                  />
+                </div>
+              ) : (
+                <h3 
+                  className="font-semibold text-gray-800 text-2xl mb-1"
+                  onClick={() => canEdit && setIsEditingName(true)}
                 >
-                  <MoreHorizontal className="h-5 w-5 text-gray-500" />
-                </button>
-              </PopoverTrigger>
-              <PopoverContent className="w-56" align="end">
-                <div className="grid gap-1">
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="justify-start"
-                    onClick={() => setIsEditingName(true)}
+                  {member.name}
+                </h3>
+              )}
+              <p className="text-gray-600 text-md">{member.position}</p>
+            </div>
+            
+            {canEdit && (
+              <Popover>
+                <PopoverTrigger asChild>
+                  <button 
+                    className="rounded-full p-2 bg-white/80 hover:bg-white shadow-sm"
                   >
-                    <Edit className="mr-2 h-4 w-4" />
-                    Edit Name
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="justify-start"
-                    onClick={() => setIsEditingProjects(true)}
-                  >
-                    <Briefcase className="mr-2 h-4 w-4" />
-                    Edit Projects
-                  </Button>
-                  {isPremium && (
+                    <MoreHorizontal className="h-5 w-5 text-gray-500" />
+                  </button>
+                </PopoverTrigger>
+                <PopoverContent className="w-56" align="end">
+                  <div className="grid gap-1">
                     <Button
                       variant="ghost"
                       size="sm"
                       className="justify-start"
-                      onClick={() => setShowCustomizer(true)}
+                      onClick={() => setIsEditingName(true)}
                     >
-                      <Palette className="mr-2 h-4 w-4" />
-                      Customize Card
+                      <Edit className="mr-2 h-4 w-4" />
+                      Edit Name
                     </Button>
-                  )}
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="justify-start text-red-500 hover:text-red-600 hover:bg-red-50"
-                    onClick={() => setIsConfirmingDelete(true)}
-                  >
-                    <Trash2 className="mr-2 h-4 w-4" />
-                    Delete
-                  </Button>
-                </div>
-              </PopoverContent>
-            </Popover>
-          )}
-        </div>
-        
-        {/* Projects Section */}
-        <div className="mb-8">
-          <div className="flex items-center justify-between mb-3">
-            <h4 className="text-gray-700 font-medium">Projects</h4>
-            
-            {canEdit && (
-              <Button 
-                onClick={() => setIsEditingProjects(true)}
-                className="rounded-full px-4 py-2 h-auto bg-white text-gray-700 hover:bg-white/90 shadow-sm flex items-center gap-1.5"
-                variant="ghost"
-              >
-                <Plus className="h-4 w-4" />
-                Add Project
-              </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="justify-start"
+                      onClick={() => setIsEditingProjects(true)}
+                    >
+                      <Briefcase className="mr-2 h-4 w-4" />
+                      Edit Projects
+                    </Button>
+                    {isPremium && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="justify-start"
+                        onClick={() => setShowCustomizer(true)}
+                      >
+                        <Palette className="mr-2 h-4 w-4" />
+                        Customize Card
+                      </Button>
+                    )}
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="justify-start text-red-500 hover:text-red-600 hover:bg-red-50"
+                      onClick={() => setIsConfirmingDelete(true)}
+                    >
+                      <Trash2 className="mr-2 h-4 w-4" />
+                      Delete
+                    </Button>
+                  </div>
+                </PopoverContent>
+              </Popover>
             )}
           </div>
           
-          {member.projects.length > 0 ? (
-            <div className="flex flex-wrap gap-2">
-              {member.projects.map((project, index) => (
-                <span 
-                  key={index} 
-                  className="bg-white/90 text-gray-700 rounded-full px-3 py-1 text-sm font-medium shadow-sm"
+          {/* Projects Section */}
+          <div className="mb-8">
+            <div className="flex items-center justify-between mb-3">
+              <h4 className="text-gray-700 font-medium">Projects</h4>
+              
+              {canEdit && (
+                <Button 
+                  onClick={() => setIsEditingProjects(true)}
+                  className="rounded-full px-4 py-2 h-auto bg-white text-gray-700 hover:bg-white/90 shadow-sm flex items-center gap-1.5"
+                  variant="ghost"
                 >
-                  {project}
-                </span>
-              ))}
+                  <Plus className="h-4 w-4" />
+                  Add Project
+                </Button>
+              )}
             </div>
-          ) : (
-            <p className="text-gray-500 text-sm">No projects assigned</p>
-          )}
-        </div>
-        
-        {/* Status Section */}
-        <div className="space-y-3">
-          <h4 className="text-gray-700 font-medium">Status</h4>
-          
-          <div className="flex items-center justify-between">
-            {canEdit ? (
-              <div>
-                <StatusSelector
-                  currentStatus={member.status}
-                  onStatusChange={handleStatusChange}
-                />
-                <div className="mt-2">
-                  <Badge 
-                    className={`inline-flex items-center gap-1 px-3 py-1.5`}
-                    style={{ background: cardStyle.background }}
+            
+            {member.projects.length > 0 ? (
+              <div className="flex flex-wrap gap-2">
+                {member.projects.map((project, index) => (
+                  <span 
+                    key={index} 
+                    className="bg-white/90 text-gray-700 rounded-full px-3 py-1 text-sm font-medium shadow-sm"
                   >
-                    <span className="flex-shrink-0">{getStatusIcon(member.status)}</span>
-                    <span className="text-xs font-medium text-gray-700">{getStatusText()}</span>
-                  </Badge>
-                </div>
+                    {project}
+                  </span>
+                ))}
               </div>
             ) : (
-              <Badge 
-                className={`inline-flex items-center gap-1.5 px-3 py-1.5`}
-                style={{ background: cardStyle.background }}
-              >
-                <span className="flex-shrink-0">{getStatusIcon(member.status)}</span>
-                <span className="text-xs font-medium text-gray-700">{getStatusText()}</span>
-              </Badge>
+              <p className="text-gray-500 text-sm">No projects assigned</p>
             )}
           </div>
-        </div>
-        
-        {/* Timestamp */}
-        <div className="absolute bottom-6 right-6">
-          <span className="text-xs text-gray-400">{getTimeAgo()}</span>
+          
+          {/* Status Section */}
+          <div className="space-y-3">
+            <h4 className="text-gray-700 font-medium">Status</h4>
+            
+            <div className="flex items-center justify-between">
+              {canEdit ? (
+                <div>
+                  <StatusSelector
+                    currentStatus={member.status}
+                    onStatusChange={handleStatusChange}
+                  />
+                  <div className="mt-2">
+                    <Badge 
+                      className={`inline-flex items-center gap-1 px-3 py-1.5`}
+                      style={{ background: cardStyle.background }}
+                    >
+                      <span className="flex-shrink-0">{getStatusIcon(member.status)}</span>
+                      <span className="text-xs font-medium text-gray-700">{getStatusText()}</span>
+                    </Badge>
+                  </div>
+                </div>
+              ) : (
+                <Badge 
+                  className={`inline-flex items-center gap-1.5 px-3 py-1.5`}
+                  style={{ background: cardStyle.background }}
+                >
+                  <span className="flex-shrink-0">{getStatusIcon(member.status)}</span>
+                  <span className="text-xs font-medium text-gray-700">{getStatusText()}</span>
+                </Badge>
+              )}
+            </div>
+          </div>
+          
+          {/* Timestamp */}
+          <div className="absolute bottom-6 right-6">
+            <span className="text-xs text-gray-400">{getTimeAgo()}</span>
+          </div>
         </div>
       </div>
       
