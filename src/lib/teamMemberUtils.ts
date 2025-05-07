@@ -1,5 +1,5 @@
 
-import { TeamMember, TeamMemberStatus } from "@/types/TeamMemberTypes";
+import { TeamMember, TeamMemberStatus, TeamMemberRole } from "@/types/TeamMemberTypes";
 import { supabase } from "@/integrations/supabase/client";
 
 // Format name from email
@@ -163,6 +163,11 @@ export const getOrCreateTeamMemberForUser = async (userId: string, email: string
     position = "Senior Member";
   }
   
+  // Convert role string to TeamMemberRole type
+  const memberRole: TeamMemberRole = (role === 'admin' || role === 'user' || role === 'premium') 
+    ? role as TeamMemberRole 
+    : 'user';
+  
   const newTeamMember: Omit<TeamMember, 'id'> = {
     name: formattedName,
     position: position,
@@ -170,7 +175,7 @@ export const getOrCreateTeamMemberForUser = async (userId: string, email: string
     projects: [],
     lastUpdated: new Date(),
     user_id: userId,
-    role: role
+    role: memberRole
   };
 
   return addTeamMember(newTeamMember);
@@ -207,4 +212,3 @@ export const subscribeToTeamMembers = (
     supabase.removeChannel(subscription);
   };
 };
-
