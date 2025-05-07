@@ -16,6 +16,7 @@ export function ColorPickerComponent({
   label = "Color" 
 }: ColorPickerComponentProps) {
   const [color, setColor] = useState(currentColor || "#ffffff");
+  const [isOpen, setIsOpen] = useState(false);
   
   const handleColorChange = (newColor: string) => {
     setColor(newColor);
@@ -23,6 +24,7 @@ export function ColorPickerComponent({
   
   const handleApplyColor = () => {
     onChange(color);
+    setIsOpen(false);
   };
   
   return (
@@ -34,18 +36,20 @@ export function ColorPickerComponent({
             className="w-6 h-6 rounded-full border shadow-sm" 
             style={{ backgroundColor: color }}
           />
-          <Popover>
+          <Popover open={isOpen} onOpenChange={setIsOpen}>
             <PopoverTrigger asChild>
               <Button variant="outline" size="sm">
                 Pick Color
               </Button>
             </PopoverTrigger>
-            <PopoverContent className="w-auto p-4" side="right">
-              <div className="space-y-4">
-                <HexColorPicker 
-                  color={color} 
-                  onChange={handleColorChange} 
-                />
+            <PopoverContent className="w-auto p-4" side="right" onOpenAutoFocus={(e) => e.preventDefault()}>
+              <div className="space-y-4" onClick={(e) => e.stopPropagation()}>
+                <div onClick={(e) => e.stopPropagation()}>
+                  <HexColorPicker 
+                    color={color} 
+                    onChange={handleColorChange} 
+                  />
+                </div>
                 <div className="flex justify-between gap-2">
                   <input
                     type="text"

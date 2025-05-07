@@ -8,7 +8,8 @@ import { ColorSelector } from './ColorSelector';
 import { GradientSelector } from './GradientSelector';
 import { AnimationToggle } from './AnimationToggle';
 import { ColorPickerComponent } from './ColorPickerComponent';
-import { GradientPickerComponent } from './GradientPickerComponent';
+import { CustomColorInput } from './CustomColorInput';
+import { CustomGradientInput } from './CustomGradientInput';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 interface CardCustomizerProps {
@@ -21,6 +22,11 @@ export function CardCustomizer({ teamMember, onUpdate }: CardCustomizerProps) {
   const [customization, setCustomization] = useState<TeamMemberCustomization>(
     teamMember.customization || {}
   );
+  
+  // For the custom inputs
+  const [customColor, setCustomColor] = useState(teamMember.customization?.color || "");
+  const [customGradient, setCustomGradient] = useState(teamMember.customization?.gradient || "");
+  
   const { toast } = useToast();
 
   // Used for preview
@@ -44,6 +50,7 @@ export function CardCustomizer({ teamMember, onUpdate }: CardCustomizerProps) {
   }, [customization]);
 
   const handleSelectColor = (color: string) => {
+    console.log("Selected color:", color);
     const newCustomization = {
       ...customization,
       color,
@@ -54,6 +61,7 @@ export function CardCustomizer({ teamMember, onUpdate }: CardCustomizerProps) {
   };
 
   const handleSelectGradient = (gradient: string) => {
+    console.log("Selected gradient:", gradient);
     const newCustomization = {
       ...customization,
       gradient,
@@ -64,11 +72,22 @@ export function CardCustomizer({ teamMember, onUpdate }: CardCustomizerProps) {
   };
 
   const handleColorPickerChange = (color: string) => {
+    console.log("Color picker change:", color);
     handleSelectColor(color);
   };
 
-  const handleGradientPickerChange = (gradient: string) => {
-    handleSelectGradient(gradient);
+  // Legacy support for custom color input
+  const handleApplyCustomColor = () => {
+    if (customColor) {
+      handleSelectColor(customColor);
+    }
+  };
+
+  // Legacy support for custom gradient input
+  const handleApplyCustomGradient = () => {
+    if (customGradient) {
+      handleSelectGradient(customGradient);
+    }
   };
 
   const handleToggleAnimate = (checked: boolean) => {
@@ -115,18 +134,31 @@ export function CardCustomizer({ teamMember, onUpdate }: CardCustomizerProps) {
         
         <TabsContent value="advanced" className="space-y-6 py-4">
           {/* Color Picker */}
-          <ColorPickerComponent
-            currentColor={customization.color || "#ffffff"}
-            onChange={handleColorPickerChange}
-            label="Custom Color"
-          />
+          <div className="space-y-4">
+            <h3 className="text-sm font-medium">Custom Color</h3>
+            <ColorPickerComponent
+              currentColor={customization.color || "#ffffff"}
+              onChange={handleColorPickerChange}
+              label="Pick a Color"
+            />
+            
+            {/* Kept for backward compatibility */}
+            <CustomColorInput
+              customColor={customColor}
+              setCustomColor={setCustomColor}
+              handleApplyCustomColor={handleApplyCustomColor}
+            />
+          </div>
           
-          {/* Gradient Picker */}
-          <GradientPickerComponent
-            currentGradient={customization.gradient || ""}
-            onChange={handleGradientPickerChange}
-            label="Custom Gradient"
-          />
+          {/* Custom Gradient Input - kept for backward compatibility */}
+          <div className="space-y-2">
+            <h3 className="text-sm font-medium">Custom Gradient</h3>
+            <CustomGradientInput
+              customGradient={customGradient}
+              setCustomGradient={setCustomGradient}
+              handleApplyCustomGradient={handleApplyCustomGradient}
+            />
+          </div>
         </TabsContent>
       </Tabs>
       
