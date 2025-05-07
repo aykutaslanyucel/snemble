@@ -72,6 +72,42 @@ export type Database = {
         }
         Relationships: []
       }
+      team_members: {
+        Row: {
+          customization: Json | null
+          id: string
+          last_updated: string | null
+          name: string
+          position: string
+          projects: string[] | null
+          role: string | null
+          status: string
+          user_id: string | null
+        }
+        Insert: {
+          customization?: Json | null
+          id?: string
+          last_updated?: string | null
+          name: string
+          position: string
+          projects?: string[] | null
+          role?: string | null
+          status: string
+          user_id?: string | null
+        }
+        Update: {
+          customization?: Json | null
+          id?: string
+          last_updated?: string | null
+          name?: string
+          position?: string
+          projects?: string[] | null
+          role?: string | null
+          status?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never

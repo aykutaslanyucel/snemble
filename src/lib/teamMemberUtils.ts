@@ -24,7 +24,7 @@ export const mapTeamMemberToDb = (teamMember: TeamMember) => {
     position: teamMember.position,
     status: teamMember.status,
     projects: teamMember.projects,
-    last_updated: teamMember.lastUpdated,
+    last_updated: teamMember.lastUpdated ? teamMember.lastUpdated.toISOString() : new Date().toISOString(),
     user_id: teamMember.user_id,
     role: teamMember.role
   };
@@ -47,14 +47,20 @@ export const fetchTeamMembers = async (): Promise<TeamMember[]> => {
 
 // Add a new team member
 export const addTeamMember = async (teamMember: Omit<TeamMember, 'id'>): Promise<TeamMember> => {
-  const newTeamMember = {
-    ...teamMember,
-    last_updated: new Date()
+  const newTeamMemberData = {
+    name: teamMember.name,
+    position: teamMember.position,
+    status: teamMember.status,
+    projects: teamMember.projects || [],
+    user_id: teamMember.user_id,
+    role: teamMember.role,
+    customization: teamMember.customization
+    // last_updated will be set by default in the database
   };
 
   const { data, error } = await supabase
     .from('team_members')
-    .insert([newTeamMember])
+    .insert([newTeamMemberData])
     .select()
     .single();
 
@@ -68,18 +74,17 @@ export const addTeamMember = async (teamMember: Omit<TeamMember, 'id'>): Promise
 
 // Update a team member
 export const updateTeamMember = async (id: string, updates: Partial<TeamMember>): Promise<TeamMember> => {
-  const dbUpdates: any = {
-    ...updates,
-    last_updated: new Date()
-  };
+  const dbUpdates: any = {};
+  
+  if ('name' in updates) dbUpdates.name = updates.name;
+  if ('position' in updates) dbUpdates.position = updates.position;
+  if ('status' in updates) dbUpdates.status = updates.status;
+  if ('projects' in updates) dbUpdates.projects = updates.projects;
+  if ('role' in updates) dbUpdates.role = updates.role;
+  if ('customization' in updates) dbUpdates.customization = updates.customization;
+  if ('user_id' in updates) dbUpdates.user_id = updates.user_id;
 
-  if ('lastUpdated' in dbUpdates) {
-    delete dbUpdates.lastUpdated;
-  }
-
-  if ('projects' in updates) {
-    dbUpdates.projects = updates.projects;
-  }
+  // Note: We don't need to set last_updated as there's a trigger in the database
 
   const { data, error } = await supabase
     .from('team_members')
