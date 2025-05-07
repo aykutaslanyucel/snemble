@@ -1,7 +1,8 @@
+
 import { motion, AnimatePresence } from "framer-motion";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { TeamMemberCard } from "@/components/TeamMemberCard";
-import { TeamMember, TeamMemberStatus } from "@/types/TeamMemberTypes";
+import { TeamMember } from "@/types/TeamMemberTypes";
 import { 
   Select, 
   SelectContent, 
@@ -25,7 +26,7 @@ type SortField = "lastUpdated" | "name" | "capacity";
 type SortDirection = "asc" | "desc";
 
 // Function to get capacity score from status
-const getCapacityScore = (status: TeamMemberStatus): number => {
+const getCapacityScore = (status: any): number => {
   switch (status) {
     case "available": return 5;
     case "someAvailability": return 4;
@@ -84,7 +85,7 @@ export function TeamMembers({ members, onUpdate, onDelete, currentUserId, isAdmi
   }
   
   return (
-    <div className="space-y-6" style={{ overflow: "visible", position: "relative" }}>
+    <div className="space-y-6">
       {/* Sorting Controls */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
@@ -130,10 +131,9 @@ export function TeamMembers({ members, onUpdate, onDelete, currentUserId, isAdmi
         </div>
       </div>
     
-      <motion.div 
-        layout
-        className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 badge-wrapper"
-        style={{ position: "relative", overflow: "visible" }}
+      <div 
+        className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
+        style={{ position: "static" }}
       >
         <AnimatePresence>
           {sortedMembers.map((member) => {
@@ -143,13 +143,16 @@ export function TeamMembers({ members, onUpdate, onDelete, currentUserId, isAdmi
             return (
               <motion.div
                 key={member.id}
-                layout
                 initial={{ opacity: 0, scale: 0.9 }}
                 animate={{ opacity: 1, scale: 1 }}
                 exit={{ opacity: 0, scale: 0.9 }}
                 transition={{ duration: 0.2 }}
-                className="badge-wrapper"
-                style={{ position: "relative", overflow: "visible" }}
+                className="motion-div"
+                style={{ 
+                  position: "relative", 
+                  transformStyle: "preserve-3d",
+                  perspective: "1000px"
+                }}
               >
                 <TeamMemberCard
                   member={member}
@@ -161,7 +164,7 @@ export function TeamMembers({ members, onUpdate, onDelete, currentUserId, isAdmi
             );
           })}
         </AnimatePresence>
-      </motion.div>
+      </div>
     </div>
   );
 }

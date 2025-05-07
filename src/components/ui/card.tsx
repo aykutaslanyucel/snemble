@@ -6,14 +6,13 @@ import { cn } from "@/lib/utils"
 const Card = React.forwardRef<
   HTMLDivElement,
   React.HTMLAttributes<HTMLDivElement>
->(({ className, style, ...props }, ref) => (
+>(({ className, ...props }, ref) => (
   <div
     ref={ref}
     className={cn(
       "rounded-xl border shadow-sm",
       className
     )}
-    style={{ ...style, overflow: "visible" }} // Force overflow to be visible
     {...props}
   />
 ))

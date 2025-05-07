@@ -47,42 +47,32 @@ export function MemberCard({ member, onUpdate, onDelete, canEdit }: MemberCardPr
     }
   };
 
-  // Calculate badge position styles - more extreme positioning to ensure visibility
-  const getBadgeStyle = () => {
-    if (!member.customization?.badge || !member.customization?.badgePosition) return {};
+  // Calculate badge position styles with fixed pixel values
+  const getBadgePosition = () => {
+    if (!member.customization?.badge || !member.customization?.badgePosition) return null;
     
-    const positions: Record<string, React.CSSProperties> = {
-      "top-left": { 
-        position: "absolute", 
-        top: "-60%", 
-        left: "-35%", 
-        transform: "none",
-        zIndex: 50
-      },
-      "top-right": { 
-        position: "absolute", 
-        top: "-60%", 
-        right: "-35%", 
-        transform: "none",
-        zIndex: 50
-      },
-      "bottom-left": { 
-        position: "absolute", 
-        bottom: "-60%", 
-        left: "-35%", 
-        transform: "none",
-        zIndex: 50
-      },
-      "bottom-right": { 
-        position: "absolute", 
-        bottom: "-60%", 
-        right: "-35%", 
-        transform: "none",
-        zIndex: 50
-      }
+    const positions = {
+      "top-left": { top: "-40px", left: "-30px" },
+      "top-right": { top: "-40px", right: "-30px" },
+      "bottom-left": { bottom: "-40px", left: "-30px" },
+      "bottom-right": { bottom: "-40px", right: "-30px" }
     };
     
-    return positions[member.customization.badgePosition] || positions["top-right"];
+    const positionStyle = positions[member.customization.badgePosition as keyof typeof positions] 
+      || positions["top-right"];
+    
+    return (
+      <div 
+        className={`${getBadgeSizeClass()} absolute z-[100]`}
+        style={positionStyle}
+      >
+        <img 
+          src={member.customization.badge} 
+          alt="Badge" 
+          className="w-full h-full object-contain"
+        />
+      </div>
+    );
   };
 
   const handleStatusChange = (status: TeamMemberStatus) => {
@@ -121,59 +111,47 @@ export function MemberCard({ member, onUpdate, onDelete, canEdit }: MemberCardPr
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.3 }}
-      className="h-full"
-      style={{ minHeight: "100%", position: "relative", overflow: "visible" }}
+      className="h-full py-10 px-6"
+      style={{ 
+        position: "relative",
+        transform: "translate3d(0,0,0)" // Create a new stacking context
+      }}
     >
-      <div className="relative h-full" style={{ position: "relative", overflow: "visible" }}>
-        {/* Badge placed outside card for "hat" effect */}
-        {member.customization?.badge && (
-          <div 
-            className={`${getBadgeSizeClass()} pointer-events-none badge-container`}
-            style={getBadgeStyle()}
-          >
-            <img 
-              src={member.customization.badge} 
-              alt="Badge" 
-              className="w-full h-full object-contain"
-            />
-          </div>
-        )}
+      {/* Render badge outside card */}
+      {member.customization?.badge && getBadgePosition()}
+      
+      <Card 
+        className={`h-full rounded-2xl shadow-md ${cardStyle.className} ${animationClass}`}
+        style={{ 
+          background: cardStyle.background,
+          boxShadow: "0 4px 20px rgba(0, 0, 0, 0.08)",
+          backgroundSize: "200% 200%"
+        }}
+      >
+        <MemberCardHeader
+          name={name}
+          isEditingName={isEditingName}
+          setIsEditingName={setIsEditingName}
+          nameValue={name}
+          setNameValue={setName}
+          handleNameChange={handleNameChange}
+          canEdit={canEdit}
+          isPremium={isPremium}
+          onEditProjects={() => setIsEditingProjects(true)}
+          onCustomize={() => setShowCustomizer(true)}
+          onDelete={() => setIsConfirmingDelete(true)}
+        />
         
-        <Card 
-          className={`h-full rounded-2xl shadow-md ${cardStyle.className} ${animationClass}`}
-          style={{ 
-            background: cardStyle.background,
-            boxShadow: "0 4px 20px rgba(0, 0, 0, 0.08)",
-            backgroundSize: "200% 200%",
-            overflow: "visible", // Explicitly set overflow to visible
-            position: "relative"
-          }}
-        >
-          <MemberCardHeader
-            name={name}
-            isEditingName={isEditingName}
-            setIsEditingName={setIsEditingName}
-            nameValue={name}
-            setNameValue={setName}
-            handleNameChange={handleNameChange}
-            canEdit={canEdit}
-            isPremium={isPremium}
-            onEditProjects={() => setIsEditingProjects(true)}
-            onCustomize={() => setShowCustomizer(true)}
-            onDelete={() => setIsConfirmingDelete(true)}
-          />
-          
-          <MemberCardContent
-            position={member.position}
-            projects={member.projects}
-            canEdit={canEdit}
-            onStatusChange={handleStatusChange}
-            currentStatus={member.status}
-            onEditProjects={() => setIsEditingProjects(true)}
-            lastUpdated={new Date(member.lastUpdated)}
-          />
-        </Card>
-      </div>
+        <MemberCardContent
+          position={member.position}
+          projects={member.projects}
+          canEdit={canEdit}
+          onStatusChange={handleStatusChange}
+          currentStatus={member.status}
+          onEditProjects={() => setIsEditingProjects(true)}
+          lastUpdated={new Date(member.lastUpdated)}
+        />
+      </Card>
       
       {/* Dialogs */}
       <ProjectsDialog 

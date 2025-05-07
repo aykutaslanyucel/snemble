@@ -60,9 +60,35 @@
     font-feature-settings: "ss01", "ss02", "cv01", "cv02", "cv03";
   }
   
-  /* Fix badge visibility globally */
-  [class*="overflow-hidden"] {
+  /* AGGRESSIVE badge visibility fix - override any CSS that might hide badges */
+  body * {
     overflow: visible !important;
+  }
+  
+  /* Remove overflow hidden from all parents */
+  [class*="overflow-hidden"],
+  [style*="overflow: hidden"],
+  [style*="overflow:hidden"],
+  div, section, main {
+    overflow: visible !important;
+  }
+  
+  /* Force all badges to have maximum z-index */
+  img[alt="Badge"],
+  [class*="badge-container"],
+  [style*="z-index: 50"] {
+    position: absolute !important;
+    z-index: 9999 !important;
+    pointer-events: none !important;
+    visibility: visible !important;
+    display: block !important;
+    transform: none !important;
+  }
+  
+  /* Remove transformations from motion divs that might affect badge visibility */
+  .motion-div {
+    transform: none !important;
+    position: relative !important;
   }
   
   /* Status colors */
@@ -161,17 +187,4 @@
 .dark .spinner {
   border: 3px solid rgba(100, 100, 100, 0.3);
   border-top-color: #5b93d3;
-}
-
-/* Fix badge visibility */
-.badge-wrapper {
-  position: relative !important;
-  overflow: visible !important;
-  z-index: 50;
-}
-
-.badge-container {
-  position: absolute !important;
-  overflow: visible !important;
-  z-index: 50;
 }

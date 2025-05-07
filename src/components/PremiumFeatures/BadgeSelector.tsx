@@ -128,55 +128,56 @@ export function BadgeSelector({
                 onValueChange={(value) => onPositionChange(value as any)} 
                 className="grid grid-cols-2 gap-2"
               >
-                {/* Top Left */}
-                <div className="flex flex-col items-center space-y-1">
-                  <div className="p-2 border rounded-md relative h-24 w-24 bg-slate-50" style={{ position: "relative", overflow: "visible" }}>
-                    <div className="absolute h-8 w-8 rounded-full border flex items-center justify-center" style={{ top: "-60%", left: "-35%", zIndex: 50 }}>
-                      <div className="h-6 w-6 rounded-full bg-primary"></div>
+                {/* Position preview boxes */}
+                <div className="flex flex-col items-center space-y-2">
+                  <div className="p-4 border rounded-md bg-slate-50 relative" style={{ width: '90px', height: '90px', position: 'relative' }}>
+                    <div style={{ position: 'absolute', top: '-20px', left: '-15px', width: '30px', height: '30px', zIndex: 999 }}>
+                      <div className="bg-primary rounded-full w-full h-full"></div>
                     </div>
+                    <div className="w-full h-full border border-dashed border-gray-300"></div>
                   </div>
                   <div className="flex items-center space-x-2">
                     <RadioGroupItem value="top-left" id="top-left" />
-                    <Label htmlFor="top-left" className="text-xs">Top Left</Label>
+                    <Label htmlFor="top-left">Top Left</Label>
                   </div>
                 </div>
                 
-                {/* Top Right */}
-                <div className="flex flex-col items-center space-y-1">
-                  <div className="p-2 border rounded-md relative h-24 w-24 bg-slate-50" style={{ position: "relative", overflow: "visible" }}>
-                    <div className="absolute h-8 w-8 rounded-full border flex items-center justify-center" style={{ top: "-60%", right: "-35%", zIndex: 50 }}>
-                      <div className="h-6 w-6 rounded-full bg-primary"></div>
+                <div className="flex flex-col items-center space-y-2">
+                  <div className="p-4 border rounded-md bg-slate-50 relative" style={{ width: '90px', height: '90px', position: 'relative' }}>
+                    <div style={{ position: 'absolute', top: '-20px', right: '-15px', width: '30px', height: '30px', zIndex: 999 }}>
+                      <div className="bg-primary rounded-full w-full h-full"></div>
                     </div>
+                    <div className="w-full h-full border border-dashed border-gray-300"></div>
                   </div>
                   <div className="flex items-center space-x-2">
                     <RadioGroupItem value="top-right" id="top-right" />
-                    <Label htmlFor="top-right" className="text-xs">Top Right</Label>
+                    <Label htmlFor="top-right">Top Right</Label>
                   </div>
                 </div>
                 
-                {/* Bottom Left */}
-                <div className="flex flex-col items-center space-y-1">
-                  <div className="p-2 border rounded-md relative h-24 w-24 bg-slate-50" style={{ position: "relative", overflow: "visible" }}>
-                    <div className="absolute h-8 w-8 rounded-full border flex items-center justify-center" style={{ bottom: "-60%", left: "-35%", zIndex: 50 }}>
-                      <div className="h-6 w-6 rounded-full bg-primary"></div>
+                <div className="flex flex-col items-center space-y-2">
+                  <div className="p-4 border rounded-md bg-slate-50 relative" style={{ width: '90px', height: '90px', position: 'relative' }}>
+                    <div style={{ position: 'absolute', bottom: '-20px', left: '-15px', width: '30px', height: '30px', zIndex: 999 }}>
+                      <div className="bg-primary rounded-full w-full h-full"></div>
                     </div>
+                    <div className="w-full h-full border border-dashed border-gray-300"></div>
                   </div>
                   <div className="flex items-center space-x-2">
                     <RadioGroupItem value="bottom-left" id="bottom-left" />
-                    <Label htmlFor="bottom-left" className="text-xs">Bottom Left</Label>
+                    <Label htmlFor="bottom-left">Bottom Left</Label>
                   </div>
                 </div>
                 
-                {/* Bottom Right */}
-                <div className="flex flex-col items-center space-y-1">
-                  <div className="p-2 border rounded-md relative h-24 w-24 bg-slate-50" style={{ position: "relative", overflow: "visible" }}>
-                    <div className="absolute h-8 w-8 rounded-full border flex items-center justify-center" style={{ bottom: "-60%", right: "-35%", zIndex: 50 }}>
-                      <div className="h-6 w-6 rounded-full bg-primary"></div>
+                <div className="flex flex-col items-center space-y-2">
+                  <div className="p-4 border rounded-md bg-slate-50 relative" style={{ width: '90px', height: '90px', position: 'relative' }}>
+                    <div style={{ position: 'absolute', bottom: '-20px', right: '-15px', width: '30px', height: '30px', zIndex: 999 }}>
+                      <div className="bg-primary rounded-full w-full h-full"></div>
                     </div>
+                    <div className="w-full h-full border border-dashed border-gray-300"></div>
                   </div>
                   <div className="flex items-center space-x-2">
                     <RadioGroupItem value="bottom-right" id="bottom-right" />
-                    <Label htmlFor="bottom-right" className="text-xs">Bottom Right</Label>
+                    <Label htmlFor="bottom-right">Bottom Right</Label>
                   </div>
                 </div>
               </RadioGroup>
@@ -190,8 +191,8 @@ export function BadgeSelector({
                 className="grid grid-cols-3 gap-4"
               >
                 <div className="flex flex-col items-center space-y-2">
-                  <div className="h-12 w-12 rounded-full border flex items-center justify-center">
-                    <div className="h-10 w-10 rounded-full bg-muted"></div>
+                  <div className="h-12 w-12 rounded-full border bg-primary/20 flex items-center justify-center">
+                    <div className="h-10 w-10 rounded-full bg-primary/40"></div>
                   </div>
                   <div className="flex items-center space-x-2">
                     <RadioGroupItem value="small" id="small" />
@@ -200,8 +201,8 @@ export function BadgeSelector({
                 </div>
                 
                 <div className="flex flex-col items-center space-y-2">
-                  <div className="h-20 w-20 rounded-full border flex items-center justify-center">
-                    <div className="h-18 w-18 rounded-full bg-muted"></div>
+                  <div className="h-20 w-20 rounded-full border bg-primary/20 flex items-center justify-center">
+                    <div className="h-16 w-16 rounded-full bg-primary/40"></div>
                   </div>
                   <div className="flex items-center space-x-2">
                     <RadioGroupItem value="medium" id="medium" />
@@ -210,8 +211,8 @@ export function BadgeSelector({
                 </div>
                 
                 <div className="flex flex-col items-center space-y-2">
-                  <div className="h-28 w-28 rounded-full border flex items-center justify-center">
-                    <div className="h-24 w-24 rounded-full bg-muted"></div>
+                  <div className="h-28 w-28 rounded-full border bg-primary/20 flex items-center justify-center">
+                    <div className="h-24 w-24 rounded-full bg-primary/40"></div>
                   </div>
                   <div className="flex items-center space-x-2">
                     <RadioGroupItem value="large" id="large" />

@@ -41,65 +41,43 @@ export function CardPreview({
   // Get badge size class
   const sizeClass = badgeSizeClasses[badgeSize as keyof typeof badgeSizeClasses] || badgeSizeClasses.medium;
 
-  // Calculate badge position styles - more extreme positioning to ensure visibility
-  const getBadgeStyle = () => {
-    if (!badge || !badgePosition) return {};
+  // Calculate badge position styles with fixed position
+  const getBadgePosition = () => {
+    if (!badge || !badgePosition) return null;
     
-    const positions: Record<string, React.CSSProperties> = {
-      "top-left": { 
-        position: "absolute", 
-        top: "-60%", 
-        left: "-35%", 
-        transform: "none",
-        zIndex: 50
-      },
-      "top-right": { 
-        position: "absolute", 
-        top: "-60%", 
-        right: "-35%", 
-        transform: "none",
-        zIndex: 50
-      },
-      "bottom-left": { 
-        position: "absolute", 
-        bottom: "-60%", 
-        left: "-35%", 
-        transform: "none",
-        zIndex: 50
-      },
-      "bottom-right": { 
-        position: "absolute", 
-        bottom: "-60%", 
-        right: "-35%", 
-        transform: "none",
-        zIndex: 50
-      }
+    const positions = {
+      "top-left": { top: "-40px", left: "-30px" },
+      "top-right": { top: "-40px", right: "-30px" },
+      "bottom-left": { bottom: "-40px", left: "-30px" },
+      "bottom-right": { bottom: "-40px", right: "-30px" }
     };
     
-    return positions[badgePosition] || positions["top-right"];
+    const positionStyle = positions[badgePosition as keyof typeof positions] || positions["top-right"];
+    
+    return (
+      <div 
+        className={`${sizeClass} absolute z-[100]`}
+        style={positionStyle}
+      >
+        <img 
+          src={badge} 
+          alt="Badge" 
+          className="w-full h-full object-contain"
+        />
+      </div>
+    );
   };
 
   return (
-    <div className="relative w-full" style={{ position: "relative", overflow: "visible" }}>
-      {/* Badge placed outside card for "hat" effect */}
-      {badge && (
-        <div 
-          className={`${sizeClass} pointer-events-none z-50`}
-          style={getBadgeStyle()}
-        >
-          <img 
-            src={badge} 
-            alt="Badge" 
-            className="w-full h-full object-contain"
-          />
-        </div>
-      )}
+    <div className="w-full py-10 px-6 relative">
+      {/* Render the badge separately outside the card */}
+      {badge && getBadgePosition()}
+      
       <Card 
         className={`border relative ${animationClass}`}
         style={{
           ...previewStyle,
-          backgroundSize: "200% 200%",
-          overflow: "visible" // Explicitly set overflow to visible
+          backgroundSize: "200% 200%"
         }}
       >
         <CardHeader className="p-4">
