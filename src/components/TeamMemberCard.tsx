@@ -20,7 +20,7 @@ interface TeamMemberCardProps {
   canEdit: boolean;
 }
 
-// Status button configs with colors but without labels
+// Status button configs with colors but without labels - simplified
 const STATUS_BUTTONS = [
   { status: "available", color: "#D3E4FD", tooltip: "Available" },
   { status: "someAvailability", color: "#F2FCE2", tooltip: "Some Availability" },

@@ -1,3 +1,4 @@
+
 export type TeamMemberStatus = 'available' | 'someAvailability' | 'busy' | 'seriouslyBusy' | 'away';
 
 // FIXED: Include all role types that are used throughout the application
@@ -22,6 +23,7 @@ export interface TeamMember {
   projects: string[];
   lastUpdated: Date;
   user_id: string;
+  role?: TeamMemberRole;
   customization?: {
     color?: string;
     texture?: string;

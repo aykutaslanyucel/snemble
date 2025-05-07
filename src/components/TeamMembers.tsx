@@ -5,8 +5,8 @@ import { TeamMember } from "@/types/TeamMemberTypes";
 
 interface TeamMembersProps {
   members: TeamMember[];
-  onUpdate: (id: string, field: string, value: any) => void;
-  onDelete: (id: string) => void;
+  onUpdate: (id: string, field: string, value: any) => Promise<void>;
+  onDelete: (id: string) => Promise<void>;
   currentUserId?: string;
   isAdmin: boolean;
 }

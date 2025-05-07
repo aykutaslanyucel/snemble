@@ -1,3 +1,4 @@
+
 import React, { useMemo } from "react";
 import { Card } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
@@ -430,18 +431,24 @@ export default function WorkloadSummary({
               animate="visible"
               exit="exit"
             >
-              {roleMetricsData.map((data, idx) => (
-                <DonutChart
-                  key={data.role}
-                  percentage={data.percentage}
-                  color={data.color}
-                  gradientColor={data.gradientColor}
-                  label={data.role}
-                  count={data.count}
-                  icon={data.icon}
-                  index={idx}
-                />
-              ))}
+              {roleMetricsData.length > 0 ? (
+                roleMetricsData.map((data, idx) => (
+                  <DonutChart
+                    key={data.role}
+                    percentage={data.percentage}
+                    color={data.color}
+                    gradientColor={data.gradientColor}
+                    label={data.role}
+                    count={data.count}
+                    icon={data.icon}
+                    index={idx}
+                  />
+                ))
+              ) : (
+                <div className="text-center py-8 text-muted-foreground">
+                  No active team members with status information
+                </div>
+              )}
             </motion.div>
           ) : (
             <motion.div
