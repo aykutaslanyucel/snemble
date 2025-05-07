@@ -4,13 +4,16 @@ import { TeamMember, TeamMemberStatus } from "@/types/TeamMemberTypes";
 import { motion } from "framer-motion";
 import { useAuth } from "@/contexts/AuthContext";
 import "../styles/animations.css";
-import { Check, User, Clock, X, Coffee, Plus, MoreHorizontal } from "lucide-react";
+import { Check, User, Clock, X, Coffee, Plus, MoreHorizontal, Edit, Briefcase, Palette, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 
 // Import our dialogs
 import { ProjectsDialog } from "@/components/TeamMember/ProjectsDialog";
 import { DeleteConfirmationDialog } from "@/components/TeamMember/DeleteConfirmationDialog";
 import { CustomizerDialog } from "@/components/TeamMember/CustomizerDialog";
+import { StatusSelector } from "./TeamMember/StatusSelector";
 
 interface TeamMemberCardProps {
   member: TeamMember;
@@ -119,6 +122,42 @@ export function TeamMemberCard({ member, onUpdate, onDelete, canEdit }: TeamMemb
     }
   };
 
+  // Status icon with color
+  const getStatusIcon = (status: TeamMemberStatus) => {
+    switch (status) {
+      case "available":
+        return <Check className="h-3.5 w-3.5 text-green-600" />;
+      case "someAvailability":
+        return <User className="h-3.5 w-3.5 text-blue-600" />;
+      case "busy":
+        return <Clock className="h-3.5 w-3.5 text-yellow-600" />;
+      case "seriouslyBusy":
+        return <X className="h-3.5 w-3.5 text-red-600" />;
+      case "away":
+        return <Coffee className="h-3.5 w-3.5 text-gray-600" />;
+      default:
+        return null;
+    }
+  };
+
+  // Get status badge color
+  const getStatusBadgeColor = (status: TeamMemberStatus) => {
+    switch (status) {
+      case "available":
+        return "bg-green-100 border-green-200";
+      case "someAvailability":
+        return "bg-blue-100 border-blue-200";
+      case "busy":
+        return "bg-yellow-100 border-yellow-200";
+      case "seriouslyBusy":
+        return "bg-red-100 border-red-200";
+      case "away":
+        return "bg-gray-100 border-gray-200";
+      default:
+        return "bg-white border-gray-100";
+    }
+  };
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
@@ -160,12 +199,57 @@ export function TeamMemberCard({ member, onUpdate, onDelete, canEdit }: TeamMemb
           </div>
           
           {canEdit && (
-            <button 
-              className="rounded-full p-2 bg-white/80 hover:bg-white shadow-sm"
-              onClick={() => setIsConfirmingDelete(true)}
-            >
-              <MoreHorizontal className="h-5 w-5 text-gray-500" />
-            </button>
+            <Popover>
+              <PopoverTrigger asChild>
+                <button 
+                  className="rounded-full p-2 bg-white/80 hover:bg-white shadow-sm"
+                >
+                  <MoreHorizontal className="h-5 w-5 text-gray-500" />
+                </button>
+              </PopoverTrigger>
+              <PopoverContent className="w-56" align="end">
+                <div className="grid gap-1">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="justify-start"
+                    onClick={() => setIsEditingName(true)}
+                  >
+                    <Edit className="mr-2 h-4 w-4" />
+                    Edit Name
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="justify-start"
+                    onClick={() => setIsEditingProjects(true)}
+                  >
+                    <Briefcase className="mr-2 h-4 w-4" />
+                    Edit Projects
+                  </Button>
+                  {isPremium && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="justify-start"
+                      onClick={() => setShowCustomizer(true)}
+                    >
+                      <Palette className="mr-2 h-4 w-4" />
+                      Customize Card
+                    </Button>
+                  )}
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="justify-start text-red-500 hover:text-red-600 hover:bg-red-50"
+                    onClick={() => setIsConfirmingDelete(true)}
+                  >
+                    <Trash2 className="mr-2 h-4 w-4" />
+                    Delete
+                  </Button>
+                </div>
+              </PopoverContent>
+            </Popover>
           )}
         </div>
         
@@ -208,42 +292,36 @@ export function TeamMemberCard({ member, onUpdate, onDelete, canEdit }: TeamMemb
           
           <div className="flex items-center justify-between">
             {canEdit ? (
-              <div className="flex space-x-3">
-                <StatusButton 
-                  status="available"
-                  current={member.status} 
-                  onClick={() => handleStatusChange("available")}
+              <div>
+                <StatusSelector
+                  currentStatus={member.status}
+                  onStatusChange={handleStatusChange}
                 />
-                <StatusButton 
-                  status="someAvailability"
-                  current={member.status} 
-                  onClick={() => handleStatusChange("someAvailability")}
-                />
-                <StatusButton 
-                  status="busy"
-                  current={member.status} 
-                  onClick={() => handleStatusChange("busy")}
-                />
-                <StatusButton 
-                  status="seriouslyBusy"
-                  current={member.status} 
-                  onClick={() => handleStatusChange("seriouslyBusy")}
-                />
-                <StatusButton 
-                  status="away"
-                  current={member.status} 
-                  onClick={() => handleStatusChange("away")}
-                />
+                <div className="mt-2">
+                  <Badge 
+                    className={`inline-flex items-center gap-1 px-3 py-1.5 ${getStatusBadgeColor(member.status)}`}
+                    variant="outline"
+                  >
+                    <span className="flex-shrink-0">{getStatusIcon(member.status)}</span>
+                    <span className="text-xs font-medium">{getStatusText()}</span>
+                  </Badge>
+                </div>
               </div>
             ) : (
-              <div className="flex items-center gap-2 bg-white/80 rounded-full px-3 py-1.5 shadow-sm">
-                {getStatusIcon(member.status)}
-                <span className="text-sm font-medium text-gray-700">{getStatusText()}</span>
-              </div>
+              <Badge 
+                className={`inline-flex items-center gap-1.5 px-3 py-1.5 ${getStatusBadgeColor(member.status)}`}
+                variant="outline"
+              >
+                <span className="flex-shrink-0">{getStatusIcon(member.status)}</span>
+                <span className="text-xs font-medium">{getStatusText()}</span>
+              </Badge>
             )}
-            
-            <span className="text-xs text-gray-400">{getTimeAgo()}</span>
           </div>
+        </div>
+        
+        {/* Timestamp */}
+        <div className="absolute bottom-6 right-6">
+          <span className="text-xs text-gray-400">{getTimeAgo()}</span>
         </div>
       </div>
       
@@ -273,47 +351,4 @@ export function TeamMemberCard({ member, onUpdate, onDelete, canEdit }: TeamMemb
       />
     </motion.div>
   );
-}
-
-// Status Button Component with enhanced styling
-function StatusButton({ 
-  status, 
-  current, 
-  onClick, 
-}: { 
-  status: TeamMemberStatus; 
-  current: TeamMemberStatus;
-  onClick: () => void;
-}) {
-  return (
-    <button
-      onClick={onClick}
-      className={`w-12 h-12 rounded-full bg-white flex items-center justify-center transition-all ${
-        current === status 
-          ? 'ring-2 ring-blue-400 transform scale-110 shadow-md' 
-          : 'shadow-sm hover:scale-105'
-      }`}
-      aria-label={`Set status to ${status}`}
-    >
-      {getStatusIcon(status)}
-    </button>
-  );
-}
-
-// Extracted status icon function to be used in multiple places
-function getStatusIcon(status: TeamMemberStatus) {
-  switch (status) {
-    case "available":
-      return <Check className="h-5 w-5 text-gray-700" />;
-    case "someAvailability":
-      return <User className="h-5 w-5 text-gray-700" />;
-    case "busy":
-      return <Clock className="h-5 w-5 text-gray-700" />;
-    case "seriouslyBusy":
-      return <X className="h-5 w-5 text-gray-700" />;
-    case "away":
-      return <Coffee className="h-5 w-5 text-gray-700" />;
-    default:
-      return null;
-  }
 }
