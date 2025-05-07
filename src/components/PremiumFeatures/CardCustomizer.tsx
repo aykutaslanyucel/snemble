@@ -75,7 +75,10 @@ export function CardCustomizer({ teamMember, onUpdate }: CardCustomizerProps) {
           <p className="text-muted-foreground mb-4">
             Upgrade to premium to customize your capacity card with custom colors and animations.
           </p>
-          <Button variant="premium" className="bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 text-white">
+          <Button 
+            variant="secondary"
+            className="bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 text-white"
+          >
             Upgrade to Premium
           </Button>
         </CardContent>

@@ -29,6 +29,7 @@ const STATUS_BUTTONS = [
   { status: "away", color: "#F1F0FB", tooltip: "Away" },
 ];
 
+// Changed from default export to named export
 export function TeamMemberCard({ member, onUpdate, onDelete, canEdit }: TeamMemberCardProps) {
   const [isEditingName, setIsEditingName] = useState(false);
   const [name, setName] = useState(member.name);
@@ -275,3 +276,6 @@ export function TeamMemberCard({ member, onUpdate, onDelete, canEdit }: TeamMemb
     </motion.div>
   );
 }
+
+// Add this for backward compatibility if needed
+export default TeamMemberCard;

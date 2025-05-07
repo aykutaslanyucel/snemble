@@ -1,6 +1,6 @@
 
 import { motion, AnimatePresence } from "framer-motion";
-import TeamMemberCard from "@/components/TeamMemberCard";
+import { TeamMemberCard } from "@/components/TeamMemberCard";
 import { TeamMember } from "@/types/TeamMemberTypes";
 
 interface TeamMembersProps {
