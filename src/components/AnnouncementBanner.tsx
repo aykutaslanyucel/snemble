@@ -1,32 +1,159 @@
 
 import { motion } from "framer-motion";
 import { Announcement } from "@/types/TeamMemberTypes";
+import { useEffect, useState } from "react";
+import { ChevronLeft, ChevronRight } from "lucide-react";
+import { Button } from "./ui/button";
 
 interface AnnouncementBannerProps {
-  announcement: Announcement;
+  announcements: Announcement[];
+  onDelete?: (id: string) => void;
 }
 
-export function AnnouncementBanner({ announcement }: AnnouncementBannerProps) {
-  return (
-    <div className="bg-gradient-to-r from-primary/5 via-primary/10 to-primary/5 backdrop-blur-sm border-b border-white/10">
-      <div className="container py-3 px-4 overflow-hidden">
-        <motion.div 
-          className="flex items-center justify-between"
-          initial={{ x: "100%" }}
-          animate={{ x: "-100%" }}
-          transition={{
+export function AnnouncementBanner({ announcements, onDelete }: AnnouncementBannerProps) {
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const [isPaused, setIsPaused] = useState(false);
+  
+  const activeAnnouncements = announcements.filter(announcement => 
+    announcement.isActive !== false && 
+    (!announcement.expiresAt || new Date(announcement.expiresAt) > new Date())
+  );
+  
+  // Sort by priority if available
+  const sortedAnnouncements = [...activeAnnouncements].sort((a, b) => 
+    (b.priority || 0) - (a.priority || 0)
+  );
+  
+  // Don't render if no active announcements
+  if (sortedAnnouncements.length === 0) return null;
+  
+  const currentAnnouncement = sortedAnnouncements[currentIndex];
+  
+  // Go to next announcement after a delay
+  useEffect(() => {
+    if (sortedAnnouncements.length <= 1 || isPaused) return;
+    
+    const timer = setTimeout(() => {
+      setCurrentIndex((prev) => (prev + 1) % sortedAnnouncements.length);
+    }, 8000); // 8 seconds between announcements
+    
+    return () => clearTimeout(timer);
+  }, [currentIndex, sortedAnnouncements.length, isPaused]);
+  
+  // Apply default theme if not provided
+  const theme = currentAnnouncement.theme || {
+    backgroundColor: "from-primary/5 via-primary/10 to-primary/5", 
+    textColor: "text-foreground",
+    borderColor: "border-white/10",
+    animationStyle: "scroll" 
+  };
+  
+  const handlePrevious = () => {
+    setCurrentIndex((prev) => 
+      prev === 0 ? sortedAnnouncements.length - 1 : prev - 1
+    );
+  };
+  
+  const handleNext = () => {
+    setCurrentIndex((prev) => 
+      (prev + 1) % sortedAnnouncements.length
+    );
+  };
+  
+  // Animation variants based on theme
+  const getAnimationProps = () => {
+    switch(theme.animationStyle) {
+      case "fade":
+        return {
+          initial: { opacity: 0 },
+          animate: { opacity: 1 },
+          transition: { duration: 1 }
+        };
+      case "flash":
+        return {
+          animate: { 
+            backgroundColor: ["rgba(255,255,255,0.1)", "rgba(255,255,255,0.2)", "rgba(255,255,255,0.1)"] 
+          },
+          transition: { duration: 2, repeat: Infinity }
+        };
+      case "none":
+        return {};
+      case "scroll":
+      default:
+        return {
+          initial: { x: "100%" },
+          animate: { x: "-100%" },
+          transition: {
             duration: 20,
             repeat: Infinity,
             ease: "linear",
-          }}
+          }
+        };
+    }
+  };
+
+  return (
+    <div 
+      className={`bg-gradient-to-r ${theme.backgroundColor} backdrop-blur-sm border-b ${theme.borderColor} relative`}
+      onMouseEnter={() => setIsPaused(true)}
+      onMouseLeave={() => setIsPaused(false)}
+    >
+      <div className="container py-3 px-4 overflow-hidden">
+        <motion.div 
+          className={`flex items-center justify-between ${theme.textColor}`}
+          {...getAnimationProps()}
         >
           <div className="flex items-center space-x-8 whitespace-nowrap">
-            <p className="text-sm font-medium">{announcement.message}</p>
+            {currentAnnouncement.htmlContent ? (
+              <div 
+                dangerouslySetInnerHTML={{ __html: currentAnnouncement.htmlContent }} 
+                className="text-sm font-medium announcement-content"
+              />
+            ) : (
+              <p className="text-sm font-medium">{currentAnnouncement.message}</p>
+            )}
             <span className="text-xs text-muted-foreground">
-              {announcement.timestamp.toLocaleDateString()}
+              {currentAnnouncement.timestamp.toLocaleDateString()}
             </span>
           </div>
         </motion.div>
+        
+        {sortedAnnouncements.length > 1 && (
+          <div className="absolute right-4 top-1/2 transform -translate-y-1/2 flex space-x-1">
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              className="h-6 w-6 rounded-full bg-background/80 hover:bg-background/90"
+              onClick={handlePrevious}
+            >
+              <ChevronLeft className="h-3 w-3" />
+              <span className="sr-only">Previous</span>
+            </Button>
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              className="h-6 w-6 rounded-full bg-background/80 hover:bg-background/90"
+              onClick={handleNext}
+            >
+              <ChevronRight className="h-3 w-3" />
+              <span className="sr-only">Next</span>
+            </Button>
+          </div>
+        )}
+        
+        {onDelete && (
+          <Button 
+            variant="ghost" 
+            size="icon" 
+            className="h-6 w-6 rounded-full absolute right-2 top-1/2 transform -translate-y-1/2"
+            onClick={() => onDelete(currentAnnouncement.id)}
+          >
+            <span className="sr-only">Delete</span>
+            <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M18 6L6 18M6 6l12 12" />
+            </svg>
+          </Button>
+        )}
       </div>
     </div>
   );

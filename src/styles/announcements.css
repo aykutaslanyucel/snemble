@@ -1,0 +1,70 @@
+
+/* Rich text content styling */
+.announcement-content {
+  line-height: 1.5;
+}
+
+.announcement-content a {
+  color: #3b82f6;
+  text-decoration: underline;
+  transition: opacity 0.2s;
+}
+
+.announcement-content a:hover {
+  opacity: 0.8;
+}
+
+.announcement-content strong,
+.announcement-content b {
+  font-weight: bold;
+}
+
+.announcement-content em,
+.announcement-content i {
+  font-style: italic;
+}
+
+.announcement-content u {
+  text-decoration: underline;
+}
+
+/* Announcement banner animations */
+@keyframes flash {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.7;
+  }
+}
+
+.animate-flash {
+  animation: flash 2s infinite;
+}
+
+/* Ensure framer motion animations work properly */
+.motion-container {
+  overflow: hidden;
+  width: 100%;
+  position: relative;
+}
+
+/* TipTap editor styles */
+.ProseMirror {
+  min-height: 100px;
+  padding: 0.5rem;
+  overflow-y: auto;
+  word-break: break-word;
+}
+
+.ProseMirror:focus {
+  outline: none;
+}
+
+.ProseMirror p.is-editor-empty:first-child::before {
+  color: #adb5bd;
+  content: attr(data-placeholder);
+  float: left;
+  height: 0;
+  pointer-events: none;
+}

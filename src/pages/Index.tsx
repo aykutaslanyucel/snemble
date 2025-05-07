@@ -257,21 +257,27 @@ export default function Index() {
     }
   };
 
-  const handleAddAnnouncement = () => {
-    if (!newAnnouncement.trim()) return;
-    
-    const announcement: Announcement = {
-      id: Date.now().toString(),
-      message: newAnnouncement,
-      timestamp: new Date(),
-    };
-    
+  const handleAddAnnouncement = (announcement: Announcement) => {
     setAnnouncements([announcement, ...announcements]);
-    setNewAnnouncement("");
-    toast({
-      title: "Announcement posted",
-      description: "Your announcement has been posted to the team.",
+  };
+
+  const handleUpdateAnnouncement = (id: string, data: Partial<Announcement>) => {
+    const updatedAnnouncements = announcements.map(announcement => {
+      if (announcement.id === id) {
+        return { ...announcement, ...data };
+      }
+      return announcement;
     });
+    
+    setAnnouncements(updatedAnnouncements);
+  };
+
+  const handleDeleteAnnouncement = (id: string) => {
+    const updatedAnnouncements = announcements.filter(
+      announcement => announcement.id !== id
+    );
+    
+    setAnnouncements(updatedAnnouncements);
   };
 
   const handleLogout = async () => {
@@ -313,7 +319,12 @@ export default function Index() {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-background to-secondary/20">
-      {latestAnnouncement && <AnnouncementBanner announcement={latestAnnouncement} />}
+      {announcements.length > 0 && (
+        <AnnouncementBanner 
+          announcements={announcements} 
+          onDelete={isAdmin ? handleDeleteAnnouncement : undefined}
+        />
+      )}
       
       <div className="container py-12 space-y-10">
         <NavigationHeader 
@@ -330,6 +341,8 @@ export default function Index() {
           newAnnouncement={newAnnouncement}
           onAnnouncementChange={setNewAnnouncement}
           onAddAnnouncement={handleAddAnnouncement}
+          onUpdateAnnouncement={handleUpdateAnnouncement}
+          onDeleteAnnouncement={handleDeleteAnnouncement}
           members={members}
         />
 

@@ -53,7 +53,17 @@ export interface TeamMember {
 export interface Announcement {
   id: string;
   message: string;
+  htmlContent?: string;  // For rich text content
   timestamp: Date;
+  expiresAt?: Date;      // When the announcement should expire
+  priority?: number;     // For ordering announcements
+  theme?: {              // Theme customization
+    backgroundColor?: string;
+    textColor?: string;
+    borderColor?: string;
+    animationStyle?: 'scroll' | 'fade' | 'flash' | 'none';
+  };
+  isActive?: boolean;    // Whether the announcement is currently active
 }
 
 // Define Badge interface

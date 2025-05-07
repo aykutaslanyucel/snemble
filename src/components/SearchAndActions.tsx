@@ -3,13 +3,7 @@ import React from "react";
 import { Card } from "@/components/ui/card";
 import { SearchBar } from "@/components/SearchBar";
 import { ActionButtons } from "@/components/ActionButtons";
-import { TeamMember } from "@/types/TeamMemberTypes";
-
-interface Announcement {
-  id: string;
-  message: string;
-  timestamp: Date;
-}
+import { TeamMember, Announcement } from "@/types/TeamMemberTypes";
 
 interface SearchAndActionsProps {
   searchQuery: string;
@@ -18,7 +12,9 @@ interface SearchAndActionsProps {
   announcements: Announcement[];
   newAnnouncement: string;
   onAnnouncementChange: (value: string) => void;
-  onAddAnnouncement: () => void;
+  onAddAnnouncement: (announcement: Announcement) => void;
+  onUpdateAnnouncement?: (id: string, data: Partial<Announcement>) => void;
+  onDeleteAnnouncement?: (id: string) => void;
   members?: TeamMember[];
 }
 
@@ -30,6 +26,8 @@ export function SearchAndActions({
   newAnnouncement,
   onAnnouncementChange,
   onAddAnnouncement,
+  onUpdateAnnouncement,
+  onDeleteAnnouncement,
   members
 }: SearchAndActionsProps) {
   return (
@@ -45,6 +43,8 @@ export function SearchAndActions({
           newAnnouncement={newAnnouncement}
           onAnnouncementChange={onAnnouncementChange}
           onAddAnnouncement={onAddAnnouncement}
+          onUpdateAnnouncement={onUpdateAnnouncement}
+          onDeleteAnnouncement={onDeleteAnnouncement}
           members={members}
         />
       </div>
