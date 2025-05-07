@@ -2,6 +2,7 @@
 import React from "react";
 import { Card } from "@/components/ui/card";
 import { TeamMember } from "@/types/TeamMemberTypes";
+import { Check } from "lucide-react";
 
 interface AvailableMembersListProps {
   availableMembers: TeamMember[];
@@ -23,8 +24,12 @@ export function AvailableMembersList({ availableMembers }: AvailableMembersListP
             key={member.id} 
             className="p-4 bg-white/5 rounded-lg border border-white/10 flex items-center gap-3 transition-all hover:bg-white/10 hover:shadow-md group"
           >
-            <div className="h-8 w-8 rounded-full flex items-center justify-center bg-[#D3E4FD]/10 flex-shrink-0 text-sm font-medium">
-              {member.name.charAt(0)}
+            <div className="h-9 w-9 rounded-full flex items-center justify-center bg-[#D3E4FD] flex-shrink-0">
+              {member.status === "available" ? (
+                <Check className="h-4 w-4 text-gray-700" />
+              ) : (
+                <span className="text-sm font-medium text-gray-700">{member.name.charAt(0)}</span>
+              )}
             </div>
             <div className="overflow-hidden min-w-0">
               <div className="font-medium text-sm truncate group-hover:text-[#D3E4FD]">

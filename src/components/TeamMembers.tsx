@@ -1,8 +1,7 @@
 
 import { motion, AnimatePresence } from "framer-motion";
-import { TeamMemberCard } from "@/components/TeamMemberCard";
+import { MemberCard } from "@/components/MemberCard";
 import { TeamMember } from "@/types/TeamMemberTypes";
-import { Skeleton } from "@/components/ui/skeleton";
 
 interface TeamMembersProps {
   members: TeamMember[];
@@ -54,7 +53,7 @@ export function TeamMembers({ members, onUpdate, onDelete, currentUserId, isAdmi
               exit={{ opacity: 0, scale: 0.9 }}
               transition={{ duration: 0.2 }}
             >
-              <TeamMemberCard
+              <MemberCard
                 member={member}
                 onUpdate={onUpdate}
                 onDelete={onDelete}

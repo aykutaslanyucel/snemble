@@ -1,5 +1,5 @@
 
-import React, { useState } from "react";
+import React from "react";
 import { CardHeader, CardTitle } from "@/components/ui/card";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Button } from "@/components/ui/button";
@@ -34,33 +34,35 @@ export function MemberCardHeader({
   onDelete
 }: MemberCardHeaderProps) {
   return (
-    <CardHeader className="p-4 flex-row items-center justify-between">
-      <CardTitle className="text-gray-800 dark:text-gray-200 text-base font-medium flex items-center gap-2">
-        {isEditingName ? (
-          <div className="flex items-center gap-1">
-            <Input
-              className="border-gray-300 bg-white text-gray-800 text-sm p-1 h-7"
-              value={nameValue}
-              onChange={(e) => setNameValue(e.target.value)}
-              onBlur={handleNameChange}
-              onKeyDown={(e) => e.key === "Enter" && handleNameChange()}
-              autoFocus
-            />
-          </div>
-        ) : (
-          <span 
-            onClick={() => canEdit && setIsEditingName(true)} 
-            className={`${canEdit ? 'cursor-pointer hover:underline' : ''}`}
-          >
-            {name}
-          </span>
-        )}
-      </CardTitle>
+    <CardHeader className="p-4 flex-row items-start justify-between">
+      <div className="mr-2">
+        <CardTitle className="text-gray-800 dark:text-gray-200 text-lg font-semibold">
+          {isEditingName ? (
+            <div className="flex items-center gap-1">
+              <Input
+                className="border-gray-300 bg-white/80 text-gray-800 text-sm p-1 h-8 rounded-md"
+                value={nameValue}
+                onChange={(e) => setNameValue(e.target.value)}
+                onBlur={handleNameChange}
+                onKeyDown={(e) => e.key === "Enter" && handleNameChange()}
+                autoFocus
+              />
+            </div>
+          ) : (
+            <span 
+              onClick={() => canEdit && setIsEditingName(true)} 
+              className={`${canEdit ? 'cursor-pointer hover:underline' : ''}`}
+            >
+              {name}
+            </span>
+          )}
+        </CardTitle>
+      </div>
       
       {canEdit && (
         <Popover>
           <PopoverTrigger asChild>
-            <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+            <Button variant="ghost" size="sm" className="h-8 w-8 p-0 rounded-full bg-white/50 hover:bg-white/80">
               <MoreVertical className="h-4 w-4 text-gray-700 dark:text-gray-300" />
             </Button>
           </PopoverTrigger>

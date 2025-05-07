@@ -1,14 +1,14 @@
 
 import { TeamMember } from "@/types/TeamMemberTypes";
 
-// Status button configs with colors but without labels - simplified
-const STATUS_BUTTONS = [
-  { status: "available", color: "#D3E4FD", tooltip: "Available" },
-  { status: "someAvailability", color: "#F2FCE2", tooltip: "Some Availability" },
-  { status: "busy", color: "#FEF7CD", tooltip: "Busy" },
-  { status: "seriouslyBusy", color: "#FFDEE2", tooltip: "Seriously Busy" },
-  { status: "away", color: "#F1F0FB", tooltip: "Away" },
-];
+// Status colors for cards
+const STATUS_COLORS = {
+  "available": "#D3E4FD",
+  "someAvailability": "#F2FCE2", 
+  "busy": "#FEF7CD",
+  "seriouslyBusy": "#FFDEE2",
+  "away": "#E5E5E5"
+};
 
 export function getCardBackground(member: TeamMember) {
   // Safe access to member.customization with proper typing
@@ -28,9 +28,26 @@ export function getCardBackground(member: TeamMember) {
   }
   
   // Default color based on status
-  const statusConfig = STATUS_BUTTONS.find(s => s.status === member.status);
+  const backgroundColor = STATUS_COLORS[member.status] || "#F1F0FB";
   return {
-    background: statusConfig?.color || "#F1F0FB",
+    background: backgroundColor,
     className: ""
   };
+}
+
+export function getStatusText(status: string): string {
+  switch (status) {
+    case "available":
+      return "Available";
+    case "someAvailability":
+      return "Some Availability";
+    case "busy":
+      return "Busy";
+    case "seriouslyBusy":
+      return "Seriously Busy";
+    case "away":
+      return "Away";
+    default:
+      return "Unknown";
+  }
 }

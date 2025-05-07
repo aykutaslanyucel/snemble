@@ -12,13 +12,13 @@
 
 /* Status button styling */
 .status-button {
-  @apply rounded-full w-8 h-8 flex items-center justify-center;
-  @apply border border-transparent hover:border-gray-300;
-  @apply transition-all hover:shadow;
+  @apply rounded-full flex items-center justify-center;
+  @apply bg-white/80 hover:bg-white transition-all;
+  @apply shadow-sm hover:shadow;
 }
 
 .status-button.active {
-  @apply ring-2 ring-white transform scale-110;
+  @apply ring-2 ring-white/30 transform scale-110;
 }
 
 /* Spinner animation */
@@ -65,6 +65,6 @@
 
 /* Badge styling */
 .status-badge {
-  @apply px-2 py-0.5 rounded-full text-xs inline-flex items-center;
+  @apply px-3 py-1 rounded-full text-xs inline-flex items-center;
   @apply bg-white/80 text-gray-700;
 }
