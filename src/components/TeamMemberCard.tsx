@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { TeamMember, TeamMemberStatus } from "@/types/TeamMemberTypes";
 import { motion } from "framer-motion";
@@ -50,36 +51,36 @@ export function TeamMemberCard({ member, onUpdate, onDelete, canEdit }: TeamMemb
     }
   };
 
-  // Calculate badge position styles - positioned well outside card for "hat" effect
+  // Calculate badge position styles - more extreme positioning to ensure visibility
   const getBadgeStyle = () => {
     if (!member.customization?.badge || !member.customization?.badgePosition) return {};
     
     const positions: Record<string, React.CSSProperties> = {
       "top-left": { 
         position: "absolute", 
-        top: "-40%", 
-        left: "-25%", 
+        top: "-60%", 
+        left: "-35%", 
         transform: "none",
         zIndex: 50
       },
       "top-right": { 
         position: "absolute", 
-        top: "-40%", 
-        right: "-25%", 
+        top: "-60%", 
+        right: "-35%", 
         transform: "none",
         zIndex: 50
       },
       "bottom-left": { 
         position: "absolute", 
-        bottom: "-40%", 
-        left: "-25%", 
+        bottom: "-60%", 
+        left: "-35%", 
         transform: "none",
         zIndex: 50
       },
       "bottom-right": { 
         position: "absolute", 
-        bottom: "-40%", 
-        right: "-25%", 
+        bottom: "-60%", 
+        right: "-35%", 
         transform: "none",
         zIndex: 50
       }
@@ -178,12 +179,13 @@ export function TeamMemberCard({ member, onUpdate, onDelete, canEdit }: TeamMemb
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.3 }}
       className="h-full overflow-visible"
+      style={{ minHeight: "100%", overflow: "visible" }}
     >
-      <div className="relative h-full overflow-visible">
+      <div className="relative h-full overflow-visible" style={{ overflow: "visible" }}>
         {/* Badge placed outside card for "hat" effect */}
         {member.customization?.badge && (
           <div 
-            className={`${getBadgeSizeClass()} pointer-events-none`}
+            className={`${getBadgeSizeClass()} pointer-events-none absolute`}
             style={getBadgeStyle()}
           >
             <img 
@@ -195,10 +197,11 @@ export function TeamMemberCard({ member, onUpdate, onDelete, canEdit }: TeamMemb
         )}
         
         <div 
-          className={`rounded-2xl overflow-hidden h-full shadow-lg p-6 relative ${animationClass}`}
+          className="rounded-2xl h-full shadow-lg p-6 relative"
           style={{ 
             background: cardStyle.background,
-            backgroundSize: "200% 200%"
+            backgroundSize: "200% 200%",
+            overflow: "visible" // Explicitly set overflow to visible
           }}
         >
           {/* Card Header */}

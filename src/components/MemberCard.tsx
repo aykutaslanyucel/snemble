@@ -47,36 +47,36 @@ export function MemberCard({ member, onUpdate, onDelete, canEdit }: MemberCardPr
     }
   };
 
-  // Calculate badge position styles - positioned well outside card for "hat" effect
+  // Calculate badge position styles - more extreme positioning to ensure visibility
   const getBadgeStyle = () => {
     if (!member.customization?.badge || !member.customization?.badgePosition) return {};
     
     const positions: Record<string, React.CSSProperties> = {
       "top-left": { 
         position: "absolute", 
-        top: "-40%", 
-        left: "-25%", 
+        top: "-60%", 
+        left: "-35%", 
         transform: "none",
         zIndex: 50
       },
       "top-right": { 
         position: "absolute", 
-        top: "-40%", 
-        right: "-25%", 
+        top: "-60%", 
+        right: "-35%", 
         transform: "none",
         zIndex: 50
       },
       "bottom-left": { 
         position: "absolute", 
-        bottom: "-40%", 
-        left: "-25%", 
+        bottom: "-60%", 
+        left: "-35%", 
         transform: "none",
         zIndex: 50
       },
       "bottom-right": { 
         position: "absolute", 
-        bottom: "-40%", 
-        right: "-25%", 
+        bottom: "-60%", 
+        right: "-35%", 
         transform: "none",
         zIndex: 50
       }
@@ -122,8 +122,9 @@ export function MemberCard({ member, onUpdate, onDelete, canEdit }: MemberCardPr
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.3 }}
       className="h-full overflow-visible"
+      style={{ minHeight: "100%", overflow: "visible" }}
     >
-      <div className="relative h-full overflow-visible">
+      <div className="relative h-full overflow-visible" style={{ overflow: "visible" }}>
         {/* Badge placed outside card for "hat" effect */}
         {member.customization?.badge && (
           <div 
@@ -139,11 +140,12 @@ export function MemberCard({ member, onUpdate, onDelete, canEdit }: MemberCardPr
         )}
         
         <Card 
-          className={`h-full overflow-hidden rounded-2xl shadow-md ${cardStyle.className} ${animationClass}`}
+          className={`h-full rounded-2xl shadow-md ${cardStyle.className} ${animationClass}`}
           style={{ 
             background: cardStyle.background,
             boxShadow: "0 4px 20px rgba(0, 0, 0, 0.08)",
-            backgroundSize: "200% 200%"
+            backgroundSize: "200% 200%",
+            overflow: "visible" // Explicitly set overflow to visible
           }}
         >
           <MemberCardHeader

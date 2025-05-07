@@ -41,36 +41,36 @@ export function CardPreview({
   // Get badge size class
   const sizeClass = badgeSizeClasses[badgeSize as keyof typeof badgeSizeClasses] || badgeSizeClasses.medium;
 
-  // Calculate badge position styles - fully outside the card
+  // Calculate badge position styles - more extreme positioning to ensure visibility
   const getBadgeStyle = () => {
     if (!badge || !badgePosition) return {};
     
     const positions: Record<string, React.CSSProperties> = {
       "top-left": { 
         position: "absolute", 
-        top: "-40%", 
-        left: "-25%", 
+        top: "-60%", 
+        left: "-35%", 
         transform: "none",
         zIndex: 50
       },
       "top-right": { 
         position: "absolute", 
-        top: "-40%", 
-        right: "-25%", 
+        top: "-60%", 
+        right: "-35%", 
         transform: "none",
         zIndex: 50
       },
       "bottom-left": { 
         position: "absolute", 
-        bottom: "-40%", 
-        left: "-25%", 
+        bottom: "-60%", 
+        left: "-35%", 
         transform: "none",
         zIndex: 50
       },
       "bottom-right": { 
         position: "absolute", 
-        bottom: "-40%", 
-        right: "-25%", 
+        bottom: "-60%", 
+        right: "-35%", 
         transform: "none",
         zIndex: 50
       }
@@ -80,7 +80,7 @@ export function CardPreview({
   };
 
   return (
-    <div className="relative overflow-visible">
+    <div className="relative overflow-visible w-full">
       {/* Badge placed outside card for "hat" effect */}
       {badge && (
         <div 
@@ -98,7 +98,8 @@ export function CardPreview({
         className={`border relative ${animationClass}`}
         style={{
           ...previewStyle,
-          backgroundSize: "200% 200%"
+          backgroundSize: "200% 200%",
+          overflow: "visible" // Explicitly set overflow to visible
         }}
       >
         <CardHeader className="p-4">
