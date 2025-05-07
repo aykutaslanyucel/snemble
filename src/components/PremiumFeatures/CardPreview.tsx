@@ -1,7 +1,7 @@
 
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { TeamMember } from "@/types/TeamMemberTypes";
-import "../styles/animations.css";
+import "@/styles/animations.css";
 
 interface CardPreviewProps {
   teamMember: TeamMember;
