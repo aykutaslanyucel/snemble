@@ -91,21 +91,23 @@ export function CardCustomizer({ teamMember, onUpdate }: CardCustomizerProps) {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 max-h-[70vh]">
       {/* Preview */}
-      <CardPreview 
-        teamMember={teamMember} 
-        previewStyle={previewStyle} 
-        animate={!!customization.animate}
-      />
+      <div className="pb-2 border-b mb-4">
+        <CardPreview 
+          teamMember={teamMember} 
+          previewStyle={previewStyle} 
+          animate={!!customization.animate}
+        />
+      </div>
       
       <Tabs defaultValue="presets" className="w-full">
-        <TabsList className="grid w-full grid-cols-2">
+        <TabsList className="grid w-full grid-cols-2 mb-2">
           <TabsTrigger value="presets">Presets</TabsTrigger>
           <TabsTrigger value="advanced">Advanced</TabsTrigger>
         </TabsList>
         
-        <TabsContent value="presets" className="space-y-6 py-4">
+        <TabsContent value="presets" className="space-y-4">
           {/* Color Presets */}
           <ColorSelector 
             customization={customization} 
@@ -119,9 +121,9 @@ export function CardCustomizer({ teamMember, onUpdate }: CardCustomizerProps) {
           />
         </TabsContent>
         
-        <TabsContent value="advanced" className="space-y-6 py-4">
+        <TabsContent value="advanced" className="space-y-4">
           {/* Color Picker */}
-          <div className="space-y-4">
+          <div className="space-y-2">
             <h3 className="text-sm font-medium">Custom Color</h3>
             <ColorPickerComponent
               currentColor={customization.color || "#ffffff"}
@@ -131,7 +133,7 @@ export function CardCustomizer({ teamMember, onUpdate }: CardCustomizerProps) {
           </div>
           
           {/* Gradient Picker */}
-          <div className="space-y-4">
+          <div className="space-y-2">
             <h3 className="text-sm font-medium">Custom Gradient</h3>
             <GradientPickerComponent 
               currentGradient={customization.gradient || ""}
@@ -150,7 +152,7 @@ export function CardCustomizer({ teamMember, onUpdate }: CardCustomizerProps) {
       />
       
       {/* Actions */}
-      <div className="flex justify-end gap-2">
+      <div className="flex justify-end gap-2 pt-2 border-t">
         <Button variant="outline" onClick={() => onUpdate({})}>
           Reset
         </Button>

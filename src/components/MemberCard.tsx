@@ -10,7 +10,7 @@ import { ProjectsDialog } from "@/components/TeamMember/ProjectsDialog";
 import { DeleteConfirmationDialog } from "@/components/TeamMember/DeleteConfirmationDialog";
 import { CustomizerDialog } from "@/components/TeamMember/CustomizerDialog";
 import { getCardBackground } from "./TeamMember/CardBackground";
-import "../styles/animations.css";
+import "@/styles/animations.css";
 
 interface MemberCardProps {
   member: TeamMember;

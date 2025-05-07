@@ -51,15 +51,11 @@ export function GradientPickerComponent({
           </PopoverTrigger>
           <PopoverContent 
             className="w-80 p-4"
-            onInteractOutside={(e) => {
-              // Prevent all interactions outside from closing the gradient picker
-              if (e.target instanceof Element) {
-                const target = e.target as Element;
-                if (target.closest('.react-colorful') || target.closest('[data-gradient-picker]')) {
-                  e.preventDefault();
-                }
-              }
-            }}
+            side="right"
+            align="start"
+            onInteractOutside={(e) => e.preventDefault()}
+            onClick={(e) => e.stopPropagation()}
+            data-gradient-picker
           >
             <div className="space-y-4" data-gradient-picker onClick={(e) => e.stopPropagation()}>
               <div 
@@ -87,11 +83,7 @@ export function GradientPickerComponent({
                         <PopoverContent 
                           className="w-auto p-3" 
                           onClick={(e) => e.stopPropagation()}
-                          onInteractOutside={(e) => {
-                            if (e.target instanceof Element && e.target.closest('.react-colorful')) {
-                              e.preventDefault();
-                            }
-                          }}
+                          onInteractOutside={(e) => e.preventDefault()}
                         >
                           <div onClick={(e) => e.stopPropagation()}>
                             <HexColorPicker 
@@ -124,11 +116,7 @@ export function GradientPickerComponent({
                         <PopoverContent 
                           className="w-auto p-3" 
                           onClick={(e) => e.stopPropagation()}
-                          onInteractOutside={(e) => {
-                            if (e.target instanceof Element && e.target.closest('.react-colorful')) {
-                              e.preventDefault();
-                            }
-                          }}
+                          onInteractOutside={(e) => e.preventDefault()}
                         >
                           <div onClick={(e) => e.stopPropagation()}>
                             <HexColorPicker 
@@ -155,20 +143,14 @@ export function GradientPickerComponent({
                       <Button 
                         variant={gradientType === "linear" ? "default" : "outline"}
                         size="sm"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setGradientType("linear");
-                        }}
+                        onClick={() => setGradientType("linear")}
                       >
                         Linear
                       </Button>
                       <Button 
                         variant={gradientType === "radial" ? "default" : "outline"}
                         size="sm"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setGradientType("radial");
-                        }}
+                        onClick={() => setGradientType("radial")}
                       >
                         Radial
                       </Button>
@@ -184,7 +166,6 @@ export function GradientPickerComponent({
                         max="360" 
                         value={angle} 
                         onChange={(e) => setAngle(e.target.value)}
-                        onClick={(e) => e.stopPropagation()}
                       />
                     </div>
                   )}
@@ -192,11 +173,7 @@ export function GradientPickerComponent({
               </Tabs>
               
               <Button 
-                onClick={(e) => {
-                  e.stopPropagation();
-                  e.preventDefault();
-                  handleApplyGradient();
-                }} 
+                onClick={handleApplyGradient} 
                 className="w-full"
               >
                 Apply Gradient

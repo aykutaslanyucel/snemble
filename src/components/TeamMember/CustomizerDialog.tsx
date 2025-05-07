@@ -15,7 +15,7 @@ export function CustomizerDialog({ isOpen, setIsOpen, member, onUpdate }: Custom
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogContent 
-        className="sm:max-w-lg"
+        className="sm:max-w-lg max-h-[90vh] overflow-hidden flex flex-col"
         // Critical fix: Prevent automatic closing when interacting with color pickers
         onPointerDownOutside={(e) => {
           // Prevent dialog from closing when clicking inside color pickers
@@ -52,7 +52,7 @@ export function CustomizerDialog({ isOpen, setIsOpen, member, onUpdate }: Custom
             Personalize the appearance of this team member's card
           </DialogDescription>
         </DialogHeader>
-        <div className="py-4">
+        <div className="py-4 overflow-y-auto pr-1 flex-1">
           <CardCustomizer 
             teamMember={member} 
             onUpdate={(updates) => {

@@ -29,9 +29,7 @@ export function ColorPickerComponent({
     setColor(newColor);
   };
   
-  const handleApplyColor = (e: React.MouseEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
+  const handleApplyColor = () => {
     onChange(color);
     setIsOpen(false);
   };
@@ -41,13 +39,9 @@ export function ColorPickerComponent({
   };
   
   // Handle input blur to apply color when user finishes typing
-  const handleInputBlur = (e: React.FocusEvent<HTMLInputElement>) => {
-    onChange(e.target.value);
-  };
-  
-  // Prevent closing when clicking inside color picker components
-  const handleContentClick = (e: React.MouseEvent) => {
-    e.stopPropagation();
+  const handleInputBlur = () => {
+    // Don't close the popover, just update the color
+    onChange(color);
   };
   
   return (
@@ -63,11 +57,7 @@ export function ColorPickerComponent({
             <PopoverTrigger asChild>
               <Button 
                 variant="outline" 
-                size="sm" 
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setIsOpen(true);
-                }}
+                size="sm"
               >
                 Pick Color
               </Button>
@@ -75,12 +65,9 @@ export function ColorPickerComponent({
             <PopoverContent 
               className="w-auto p-4" 
               side="right"
-              // Critical: Prevent all interactions outside from closing the color picker
-              onInteractOutside={(e) => {
-                // Always prevent default for any clicks in the picker
-                e.preventDefault();
-              }}
-              onClick={handleContentClick}
+              align="start"
+              onInteractOutside={(e) => e.preventDefault()}
+              onClick={(e) => e.stopPropagation()}
               data-color-picker-wrapper
             >
               <div 
@@ -92,6 +79,7 @@ export function ColorPickerComponent({
                 <div 
                   className="react-colorful-wrapper" 
                   onClick={(e) => e.stopPropagation()}
+                  onMouseDown={(e) => e.stopPropagation()}
                   data-color-picker
                 >
                   <HexColorPicker 
