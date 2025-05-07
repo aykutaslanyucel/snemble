@@ -14,7 +14,7 @@
 .status-button {
   @apply rounded-full w-8 h-8 flex items-center justify-center transition-all;
   @apply border border-transparent hover:border-gray-300 dark:hover:border-gray-600;
-  @apply text-gray-700 dark:text-gray-900 hover:shadow-md;
+  @apply text-gray-700 hover:shadow-md;
 }
 
 .status-button.active {

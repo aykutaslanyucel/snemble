@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -29,8 +28,9 @@ const STATUS_BUTTONS = [
   { status: "away", color: "#F1F0FB", tooltip: "Away" },
 ];
 
-// Changed from default export to named export
+// Export as named export - this is the primary way we'll import this component
 export function TeamMemberCard({ member, onUpdate, onDelete, canEdit }: TeamMemberCardProps) {
+  // ... keep existing code (component state definitions)
   const [isEditingName, setIsEditingName] = useState(false);
   const [name, setName] = useState(member.name);
   const [isEditingProjects, setIsEditingProjects] = useState(false);
@@ -109,7 +109,7 @@ export function TeamMemberCard({ member, onUpdate, onDelete, canEdit }: TeamMemb
         style={{ background: cardStyle.background }}
       >
         <CardHeader className="p-4 flex-row items-center justify-between">
-          <CardTitle className="text-gray-800 dark:text-gray-900 text-base font-medium flex items-center gap-2">
+          <CardTitle className="text-gray-800 dark:text-gray-200 text-base font-medium flex items-center gap-2">
             {isEditingName ? (
               <div className="flex items-center gap-1">
                 <Input
@@ -132,7 +132,7 @@ export function TeamMemberCard({ member, onUpdate, onDelete, canEdit }: TeamMemb
             <Popover>
               <PopoverTrigger asChild>
                 <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
-                  <MoreVertical className="h-4 w-4 text-gray-700 dark:text-gray-800" />
+                  <MoreVertical className="h-4 w-4 text-gray-700 dark:text-gray-300" />
                 </Button>
               </PopoverTrigger>
               <PopoverContent className="w-56" align="end">
@@ -182,10 +182,10 @@ export function TeamMemberCard({ member, onUpdate, onDelete, canEdit }: TeamMemb
         </CardHeader>
         <CardContent className="p-4 pt-0 space-y-3 flex flex-col justify-between">
           <div>
-            <div className="text-sm text-gray-600 dark:text-gray-700 mb-1">
+            <div className="text-sm text-gray-600 dark:text-gray-300 mb-1">
               <span className="font-medium">Position:</span> {member.position}
             </div>
-            <div className="text-sm text-gray-600 dark:text-gray-700 mb-3">
+            <div className="text-sm text-gray-600 dark:text-gray-300 mb-3">
               <span className="font-medium">Projects:</span>{" "}
               {member.projects.length > 0 ? member.projects.join(", ") : "None"}
             </div>

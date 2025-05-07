@@ -193,6 +193,7 @@
   border-color: rgba(255, 255, 255, 0.05);
 }
 
+/* Improve text contrast in dark mode */
 .dark .text-gray-800 {
   color: rgba(230, 230, 240, 0.95);
 }
@@ -201,6 +202,11 @@
 .dark .text-gray-700,
 .dark .text-muted-foreground {
   color: rgba(200, 200, 220, 0.75);
+}
+
+/* Fix text color on capacity buttons in dark mode */
+.dark .status-button {
+  color: rgba(50, 50, 50, 0.9); /* Darker text for better contrast on light buttons */
 }
 
 .dark .from-background {
@@ -212,14 +218,13 @@
 }
 
 /* Preserve capacity colors in dark mode */
-.dark .bg-\[\#D3E4FD\]\/10,
-.dark .text-\[\#D3E4FD\], 
-.dark .text-\[\#E5DEFF\],
-.dark .bg-\[\#E5DEFF\],
 .dark .bg-\[\#D3E4FD\],
-.dark .bg-\[\#ACCBEE\] {
-  /* Keep original colors */
-  opacity: 1;
+.dark .bg-\[\#F2FCE2\],
+.dark .bg-\[\#FEF7CD\],
+.dark .bg-\[\#FFDEE2\],
+.dark .bg-\[\#F1F0FB\],
+.dark .bg-\[\#E5DEFF\] {
+  opacity: 0.9; /* Slight opacity adjustment for dark mode */
 }
 
 /* Shadow adjustments for dark mode */
