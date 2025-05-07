@@ -14,15 +14,22 @@ interface CustomizerDialogProps {
 export function CustomizerDialog({ isOpen, setIsOpen, member, onUpdate }: CustomizerDialogProps) {
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
-      <DialogContent className="sm:max-w-lg" onPointerDownOutside={(e) => {
-        // Prevent closing when clicking inside color pickers
-        if (e.target instanceof Element) {
-          const target = e.target as Element;
-          if (target.closest('.react-colorful')) {
-            e.preventDefault();
+      <DialogContent 
+        className="sm:max-w-lg" 
+        onInteractOutside={(e) => {
+          // Prevent closing when clicking inside color pickers
+          if (e.target instanceof Element) {
+            const target = e.target as Element;
+            if (
+              target.closest('.react-colorful') || 
+              target.closest('[data-color-picker-wrapper]') ||
+              target.closest('[data-gradient-picker]')
+            ) {
+              e.preventDefault();
+            }
           }
-        }
-      }}>
+        }}
+      >
         <DialogHeader>
           <DialogTitle>Customize Card</DialogTitle>
           <DialogDescription>

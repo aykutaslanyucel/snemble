@@ -56,27 +56,17 @@ export function ColorPickerComponent({
             <PopoverContent 
               className="w-auto p-4" 
               side="right"
-              onPointerDownOutside={(e) => {
-                // Prevent closing when clicking inside the color picker
+              onInteractOutside={(e) => {
+                // Prevent all interactions outside from closing the color picker
                 if (e.target instanceof Element) {
                   const target = e.target as Element;
-                  if (target.closest('.react-colorful')) {
+                  if (target.closest('.react-colorful') || target.closest('[data-color-picker-wrapper]')) {
                     e.preventDefault();
                   }
                 }
               }}
-              onFocusOutside={(e) => {
-                // Prevent focus events from closing if in color picker
-                if (e.target instanceof Element) {
-                  const target = e.target as Element;
-                  if (target.closest('.react-colorful')) {
-                    e.preventDefault();
-                  }
-                }
-              }}
-              onEscapeKeyDown={() => setIsOpen(false)}
             >
-              <div className="space-y-4" onClick={(e) => e.stopPropagation()}>
+              <div className="space-y-4" data-color-picker-wrapper onClick={(e) => e.stopPropagation()}>
                 {/* Color picker */}
                 <div className="react-colorful-wrapper" onClick={(e) => e.stopPropagation()}>
                   <HexColorPicker 

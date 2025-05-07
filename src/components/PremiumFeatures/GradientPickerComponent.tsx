@@ -51,27 +51,17 @@ export function GradientPickerComponent({
           </PopoverTrigger>
           <PopoverContent 
             className="w-80 p-4"
-            onPointerDownOutside={(e) => {
-              // Prevent closing when clicking inside the color picker
+            onInteractOutside={(e) => {
+              // Prevent all interactions outside from closing the gradient picker
               if (e.target instanceof Element) {
                 const target = e.target as Element;
-                if (target.closest('.react-colorful')) {
+                if (target.closest('.react-colorful') || target.closest('[data-gradient-picker]')) {
                   e.preventDefault();
                 }
               }
             }}
-            onFocusOutside={(e) => {
-              // Prevent focus events from closing if in color picker
-              if (e.target instanceof Element) {
-                const target = e.target as Element;
-                if (target.closest('.react-colorful')) {
-                  e.preventDefault();
-                }
-              }
-            }}
-            onEscapeKeyDown={() => setIsOpen(false)}
           >
-            <div className="space-y-4" onClick={(e) => e.stopPropagation()}>
+            <div className="space-y-4" data-gradient-picker onClick={(e) => e.stopPropagation()}>
               <div 
                 className="w-full h-20 rounded-md shadow-inner border" 
                 style={{ background: getPreviewGradient() }}
@@ -97,16 +87,18 @@ export function GradientPickerComponent({
                         <PopoverContent 
                           className="w-auto p-3" 
                           onClick={(e) => e.stopPropagation()}
-                          onPointerDownOutside={(e) => {
+                          onInteractOutside={(e) => {
                             if (e.target instanceof Element && e.target.closest('.react-colorful')) {
                               e.preventDefault();
                             }
                           }}
                         >
-                          <HexColorPicker 
-                            color={startColor} 
-                            onChange={setStartColor} 
-                          />
+                          <div onClick={(e) => e.stopPropagation()}>
+                            <HexColorPicker 
+                              color={startColor} 
+                              onChange={setStartColor} 
+                            />
+                          </div>
                         </PopoverContent>
                       </Popover>
                       <Input 
@@ -132,16 +124,18 @@ export function GradientPickerComponent({
                         <PopoverContent 
                           className="w-auto p-3" 
                           onClick={(e) => e.stopPropagation()}
-                          onPointerDownOutside={(e) => {
+                          onInteractOutside={(e) => {
                             if (e.target instanceof Element && e.target.closest('.react-colorful')) {
                               e.preventDefault();
                             }
                           }}
                         >
-                          <HexColorPicker 
-                            color={endColor} 
-                            onChange={setEndColor} 
-                          />
+                          <div onClick={(e) => e.stopPropagation()}>
+                            <HexColorPicker 
+                              color={endColor} 
+                              onChange={setEndColor} 
+                            />
+                          </div>
                         </PopoverContent>
                       </Popover>
                       <Input 
