@@ -1,36 +1,19 @@
+
 import { useState, useEffect } from 'react';
-import { Card, CardHeader, CardTitle, CardContent, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Switch } from "@/components/ui/switch";
-import { Check } from "lucide-react";
 import { TeamMember, TeamMemberCustomization } from "@/types/TeamMemberTypes";
 import { useToast } from "@/hooks/use-toast";
+import { CardPreview } from './CardPreview';
+import { ColorSelector } from './ColorSelector';
+import { GradientSelector } from './GradientSelector';
+import { CustomColorInput } from './CustomColorInput';
+import { CustomGradientInput } from './CustomGradientInput';
+import { AnimationToggle } from './AnimationToggle';
 
 interface CardCustomizerProps {
   teamMember: TeamMember;
   onUpdate: (customization: TeamMemberCustomization) => void;
 }
-
-// Predefined gradients
-const GRADIENTS = [
-  "linear-gradient(135deg, #fdfcfb 0%, #e2d1c3 100%)",
-  "linear-gradient(109.6deg, rgba(223,234,247,1) 11.2%, rgba(244,248,252,1) 91.1%)",
-  "linear-gradient(90deg, hsla(277, 75%, 84%, 1) 0%, hsla(297, 50%, 51%, 1) 100%)",
-  "linear-gradient(90deg, hsla(46, 73%, 75%, 1) 0%, hsla(176, 73%, 88%, 1) 100%)",
-  "linear-gradient(90deg, hsla(59, 86%, 68%, 1) 0%, hsla(134, 36%, 53%, 1) 100%)",
-];
-
-// Predefined solid colors
-const COLORS = [
-  "#D3E4FD", // Blue - Available
-  "#F2FCE2", // Green - Some Availability
-  "#FEF7CD", // Yellow - Busy
-  "#FFDEE2", // Red - Seriously Busy
-  "#F1F0FB", // Purple - Away
-  "#E5DEFF", // Lavender
-];
 
 export function CardCustomizer({ teamMember, onUpdate }: CardCustomizerProps) {
   // Initialize with current customization or empty object with correct type
@@ -161,100 +144,44 @@ export function CardCustomizer({ teamMember, onUpdate }: CardCustomizerProps) {
   return (
     <div className="space-y-6">
       {/* Preview */}
-      <Card 
-        className={`border ${customization.animate ? "animate-gradient" : ""}`}
-        style={previewStyle}
-      >
-        <CardHeader className="p-4">
-          <CardTitle className="text-base">{teamMember.name}</CardTitle>
-        </CardHeader>
-        <CardContent className="p-4 pt-0">
-          <p className="text-sm">Card preview</p>
-        </CardContent>
-      </Card>
+      <CardPreview 
+        teamMember={teamMember} 
+        previewStyle={previewStyle} 
+        animate={!!customization.animate}
+      />
       
       {/* Color Presets */}
-      <div>
-        <h3 className="text-sm font-medium mb-2">Solid Colors</h3>
-        <div className="flex flex-wrap gap-2">
-          {COLORS.map(color => (
-            <button
-              key={color}
-              onClick={() => handleSelectColor(color)}
-              className="w-8 h-8 rounded-full border flex items-center justify-center transition-all hover:scale-110"
-              style={{ backgroundColor: color }}
-            >
-              {customization.color === color && !customization.gradient && (
-                <Check className="h-4 w-4 text-gray-700" />
-              )}
-            </button>
-          ))}
-        </div>
-      </div>
+      <ColorSelector 
+        customization={customization} 
+        onSelectColor={handleSelectColor} 
+      />
       
       {/* Gradient Presets */}
-      <div>
-        <h3 className="text-sm font-medium mb-2">Gradient Presets</h3>
-        <div className="flex flex-wrap gap-2">
-          {GRADIENTS.map(gradient => (
-            <button
-              key={gradient}
-              onClick={() => handleSelectGradient(gradient)}
-              className="w-8 h-8 rounded-full border flex items-center justify-center transition-all hover:scale-110"
-              style={{ background: gradient }}
-            >
-              {customization.gradient === gradient && (
-                <Check className="h-4 w-4 text-gray-700" />
-              )}
-            </button>
-          ))}
-        </div>
-      </div>
+      <GradientSelector 
+        customization={customization} 
+        onSelectGradient={handleSelectGradient} 
+      />
       
       {/* Custom Color Input */}
-      <div className="flex items-end gap-2">
-        <div className="flex-1">
-          <Label htmlFor="custom-color">Custom Color (HEX)</Label>
-          <Input 
-            id="custom-color"
-            value={customColor} 
-            onChange={(e) => setCustomColor(e.target.value)}
-            placeholder="#RRGGBB"
-          />
-        </div>
-        <Button onClick={handleApplyCustomColor} variant="outline" className="mb-px">
-          Apply
-        </Button>
-      </div>
+      <CustomColorInput 
+        customColor={customColor}
+        setCustomColor={setCustomColor}
+        handleApplyCustomColor={handleApplyCustomColor}
+      />
       
       {/* Custom Gradient Input */}
-      <div className="flex items-end gap-2">
-        <div className="flex-1">
-          <Label htmlFor="custom-gradient">Custom CSS Gradient</Label>
-          <Input 
-            id="custom-gradient"
-            value={customGradient} 
-            onChange={(e) => setCustomGradient(e.target.value)}
-            placeholder="linear-gradient(...)"
-          />
-        </div>
-        <Button onClick={handleApplyCustomGradient} variant="outline" className="mb-px">
-          Apply
-        </Button>
-      </div>
+      <CustomGradientInput 
+        customGradient={customGradient}
+        setCustomGradient={setCustomGradient}
+        handleApplyCustomGradient={handleApplyCustomGradient}
+      />
       
       {/* Animation Toggle */}
-      <div className="flex items-center justify-between">
-        <Label htmlFor="animate-toggle" className="cursor-pointer">
-          Animate gradient
-        </Label>
-        <Switch 
-          id="animate-toggle"
-          checked={!!customization.animate}
-          onCheckedChange={handleToggleAnimate}
-          disabled={!customization.gradient}
-        />
-      </div>
+      <AnimationToggle 
+        animate={!!customization.animate}
+        onToggle={handleToggleAnimate}
+        disabled={!customization.gradient}
+      />
       
       {/* Actions */}
       <div className="flex justify-end gap-2">
