@@ -14,6 +14,8 @@ import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
 
+// Move these components inside the AuthProvider in the main render function
+// so they can access the useAuth hook safely
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth();
   
