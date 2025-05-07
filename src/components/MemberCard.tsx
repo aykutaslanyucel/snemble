@@ -10,6 +10,7 @@ import { ProjectsDialog } from "@/components/TeamMember/ProjectsDialog";
 import { DeleteConfirmationDialog } from "@/components/TeamMember/DeleteConfirmationDialog";
 import { CustomizerDialog } from "@/components/TeamMember/CustomizerDialog";
 import { getCardBackground } from "./TeamMember/CardBackground";
+import "../styles/animations.css";
 
 interface MemberCardProps {
   member: TeamMember;
@@ -69,7 +70,7 @@ export function MemberCard({ member, onUpdate, onDelete, canEdit }: MemberCardPr
       className="h-full"
     >
       <Card 
-        className="h-full overflow-hidden rounded-2xl shadow-md"
+        className={`h-full overflow-hidden rounded-2xl shadow-md ${cardStyle.className}`}
         style={{ 
           background: cardStyle.background,
           boxShadow: "0 4px 20px rgba(0, 0, 0, 0.08)"

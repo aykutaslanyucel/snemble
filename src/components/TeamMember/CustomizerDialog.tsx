@@ -15,7 +15,22 @@ export function CustomizerDialog({ isOpen, setIsOpen, member, onUpdate }: Custom
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogContent 
-        className="sm:max-w-lg" 
+        className="sm:max-w-lg"
+        // Critical fix: Prevent automatic closing when interacting with color pickers
+        onPointerDownOutside={(e) => {
+          // Prevent dialog from closing when clicking inside color pickers
+          if (e.target instanceof Element) {
+            const target = e.target as Element;
+            if (
+              target.closest('.react-colorful') || 
+              target.closest('[data-color-picker-wrapper]') ||
+              target.closest('[data-gradient-picker]') ||
+              target.closest('[data-color-picker]')
+            ) {
+              e.preventDefault();
+            }
+          }
+        }}
         onInteractOutside={(e) => {
           // Prevent closing when clicking inside color pickers
           if (e.target instanceof Element) {
@@ -23,7 +38,8 @@ export function CustomizerDialog({ isOpen, setIsOpen, member, onUpdate }: Custom
             if (
               target.closest('.react-colorful') || 
               target.closest('[data-color-picker-wrapper]') ||
-              target.closest('[data-gradient-picker]')
+              target.closest('[data-gradient-picker]') ||
+              target.closest('[data-color-picker]')
             ) {
               e.preventDefault();
             }

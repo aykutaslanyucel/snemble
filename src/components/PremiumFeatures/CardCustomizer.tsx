@@ -40,6 +40,7 @@ export function CardCustomizer({ teamMember, onUpdate }: CardCustomizerProps) {
     }
     
     if (background) {
+      console.log("Updating preview with background:", background);
       setPreviewStyle({ background });
     }
   }, [customization]);

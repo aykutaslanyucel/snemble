@@ -29,13 +29,25 @@ export function ColorPickerComponent({
     setColor(newColor);
   };
   
-  const handleApplyColor = () => {
+  const handleApplyColor = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
     onChange(color);
     setIsOpen(false);
   };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setColor(e.target.value);
+  };
+  
+  // Handle input blur to apply color when user finishes typing
+  const handleInputBlur = (e: React.FocusEvent<HTMLInputElement>) => {
+    onChange(e.target.value);
+  };
+  
+  // Prevent closing when clicking inside color picker components
+  const handleContentClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
   };
   
   return (
@@ -49,26 +61,39 @@ export function ColorPickerComponent({
           />
           <Popover open={isOpen} onOpenChange={setIsOpen}>
             <PopoverTrigger asChild>
-              <Button variant="outline" size="sm">
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setIsOpen(true);
+                }}
+              >
                 Pick Color
               </Button>
             </PopoverTrigger>
             <PopoverContent 
               className="w-auto p-4" 
               side="right"
+              // Critical: Prevent all interactions outside from closing the color picker
               onInteractOutside={(e) => {
-                // Prevent all interactions outside from closing the color picker
-                if (e.target instanceof Element) {
-                  const target = e.target as Element;
-                  if (target.closest('.react-colorful') || target.closest('[data-color-picker-wrapper]')) {
-                    e.preventDefault();
-                  }
-                }
+                // Always prevent default for any clicks in the picker
+                e.preventDefault();
               }}
+              onClick={handleContentClick}
+              data-color-picker-wrapper
             >
-              <div className="space-y-4" data-color-picker-wrapper onClick={(e) => e.stopPropagation()}>
+              <div 
+                className="space-y-4"
+                onClick={(e) => e.stopPropagation()}
+                data-color-picker-wrapper
+              >
                 {/* Color picker */}
-                <div className="react-colorful-wrapper" onClick={(e) => e.stopPropagation()}>
+                <div 
+                  className="react-colorful-wrapper" 
+                  onClick={(e) => e.stopPropagation()}
+                  data-color-picker
+                >
                   <HexColorPicker 
                     color={color} 
                     onChange={handleColorChange}
@@ -81,16 +106,13 @@ export function ColorPickerComponent({
                     type="text"
                     value={color}
                     onChange={handleInputChange}
+                    onBlur={handleInputBlur}
                     onClick={(e) => e.stopPropagation()}
                     className="flex-1 px-2 py-1 border rounded-md text-sm"
                   />
                   <Button 
                     size="sm" 
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      e.preventDefault();
-                      handleApplyColor();
-                    }}
+                    onClick={handleApplyColor}
                   >
                     Apply
                   </Button>
