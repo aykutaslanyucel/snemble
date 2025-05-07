@@ -25,6 +25,8 @@ import {
 import { UserPlus, Users, LogOut, ArrowUpDown, Trash2 } from "lucide-react";
 import { useTheme } from "@/contexts/ThemeContext";
 import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
+import { v4 as uuidv4 } from "uuid";
 
 interface User {
   id: string;
@@ -41,7 +43,7 @@ export default function Admin() {
   const [users, setUsers] = useState<User[]>([]);
   const [newUserEmail, setNewUserEmail] = useState("");
   const [newUserPassword, setNewUserPassword] = useState("");
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [sortField, setSortField] = useState<SortField>("lastUpdated");
   const [sortOrder, setSortOrder] = useState<SortOrder>("desc");
   const { user, isAdmin, signup } = useAuth();
@@ -49,33 +51,72 @@ export default function Admin() {
   const { theme, setTheme } = useTheme();
   const navigate = useNavigate();
 
-  // Mock data for demo purposes
+  // Fetch users from Supabase profiles table
   useEffect(() => {
-    const mockUsers = [
-      {
-        id: '1',
-        email: 'aykut.yucel@snellman.com',
-        role: 'admin',
-        seniority: 'Partners' as const,
-        lastUpdated: new Date(2023, 1, 15)
-      },
-      {
-        id: '2',
-        email: 'klara.hasselberg@snellman.com',
-        role: 'user',
-        seniority: 'Senior Associate' as const,
-        lastUpdated: new Date(2023, 2, 10)
-      },
-      {
-        id: '3',
-        email: 'test@snellman.com',
-        role: 'user',
-        seniority: 'Junior Associate' as const,
-        lastUpdated: new Date(2023, 3, 5)
+    const fetchUsers = async () => {
+      setLoading(true);
+      
+      try {
+        // Fetch profiles from Supabase
+        const { data: profiles, error } = await supabase
+          .from('profiles')
+          .select('*');
+          
+        if (error) {
+          throw error;
+        }
+        
+        if (profiles) {
+          // Map profiles to User interface
+          const mappedUsers = profiles.map(profile => ({
+            id: profile.id,
+            email: profile.email,
+            role: profile.role || 'user',
+            seniority: (profile.seniority as any) || 'Other',
+            lastUpdated: profile.updated_at ? new Date(profile.updated_at) : new Date()
+          }));
+          
+          setUsers(mappedUsers);
+        }
+      } catch (error) {
+        console.error("Error fetching users:", error);
+        uiToast({
+          title: "Error",
+          description: "Failed to load users. Using demo data instead.",
+          variant: "destructive",
+        });
+        
+        // Fallback to mock data
+        setUsers([
+          {
+            id: 'b82c63f6-1aa9-4150-a857-eeac0b9c921b',
+            email: 'aykut.yucel@snellman.com',
+            role: 'admin',
+            seniority: 'Partners' as const,
+            lastUpdated: new Date(2023, 1, 15)
+          },
+          {
+            id: '3fa85f64-5717-4562-b3fc-2c963f66afa6',
+            email: 'klara.hasselberg@snellman.com',
+            role: 'user',
+            seniority: 'Senior Associate' as const,
+            lastUpdated: new Date(2023, 2, 10)
+          },
+          {
+            id: '98765432-5717-4562-b3fc-2c963f66afa6',
+            email: 'test@snellman.com',
+            role: 'user',
+            seniority: 'Junior Associate' as const,
+            lastUpdated: new Date(2023, 3, 5)
+          }
+        ]);
+      } finally {
+        setLoading(false);
       }
-    ];
-    setUsers(mockUsers);
-  }, []);
+    };
+    
+    fetchUsers();
+  }, [uiToast]);
 
   const handleSort = (field: SortField) => {
     if (sortField === field) {
@@ -110,7 +151,18 @@ export default function Admin() {
 
   const handleRoleChange = async (userId: string, newRole: string, newSeniority?: string) => {
     try {
-      // Update the user in our mock data
+      // Update the profile in Supabase
+      const updates: any = { role: newRole };
+      if (newSeniority) updates.seniority = newSeniority;
+      
+      const { error } = await supabase
+        .from('profiles')
+        .update(updates)
+        .eq('id', userId);
+        
+      if (error) throw error;
+      
+      // Update local state
       setUsers(users.map(u => 
         u.id === userId ? { 
           ...u, 
@@ -124,6 +176,7 @@ export default function Admin() {
         description: "User role updated successfully",
       });
     } catch (error) {
+      console.error("Error updating user role:", error);
       uiToast({
         title: "Error",
         description: "Failed to update user role",
@@ -134,13 +187,33 @@ export default function Admin() {
 
   const handleDeleteUser = async (userId: string) => {
     try {
-      // Remove the user from our mock data
+      // Delete the user's team member entry first
+      const { error: teamMemberError } = await supabase
+        .from('team_members')
+        .delete()
+        .eq('user_id', userId);
+        
+      if (teamMemberError) {
+        console.error("Error deleting team member:", teamMemberError);
+        // Continue anyway to try to delete the profile
+      }
+      
+      // Delete the profile
+      const { error } = await supabase
+        .from('profiles')
+        .delete()
+        .eq('id', userId);
+        
+      if (error) throw error;
+      
+      // Update local state
       setUsers(users.filter(u => u.id !== userId));
       
       toast("Success", {
         description: "User deleted successfully",
       });
     } catch (error) {
+      console.error("Error deleting user:", error);
       uiToast({
         title: "Error",
         description: "Failed to delete user",
@@ -171,9 +244,29 @@ export default function Admin() {
 
     setLoading(true);
     try {
-      // Add the user to our mock data
+      // Create a new user with a valid UUID
+      const userId = uuidv4();
+      
+      // Insert into profiles table
+      const { error } = await supabase
+        .from('profiles')
+        .insert({
+          id: userId,
+          email: newUserEmail,
+          name: formatNameFromEmail(newUserEmail),
+          role: 'user',
+          seniority: 'Other',
+          updated_at: new Date().toISOString()
+        });
+        
+      if (error) throw error;
+      
+      // Call the signup function to create team member as well
+      await signup(newUserEmail, newUserPassword, 'user');
+      
+      // Add to local state
       const newUser = {
-        id: Math.random().toString(36).substring(2, 15),
+        id: userId,
         email: newUserEmail,
         role: 'user',
         seniority: 'Other' as const,
@@ -196,6 +289,15 @@ export default function Admin() {
       });
     }
     setLoading(false);
+  };
+
+  // Helper function to format name from email
+  const formatNameFromEmail = (email: string): string => {
+    const namePart = email.split('@')[0];
+    return namePart
+      .split('.')
+      .map(part => part.charAt(0).toUpperCase() + part.slice(1))
+      .join(' ');
   };
 
   if (!isAdmin) {
@@ -265,73 +367,80 @@ export default function Admin() {
 
       <Card className="p-6">
         <h2 className="text-xl font-semibold mb-4">Manage Users</h2>
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead onClick={() => handleSort("name")} className="cursor-pointer">
-                Email <ArrowUpDown className="h-4 w-4 inline-block ml-2" />
-              </TableHead>
-              <TableHead>Role</TableHead>
-              <TableHead onClick={() => handleSort("seniority")} className="cursor-pointer">
-                Seniority <ArrowUpDown className="h-4 w-4 inline-block ml-2" />
-              </TableHead>
-              <TableHead onClick={() => handleSort("lastUpdated")} className="cursor-pointer">
-                Last Updated <ArrowUpDown className="h-4 w-4 inline-block ml-2" />
-              </TableHead>
-              <TableHead>Actions</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {sortedUsers.map((user) => (
-              <TableRow key={user.id}>
-                <TableCell>{user.email}</TableCell>
-                <TableCell>
-                  <Select
-                    value={user.role}
-                    onValueChange={(value) => handleRoleChange(user.id, value)}
-                  >
-                    <SelectTrigger className="w-32">
-                      <SelectValue placeholder="Select role" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="user">User</SelectItem>
-                      <SelectItem value="admin">Admin</SelectItem>
-                      <SelectItem value="premium">Premium</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </TableCell>
-                <TableCell>
-                  <Select
-                    value={user.seniority}
-                    onValueChange={(value) => handleRoleChange(user.id, user.role, value)}
-                  >
-                    <SelectTrigger className="w-40">
-                      <SelectValue placeholder="Select seniority" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="Other">Other</SelectItem>
-                      <SelectItem value="Junior Associate">Junior Associate</SelectItem>
-                      <SelectItem value="Senior Associate">Senior Associate</SelectItem>
-                      <SelectItem value="Partners">Partners</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </TableCell>
-                <TableCell>{user.lastUpdated ? new Date(user.lastUpdated).toLocaleDateString() : 'N/A'}</TableCell>
-                <TableCell>
-                  <div className="flex gap-2">
-                    <Button 
-                      variant="destructive" 
-                      size="sm"
-                      onClick={() => handleDeleteUser(user.id)}
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  </div>
-                </TableCell>
+        {loading ? (
+          <div className="text-center py-8">
+            <div className="animate-spin h-10 w-10 border-4 border-primary border-t-transparent rounded-full mx-auto mb-2"></div>
+            <p>Loading users...</p>
+          </div>
+        ) : (
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead onClick={() => handleSort("name")} className="cursor-pointer">
+                  Email <ArrowUpDown className="h-4 w-4 inline-block ml-2" />
+                </TableHead>
+                <TableHead>Role</TableHead>
+                <TableHead onClick={() => handleSort("seniority")} className="cursor-pointer">
+                  Seniority <ArrowUpDown className="h-4 w-4 inline-block ml-2" />
+                </TableHead>
+                <TableHead onClick={() => handleSort("lastUpdated")} className="cursor-pointer">
+                  Last Updated <ArrowUpDown className="h-4 w-4 inline-block ml-2" />
+                </TableHead>
+                <TableHead>Actions</TableHead>
               </TableRow>
-            ))}
-          </TableBody>
-        </Table>
+            </TableHeader>
+            <TableBody>
+              {sortedUsers.map((user) => (
+                <TableRow key={user.id}>
+                  <TableCell>{user.email}</TableCell>
+                  <TableCell>
+                    <Select
+                      value={user.role}
+                      onValueChange={(value) => handleRoleChange(user.id, value)}
+                    >
+                      <SelectTrigger className="w-32">
+                        <SelectValue placeholder="Select role" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="user">User</SelectItem>
+                        <SelectItem value="admin">Admin</SelectItem>
+                        <SelectItem value="premium">Premium</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </TableCell>
+                  <TableCell>
+                    <Select
+                      value={user.seniority}
+                      onValueChange={(value) => handleRoleChange(user.id, user.role, value)}
+                    >
+                      <SelectTrigger className="w-40">
+                        <SelectValue placeholder="Select seniority" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="Other">Other</SelectItem>
+                        <SelectItem value="Junior Associate">Junior Associate</SelectItem>
+                        <SelectItem value="Senior Associate">Senior Associate</SelectItem>
+                        <SelectItem value="Partners">Partners</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </TableCell>
+                  <TableCell>{user.lastUpdated ? new Date(user.lastUpdated).toLocaleDateString() : 'N/A'}</TableCell>
+                  <TableCell>
+                    <div className="flex gap-2">
+                      <Button 
+                        variant="destructive" 
+                        size="sm"
+                        onClick={() => handleDeleteUser(user.id)}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        )}
       </Card>
     </div>
   );

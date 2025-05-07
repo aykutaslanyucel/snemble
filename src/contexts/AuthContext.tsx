@@ -1,5 +1,6 @@
 
 import { createContext, useContext, useState, useEffect } from "react";
+import { v4 as uuidv4 } from "uuid";
 import { getOrCreateTeamMemberForUser } from "@/lib/teamMemberUtils";
 
 // Define the User type
@@ -28,6 +29,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [isAdmin, setIsAdmin] = useState(false);
   const [loading, setLoading] = useState(false);
 
+  // Generate a valid UUID that matches Supabase format
+  const generateValidUUID = () => {
+    // Generate a proper UUID v4
+    return uuidv4();
+  };
+
   // Simulate authentication functionality
   const login = async (email: string, password: string) => {
     setLoading(true);
@@ -40,9 +47,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         throw new Error('Invalid email domain');
       }
       
+      // Use predefined UUIDs for specific test users for consistency
+      let userId;
+      if (email === 'aykut.yucel@snellman.com') {
+        userId = "b82c63f6-1aa9-4150-a857-eeac0b9c921b"; // Fixed UUID for admin
+      } else if (email === 'klara.hasselberg@snellman.com') {
+        userId = "3fa85f64-5717-4562-b3fc-2c963f66afa6"; // Fixed UUID for Klara
+      } else if (email === 'test@snellman.com') {
+        userId = "98765432-5717-4562-b3fc-2c963f66afa6"; // Fixed UUID for test user
+      } else {
+        userId = generateValidUUID(); // Generate valid UUID for other users
+      }
+      
       // Create a user object
       const newUser = {
-        id: Math.random().toString(36).substring(2, 15),
+        id: userId,
         email,
         role: email === 'aykut.yucel@snellman.com' ? 'admin' : 'user'
       };
@@ -58,6 +77,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         await getOrCreateTeamMemberForUser(newUser.id, newUser.email, newUser.role);
       } catch (error) {
         console.error("Error ensuring team member exists on login:", error);
+        throw error; // Re-throw to handle in the login flow
       }
     } catch (error) {
       console.error('Login error:', error);
@@ -78,9 +98,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         throw new Error('Invalid email domain');
       }
       
-      // Create a user object
+      // Create a user object with a valid UUID
       const newUser = {
-        id: Math.random().toString(36).substring(2, 15),
+        id: generateValidUUID(),
         email,
         role: email === 'aykut.yucel@snellman.com' ? 'admin' : role
       };
@@ -96,6 +116,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         await getOrCreateTeamMemberForUser(newUser.id, newUser.email, newUser.role);
       } catch (error) {
         console.error("Error ensuring team member exists on signup:", error);
+        throw error; // Re-throw to handle in the signup flow
       }
     } catch (error) {
       console.error('Signup error:', error);

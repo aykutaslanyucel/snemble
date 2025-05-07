@@ -1,6 +1,7 @@
 
 import { TeamMember, TeamMemberStatus, TeamMemberRole } from "@/types/TeamMemberTypes";
 import { supabase } from "@/integrations/supabase/client";
+import { validate as isValidUUID } from 'uuid';
 
 // Format name from email
 export const formatNameFromEmail = (email: string): string => {
@@ -41,6 +42,7 @@ export const mapTeamMemberToDb = (teamMember: TeamMember) => {
 
 // Fetch all team members
 export const fetchTeamMembers = async (): Promise<TeamMember[]> => {
+  console.log("Fetching team members...");
   const { data, error } = await supabase
     .from('team_members')
     .select('*')
@@ -51,11 +53,20 @@ export const fetchTeamMembers = async (): Promise<TeamMember[]> => {
     throw error;
   }
 
+  console.log(`Fetched ${data?.length || 0} team members`);
   return data ? data.map(mapDbToTeamMember) : [];
 };
 
 // Add a new team member
 export const addTeamMember = async (teamMember: Omit<TeamMember, 'id'>): Promise<TeamMember> => {
+  // Validate user_id is a valid UUID
+  if (teamMember.user_id && !isValidUUID(teamMember.user_id)) {
+    console.error(`Invalid UUID format for user_id: ${teamMember.user_id}`);
+    throw new Error(`Invalid UUID format for user_id: ${teamMember.user_id}`);
+  }
+  
+  console.log(`Adding team member for user: ${teamMember.user_id || 'unknown'}`);
+  
   const newTeamMemberData = {
     name: teamMember.name,
     position: teamMember.position,
@@ -78,11 +89,14 @@ export const addTeamMember = async (teamMember: Omit<TeamMember, 'id'>): Promise
     throw error;
   }
 
+  console.log(`Successfully added team member with ID: ${data.id}`);
   return mapDbToTeamMember(data);
 };
 
 // Update a team member
 export const updateTeamMember = async (id: string, updates: Partial<TeamMember>): Promise<TeamMember> => {
+  console.log(`Updating team member with ID: ${id}`);
+  
   const dbUpdates: any = {};
   
   if ('name' in updates) dbUpdates.name = updates.name;
@@ -107,11 +121,14 @@ export const updateTeamMember = async (id: string, updates: Partial<TeamMember>)
     throw error;
   }
 
+  console.log(`Successfully updated team member with ID: ${id}`);
   return mapDbToTeamMember(data);
 };
 
 // Delete a team member
 export const deleteTeamMember = async (id: string): Promise<void> => {
+  console.log(`Deleting team member with ID: ${id}`);
+  
   const { error } = await supabase
     .from('team_members')
     .delete()
@@ -121,6 +138,8 @@ export const deleteTeamMember = async (id: string): Promise<void> => {
     console.error('Error deleting team member:', error);
     throw error;
   }
+  
+  console.log(`Successfully deleted team member with ID: ${id}`);
 };
 
 // Check if current user can edit a team member
@@ -136,6 +155,13 @@ export const canEditTeamMember = (
 
 // Get or create a team member for a user
 export const getOrCreateTeamMemberForUser = async (userId: string, email: string, role: string): Promise<TeamMember> => {
+  console.log(`Getting or creating team member for user: ${userId}, email: ${email}`);
+  
+  if (!userId || !isValidUUID(userId)) {
+    console.error(`Invalid UUID format for userId: ${userId}`);
+    throw new Error(`Invalid UUID format for userId: ${userId}`);
+  }
+  
   // First check if a team member already exists for this user
   const { data: existingMember, error: fetchError } = await supabase
     .from('team_members')
@@ -149,6 +175,7 @@ export const getOrCreateTeamMemberForUser = async (userId: string, email: string
   }
 
   if (existingMember) {
+    console.log(`Found existing team member for user ${userId}`);
     return mapDbToTeamMember(existingMember);
   }
 
@@ -178,7 +205,13 @@ export const getOrCreateTeamMemberForUser = async (userId: string, email: string
     role: memberRole
   };
 
-  return addTeamMember(newTeamMember);
+  try {
+    console.log(`Creating new team member for user ${userId}`);
+    return await addTeamMember(newTeamMember);
+  } catch (error) {
+    console.error(`Failed to create team member for user ${userId}:`, error);
+    throw error;
+  }
 };
 
 // Set up real-time subscription
