@@ -1,7 +1,5 @@
-
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { motion } from "framer-motion";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/components/ui/use-toast";
 import { Button } from "@/components/ui/button";
@@ -27,6 +25,7 @@ import { useTheme } from "@/contexts/ThemeContext";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { v4 as uuidv4 } from "uuid";
+import { getOrCreateTeamMemberForUser, deleteTeamMember } from "@/lib/teamMemberUtils";
 
 interface User {
   id: string;
@@ -86,7 +85,7 @@ export default function Admin() {
           variant: "destructive",
         });
         
-        // Fallback to mock data
+        // Fallback to mock data with consistent UUIDs
         setUsers([
           {
             id: 'b82c63f6-1aa9-4150-a857-eeac0b9c921b',
@@ -96,7 +95,7 @@ export default function Admin() {
             lastUpdated: new Date(2023, 1, 15)
           },
           {
-            id: '3fa85f64-5717-4562-b3fc-2c963f66afa6',
+            id: '35fa5e15-e3f2-48c5-900d-63d17fae865c', // Updated UUID for Klara
             email: 'klara.hasselberg@snellman.com',
             role: 'user',
             seniority: 'Senior Associate' as const,
@@ -162,6 +161,32 @@ export default function Admin() {
         
       if (error) throw error;
       
+      // Update the team member role as well
+      try {
+        const { data: teamMember, error: teamMemberError } = await supabase
+          .from('team_members')
+          .select('*')
+          .eq('user_id', userId)
+          .maybeSingle();
+          
+        if (teamMemberError) {
+          console.error("Error fetching team member:", teamMemberError);
+        }
+        
+        if (teamMember) {
+          const { error: updateError } = await supabase
+            .from('team_members')
+            .update({ role: newRole })
+            .eq('id', teamMember.id);
+            
+          if (updateError) {
+            console.error("Error updating team member role:", updateError);
+          }
+        }
+      } catch (error) {
+        console.error("Error updating team member role:", error);
+      }
+      
       // Update local state
       setUsers(users.map(u => 
         u.id === userId ? { 
@@ -187,15 +212,25 @@ export default function Admin() {
 
   const handleDeleteUser = async (userId: string) => {
     try {
-      // Delete the user's team member entry first
-      const { error: teamMemberError } = await supabase
+      // First find if there's a team member associated with this user
+      const { data: teamMember, error: teamMemberError } = await supabase
         .from('team_members')
-        .delete()
-        .eq('user_id', userId);
+        .select('*')
+        .eq('user_id', userId)
+        .maybeSingle();
         
       if (teamMemberError) {
-        console.error("Error deleting team member:", teamMemberError);
-        // Continue anyway to try to delete the profile
+        console.error("Error finding team member:", teamMemberError);
+      }
+      
+      // If team member exists, delete it
+      if (teamMember) {
+        try {
+          await deleteTeamMember(teamMember.id);
+          console.log("Successfully deleted team member for user:", userId);
+        } catch (error) {
+          console.error("Error deleting team member:", error);
+        }
       }
       
       // Delete the profile
@@ -246,6 +281,7 @@ export default function Admin() {
     try {
       // Create a new user with a valid UUID
       const userId = uuidv4();
+      const formattedName = formatNameFromEmail(newUserEmail);
       
       // Insert into profiles table
       const { error } = await supabase
@@ -253,7 +289,7 @@ export default function Admin() {
         .insert({
           id: userId,
           email: newUserEmail,
-          name: formatNameFromEmail(newUserEmail),
+          name: formattedName,
           role: 'user',
           seniority: 'Other',
           updated_at: new Date().toISOString()
@@ -263,6 +299,9 @@ export default function Admin() {
       
       // Call the signup function to create team member as well
       await signup(newUserEmail, newUserPassword, 'user');
+      
+      // Ensure team member is created
+      await getOrCreateTeamMemberForUser(userId, newUserEmail, 'user');
       
       // Add to local state
       const newUser = {

@@ -47,12 +47,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         throw new Error('Invalid email domain');
       }
       
-      // Use predefined UUIDs for specific test users for consistency
+      // Use consistent UUIDs for specific test users for consistency with Supabase
       let userId;
       if (email === 'aykut.yucel@snellman.com') {
         userId = "b82c63f6-1aa9-4150-a857-eeac0b9c921b"; // Fixed UUID for admin
       } else if (email === 'klara.hasselberg@snellman.com') {
-        userId = "3fa85f64-5717-4562-b3fc-2c963f66afa6"; // Fixed UUID for Klara
+        userId = "35fa5e15-e3f2-48c5-900d-63d17fae865c"; // Updated UUID for Klara to match Supabase
       } else if (email === 'test@snellman.com') {
         userId = "98765432-5717-4562-b3fc-2c963f66afa6"; // Fixed UUID for test user
       } else {
@@ -72,12 +72,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       // Store in localStorage for persistence
       localStorage.setItem('user', JSON.stringify(newUser));
       
-      // Create or get team member for this user
+      // Create or get team member for this user - with better error handling
       try {
         await getOrCreateTeamMemberForUser(newUser.id, newUser.email, newUser.role);
-      } catch (error) {
+        console.log("Team member record confirmed for user:", newUser.id);
+      } catch (error: any) {
         console.error("Error ensuring team member exists on login:", error);
-        throw error; // Re-throw to handle in the login flow
+        // Don't throw here - allow login to succeed even if team member creation fails
+        // We'll just log the error and let the user continue
       }
     } catch (error) {
       console.error('Login error:', error);
@@ -111,12 +113,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       // Store in localStorage for persistence
       localStorage.setItem('user', JSON.stringify(newUser));
       
-      // Create or get team member for this user
+      // Create or get team member for this user with enhanced error handling
       try {
         await getOrCreateTeamMemberForUser(newUser.id, newUser.email, newUser.role);
-      } catch (error) {
-        console.error("Error ensuring team member exists on signup:", error);
-        throw error; // Re-throw to handle in the signup flow
+        console.log("Team member created for new user:", newUser.id);
+      } catch (error: any) {
+        console.error("Error creating team member on signup:", error);
+        // Allow signup to continue even if team member creation fails
+        // Just log the error for debugging
       }
     } catch (error) {
       console.error('Signup error:', error);
@@ -153,10 +157,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setUser(parsedUser);
         setIsAdmin(parsedUser.role === 'admin');
         
-        // Create or get team member for this returning user
+        // Create or get team member for this returning user with enhanced error handling
         getOrCreateTeamMemberForUser(parsedUser.id, parsedUser.email, parsedUser.role)
+          .then(() => {
+            console.log("Team member confirmed for returning user:", parsedUser.id);
+          })
           .catch(error => {
             console.error("Error ensuring team member exists on session restore:", error);
+            // Continue with the session even if team member creation/verification fails
           });
       } catch (error) {
         console.error('Error parsing stored user:', error);

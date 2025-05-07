@@ -95,7 +95,7 @@ export const addTeamMember = async (teamMember: Omit<TeamMember, 'id'>): Promise
 
 // Update a team member
 export const updateTeamMember = async (id: string, updates: Partial<TeamMember>): Promise<TeamMember> => {
-  console.log(`Updating team member with ID: ${id}`);
+  console.log(`Updating team member with ID: ${id}`, updates);
   
   const dbUpdates: any = {};
   
@@ -214,12 +214,54 @@ export const getOrCreateTeamMemberForUser = async (userId: string, email: string
   }
 };
 
+// Ensure all users have team member entries
+export const ensureAllUsersHaveTeamMembers = async (): Promise<void> => {
+  console.log("Ensuring all users have team member entries...");
+  
+  try {
+    // Fetch all profiles
+    const { data: profiles, error: profilesError } = await supabase
+      .from('profiles')
+      .select('*');
+      
+    if (profilesError) {
+      console.error("Error fetching profiles:", profilesError);
+      throw profilesError;
+    }
+    
+    if (!profiles || profiles.length === 0) {
+      console.log("No profiles found to create team members for");
+      return;
+    }
+    
+    // For each profile, ensure a team member exists
+    for (const profile of profiles) {
+      try {
+        await getOrCreateTeamMemberForUser(
+          profile.id, 
+          profile.email, 
+          profile.role || 'user'
+        );
+      } catch (error) {
+        console.error(`Failed to ensure team member for user ${profile.id}:`, error);
+        // Continue with next profile even if one fails
+      }
+    }
+    
+    console.log(`Completed team member verification for ${profiles.length} profiles`);
+  } catch (error) {
+    console.error("Error in ensureAllUsersHaveTeamMembers:", error);
+    throw error;
+  }
+};
+
 // Set up real-time subscription
 export const subscribeToTeamMembers = (
   callback: (teamMembers: TeamMember[]) => void
 ): (() => void) => {
-  // First, fetch all team members
-  fetchTeamMembers()
+  // First, ensure all users have team members then fetch all team members
+  ensureAllUsersHaveTeamMembers()
+    .then(() => fetchTeamMembers())
     .then(callback)
     .catch(err => console.error('Error in initial team members fetch:', err));
   
