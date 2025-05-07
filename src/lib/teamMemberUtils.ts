@@ -1,7 +1,7 @@
-
 import { TeamMember, TeamMemberStatus, TeamMemberRole } from "@/types/TeamMemberTypes";
 import { supabase } from "@/integrations/supabase/client";
 import { validate as isValidUUID } from 'uuid';
+import { Json } from "@/integrations/supabase/types";
 
 // Format name from email
 export const formatNameFromEmail = (email: string): string => {
@@ -38,7 +38,7 @@ export const mapTeamMemberToDb = (teamMember: TeamMember) => {
     last_updated: teamMember.lastUpdated ? teamMember.lastUpdated.toISOString() : new Date().toISOString(),
     user_id: teamMember.user_id,
     role: teamMember.role,
-    customization: teamMember.customization
+    customization: teamMember.customization as unknown as Json
   };
 };
 
@@ -76,13 +76,13 @@ export const addTeamMember = async (teamMember: Omit<TeamMember, 'id'>): Promise
     projects: teamMember.projects || [],
     user_id: teamMember.user_id,
     role: teamMember.role,
-    customization: teamMember.customization
+    customization: teamMember.customization as unknown as Json
     // last_updated will be set by default in the database
   };
 
   const { data, error } = await supabase
     .from('team_members')
-    .insert([newTeamMemberData])
+    .insert(newTeamMemberData)
     .select()
     .single();
 
@@ -107,8 +107,12 @@ export const updateTeamMember = async (id: string, updates: Partial<TeamMember>)
   if ('status' in updates) dbUpdates.status = updates.status;
   if ('projects' in updates) dbUpdates.projects = updates.projects;
   if ('role' in updates) dbUpdates.role = updates.role;
-  if ('customization' in updates) dbUpdates.customization = updates.customization;
   if ('user_id' in updates) dbUpdates.user_id = updates.user_id;
+  
+  // Fix the customization type casting
+  if ('customization' in updates) {
+    dbUpdates.customization = updates.customization as unknown as Json;
+  }
   
   // Update last_updated timestamp to trigger UI refresh
   dbUpdates.last_updated = new Date().toISOString();
@@ -286,15 +290,25 @@ export const ensureAllUsersHaveTeamMembers = async (): Promise<void> => {
   }
 };
 
-// Set up real-time subscription with improved error handling
+// Set up real-time subscription with improved error handling and timeout protection
 export const subscribeToTeamMembers = (
   callback: (teamMembers: TeamMember[]) => void
 ): (() => void) => {
+  // Add timeout to prevent infinite loading
+  const timeoutId = setTimeout(() => {
+    console.warn("Team members fetch is taking too long, providing empty data");
+    callback([]);
+  }, 10000); // 10 seconds timeout
+
   // First, ensure all users have team members then fetch all team members
   ensureAllUsersHaveTeamMembers()
     .then(() => fetchTeamMembers())
-    .then(callback)
+    .then(members => {
+      clearTimeout(timeoutId); // Clear timeout on success
+      callback(members);
+    })
     .catch(err => {
+      clearTimeout(timeoutId); // Clear timeout on error
       console.error('Error in initial team members fetch:', err);
       // Provide empty array as fallback to prevent UI crashes
       callback([]);

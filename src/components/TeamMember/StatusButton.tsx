@@ -16,9 +16,16 @@ export function StatusButton({ status, currentStatus, onClick, color, tooltip }:
     <Popover>
       <PopoverTrigger asChild>
         <button
-          onClick={() => onClick(status)}
-          className={`status-button ${currentStatus === status ? 'active' : ''}`}
-          style={{ backgroundColor: color }}
+          type="button" 
+          onClick={(e) => {
+            e.preventDefault();
+            onClick(status);
+          }}
+          className={`status-button w-8 h-8 rounded-full transition-all flex items-center justify-center ${currentStatus === status ? 'active ring-2 ring-white/30 transform scale-110 shadow-lg' : ''}`}
+          style={{ 
+            backgroundColor: color,
+            border: currentStatus === status ? '2px solid rgba(255,255,255,0.5)' : '1px solid transparent'
+          }}
           aria-label={tooltip}
         />
       </PopoverTrigger>
