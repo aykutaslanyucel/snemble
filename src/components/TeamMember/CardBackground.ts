@@ -1,7 +1,7 @@
 
 import { TeamMember } from "@/types/TeamMemberTypes";
 
-// Status colors for cards
+// Status colors for cards with exact color matching
 const STATUS_COLORS = {
   "available": "#D3E4FD",
   "someAvailability": "#F2FCE2", 

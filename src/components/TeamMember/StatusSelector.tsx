@@ -19,22 +19,17 @@ interface StatusSelectorProps {
 
 export function StatusSelector({ currentStatus, onStatusChange }: StatusSelectorProps) {
   return (
-    <div className="space-y-2">
-      <p className="text-sm font-medium mb-2">Status</p>
-      <div className="flex items-center justify-between">
-        <div className="flex space-x-2">
-          {STATUS_BUTTONS.map((statusBtn) => (
-            <StatusButton
-              key={statusBtn.status}
-              status={statusBtn.status as TeamMemberStatus}
-              currentStatus={currentStatus}
-              onClick={onStatusChange}
-              color={statusBtn.color}
-              tooltip={statusBtn.tooltip}
-            />
-          ))}
-        </div>
-      </div>
+    <div className="flex items-center space-x-1.5 mb-1">
+      {STATUS_BUTTONS.map((statusBtn) => (
+        <StatusButton
+          key={statusBtn.status}
+          status={statusBtn.status as TeamMemberStatus}
+          currentStatus={currentStatus}
+          onClick={onStatusChange}
+          color={statusBtn.color}
+          tooltip={statusBtn.tooltip}
+        />
+      ))}
     </div>
   );
 }

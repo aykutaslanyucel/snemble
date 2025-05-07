@@ -16,15 +16,15 @@ export function StatusButton({ status, currentStatus, onClick, color, tooltip }:
   const getIcon = () => {
     switch (status) {
       case "available":
-        return <Check className="h-4 w-4 text-gray-700" />;
+        return <Check className="h-3.5 w-3.5 text-gray-700" />;
       case "someAvailability":
-        return <User className="h-4 w-4 text-gray-700" />;
+        return <User className="h-3.5 w-3.5 text-gray-700" />;
       case "busy":
-        return <Clock className="h-4 w-4 text-gray-700" />;
+        return <Clock className="h-3.5 w-3.5 text-gray-700" />;
       case "seriouslyBusy":
-        return <X className="h-4 w-4 text-gray-700" />;
+        return <X className="h-3.5 w-3.5 text-gray-700" />;
       case "away":
-        return <Coffee className="h-4 w-4 text-gray-700" />;
+        return <Coffee className="h-3.5 w-3.5 text-gray-700" />;
       default:
         return null;
     }
@@ -39,8 +39,8 @@ export function StatusButton({ status, currentStatus, onClick, color, tooltip }:
             e.preventDefault();
             onClick(status);
           }}
-          className={`w-10 h-10 rounded-full bg-white/80 shadow-sm flex items-center justify-center transition-all ${
-            currentStatus === status ? 'ring-2 ring-white transform scale-105' : 'hover:scale-105'
+          className={`w-8 h-8 rounded-full bg-white flex items-center justify-center shadow-sm transition-all ${
+            currentStatus === status ? 'ring-2 ring-white/70 transform scale-110' : 'hover:scale-105'
           }`}
           style={{ 
             border: currentStatus === status ? '2px solid rgba(255,255,255,0.8)' : '1px solid rgba(0,0,0,0.05)'

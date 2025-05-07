@@ -5,7 +5,7 @@ import { motion } from "framer-motion";
 import { useAuth } from "@/contexts/AuthContext";
 import "../styles/animations.css";
 import { Badge } from "@/components/ui/badge";
-import { MoreVertical, Plus } from "lucide-react";
+import { MoreVertical, Plus, Check, User, Clock, X, Coffee } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 // Import our dialogs
@@ -27,6 +27,7 @@ export function TeamMemberCard({ member, onUpdate, onDelete, canEdit }: TeamMemb
   const [projects, setProjects] = useState(member.projects.join(", "));
   const [isConfirmingDelete, setIsConfirmingDelete] = useState(false);
   const [showCustomizer, setShowCustomizer] = useState(false);
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
   const { isPremium } = useAuth();
   
   const handleStatusChange = (status: TeamMemberStatus) => {
@@ -120,6 +121,24 @@ export function TeamMemberCard({ member, onUpdate, onDelete, canEdit }: TeamMemb
     }
   };
 
+  // Status icon based on status
+  const getStatusIcon = () => {
+    switch (member.status) {
+      case "available":
+        return <Check className="h-3.5 w-3.5 text-gray-700" />;
+      case "someAvailability":
+        return <User className="h-3.5 w-3.5 text-gray-700" />;
+      case "busy":
+        return <Clock className="h-3.5 w-3.5 text-gray-700" />;
+      case "seriouslyBusy":
+        return <X className="h-3.5 w-3.5 text-gray-700" />;
+      case "away":
+        return <Coffee className="h-3.5 w-3.5 text-gray-700" />;
+      default:
+        return null;
+    }
+  };
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
@@ -131,7 +150,7 @@ export function TeamMemberCard({ member, onUpdate, onDelete, canEdit }: TeamMemb
         className="rounded-lg overflow-hidden h-full"
         style={{ 
           background: getCardBackground(),
-          boxShadow: "0px 2px 8px rgba(0, 0, 0, 0.05)"
+          boxShadow: "0px 1px 2px rgba(0, 0, 0, 0.05)"
         }}
       >
         {/* Card Header */}
@@ -143,7 +162,7 @@ export function TeamMemberCard({ member, onUpdate, onDelete, canEdit }: TeamMemb
                   type="text"
                   className="bg-white/80 rounded-md border border-gray-200 px-2 py-1 text-sm"
                   value={name}
-                  onChange={(e) => setNameValue(e.target.value)}
+                  onChange={(e) => setName(e.target.value)}
                   onBlur={handleNameChange}
                   onKeyDown={(e) => e.key === "Enter" && handleNameChange()}
                   autoFocus
@@ -151,7 +170,7 @@ export function TeamMemberCard({ member, onUpdate, onDelete, canEdit }: TeamMemb
               </div>
             ) : (
               <h3 
-                className="font-medium text-gray-800"
+                className="font-medium text-gray-800 text-base"
                 onClick={() => canEdit && setIsEditingName(true)}
               >
                 {member.name}
@@ -161,26 +180,26 @@ export function TeamMemberCard({ member, onUpdate, onDelete, canEdit }: TeamMemb
           </div>
           
           {canEdit && (
-            <button className="rounded-full p-1 hover:bg-black/5">
-              <MoreVertical 
-                className="h-5 w-5 text-gray-500" 
-                onClick={() => setIsOpen(true)}
-              />
+            <button 
+              className="rounded-full p-1 bg-white/70 hover:bg-white/90 shadow-sm"
+              onClick={() => setIsMenuOpen(!isMenuOpen)}
+            >
+              <MoreVertical className="h-4 w-4 text-gray-500" />
             </button>
           )}
         </div>
         
         {/* Card Content */}
         <div className="px-4 pb-1">
-          <div className="mb-3">
-            <p className="text-sm font-medium mb-1">Projects</p>
+          <div className="mb-4">
+            <p className="text-xs font-medium text-gray-700 mb-1.5">Projects</p>
             {member.projects.length > 0 ? (
-              <div className="flex flex-wrap gap-1">
+              <div className="flex flex-wrap gap-1.5">
                 {member.projects.map((project, index) => (
                   <Badge 
                     key={index} 
                     variant="outline" 
-                    className="bg-white/70 text-gray-700 hover:bg-white/90"
+                    className="bg-white/90 text-gray-700 hover:bg-white rounded-full"
                   >
                     {project}
                   </Badge>
@@ -189,24 +208,24 @@ export function TeamMemberCard({ member, onUpdate, onDelete, canEdit }: TeamMemb
                 {canEdit && (
                   <button 
                     onClick={() => setIsEditingProjects(true)}
-                    className="bg-white/30 hover:bg-white/50 text-gray-600 rounded-full w-5 h-5 flex items-center justify-center"
+                    className="bg-white/80 hover:bg-white/90 text-gray-600 rounded-full w-5 h-5 flex items-center justify-center shadow-sm"
                   >
-                    <Plus className="h-3 w-3" />
+                    <Plus className="h-2.5 w-2.5" />
                   </button>
                 )}
               </div>
             ) : (
               <div className="flex items-center gap-2">
-                <p className="text-sm text-gray-500">No projects</p>
+                <p className="text-xs text-gray-500">No projects</p>
                 
                 {canEdit && (
                   <Button 
                     size="sm" 
                     variant="outline" 
-                    className="h-7 text-xs bg-white/70 border-gray-200"
+                    className="h-6 text-xs bg-white/80 border-gray-200 rounded-full px-2"
                     onClick={() => setIsEditingProjects(true)}
                   >
-                    <Plus className="h-3 w-3 mr-1" />
+                    <Plus className="h-2.5 w-2.5 mr-1" />
                     Add Project
                   </Button>
                 )}
@@ -215,10 +234,10 @@ export function TeamMemberCard({ member, onUpdate, onDelete, canEdit }: TeamMemb
           </div>
           
           <div>
-            <p className="text-sm font-medium mb-2">Status</p>
+            <p className="text-xs font-medium text-gray-700 mb-1.5">Status</p>
             <div className="flex items-center justify-between">
               {canEdit ? (
-                <div className="flex space-x-2">
+                <div className="flex space-x-1.5">
                   <StatusButton 
                     status="available"
                     current={member.status} 
@@ -251,15 +270,15 @@ export function TeamMemberCard({ member, onUpdate, onDelete, canEdit }: TeamMemb
                   />
                 </div>
               ) : (
-                <Badge
-                  variant="outline"
-                  className="bg-white/80 text-gray-700"
-                >
-                  {getStatusText()}
-                </Badge>
+                <div className="flex items-center gap-1.5 bg-white/90 border border-gray-100 px-2.5 py-1 rounded-full">
+                  <span className="w-5 h-5 flex items-center justify-center bg-white rounded-full shadow-sm">
+                    {getStatusIcon()}
+                  </span>
+                  <span className="text-xs font-medium text-gray-700">{getStatusText()}</span>
+                </div>
               )}
               
-              <span className="text-xs text-gray-500">{getTimeAgo()}</span>
+              <span className="text-xs text-gray-500 ml-auto">{getTimeAgo()}</span>
             </div>
           </div>
         </div>
@@ -305,14 +324,34 @@ function StatusButton({
   onClick: () => void;
   color: string;
 }) {
+  const getIcon = () => {
+    switch (status) {
+      case "available":
+        return <Check className="h-3.5 w-3.5 text-gray-700" />;
+      case "someAvailability":
+        return <User className="h-3.5 w-3.5 text-gray-700" />;
+      case "busy":
+        return <Clock className="h-3.5 w-3.5 text-gray-700" />;
+      case "seriouslyBusy":
+        return <X className="h-3.5 w-3.5 text-gray-700" />;
+      case "away":
+        return <Coffee className="h-3.5 w-3.5 text-gray-700" />;
+      default:
+        return null;
+    }
+  };
+
   return (
     <button
       onClick={onClick}
-      className={`w-8 h-8 rounded-full transition-all ${current === status ? 'ring-2 ring-gray-300 transform scale-110' : ''}`}
+      className={`w-8 h-8 rounded-full bg-white flex items-center justify-center shadow-sm transition-all ${
+        current === status ? 'ring-2 ring-white/70 transform scale-105' : 'hover:scale-105'
+      }`}
       style={{ 
-        backgroundColor: color,
-        border: current === status ? '2px solid white' : '1px solid rgba(0,0,0,0.05)'
+        border: current === status ? '2px solid rgba(255,255,255,0.8)' : '1px solid rgba(0,0,0,0.05)'
       }}
-    />
+    >
+      {getIcon()}
+    </button>
   );
 }

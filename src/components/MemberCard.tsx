@@ -11,6 +11,7 @@ import { DeleteConfirmationDialog } from "@/components/TeamMember/DeleteConfirma
 import { CustomizerDialog } from "@/components/TeamMember/CustomizerDialog";
 import { getCardBackground, getStatusText } from "./TeamMember/CardBackground";
 import { Badge } from "@/components/ui/badge";
+import { Check, User, Clock, X, Coffee } from "lucide-react";
 
 interface MemberCardProps {
   member: TeamMember;
@@ -79,6 +80,24 @@ export function MemberCard({ member, onUpdate, onDelete, canEdit }: MemberCardPr
     return "more than a day ago";
   };
 
+  // Get status icon based on status
+  const getStatusIcon = () => {
+    switch (member.status) {
+      case "available":
+        return <Check className="h-3.5 w-3.5 text-gray-700" />;
+      case "someAvailability":
+        return <User className="h-3.5 w-3.5 text-gray-700" />;
+      case "busy":
+        return <Clock className="h-3.5 w-3.5 text-gray-700" />;
+      case "seriouslyBusy":
+        return <X className="h-3.5 w-3.5 text-gray-700" />;
+      case "away":
+        return <Coffee className="h-3.5 w-3.5 text-gray-700" />;
+      default:
+        return null;
+    }
+  };
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
@@ -87,10 +106,10 @@ export function MemberCard({ member, onUpdate, onDelete, canEdit }: MemberCardPr
       className="h-full"
     >
       <Card 
-        className="h-full overflow-hidden rounded-xl shadow-sm"
+        className="h-full overflow-hidden rounded-lg shadow-sm"
         style={{ 
           background: cardStyle.background,
-          boxShadow: "0px 1px 3px rgba(0, 0, 0, 0.05), 0px 4px 12px rgba(0, 0, 0, 0.03)"
+          boxShadow: "0px 1px 2px rgba(0, 0, 0, 0.05)"
         }}
       >
         <MemberCardHeader
@@ -117,14 +136,14 @@ export function MemberCard({ member, onUpdate, onDelete, canEdit }: MemberCardPr
         />
         
         {/* Status information */}
-        <div className="flex items-center justify-between px-4 pb-4">
+        <div className="flex items-center justify-between px-4 pb-4 pt-1">
           {!canEdit && (
-            <Badge
-              variant="outline"
-              className="bg-white/80 text-gray-700 px-3 py-1 rounded-full"
-            >
-              {getStatusText(member.status)}
-            </Badge>
+            <div className="flex items-center gap-1.5 bg-white/80 border border-gray-100 px-2.5 py-1 rounded-full">
+              <span className="w-5 h-5 flex items-center justify-center bg-white rounded-full shadow-sm">
+                {getStatusIcon()}
+              </span>
+              <span className="text-xs font-medium text-gray-700">{getStatusText(member.status)}</span>
+            </div>
           )}
           <span className="text-xs text-gray-500 ml-auto">{getTimeAgo()}</span>
         </div>
