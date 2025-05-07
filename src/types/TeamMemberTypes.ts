@@ -1,7 +1,18 @@
 
 export type TeamMemberStatus = 'available' | 'someAvailability' | 'busy' | 'seriouslyBusy' | 'away';
 
-export type TeamMemberRole = 'Associate' | 'Senior Associate' | 'Managing Associate' | 'Partner' | 'Assistant' | 'admin' | 'user' | 'premium';
+// FIXED: Include all role types that are used throughout the application
+export type TeamMemberRole = 
+  | 'Associate' 
+  | 'Senior Associate' 
+  | 'Managing Associate' 
+  | 'Partner' 
+  | 'Assistant' 
+  | 'admin' 
+  | 'user' 
+  | 'premium' 
+  | 'Team Lead' 
+  | 'Senior Member';
 
 export interface TeamMember {
   id: string;

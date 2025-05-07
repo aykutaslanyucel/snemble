@@ -1,4 +1,3 @@
-
 import { useState, useMemo, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
@@ -119,12 +118,14 @@ export default function Index() {
     }
   };
 
+  // Improved update handler with better permission checking and error handling
   const handleUpdateMember = async (id: string, field: string, value: any) => {
     try {
       // Find the member to update
       const memberToUpdate = members.find(m => m.id === id);
       
       if (!memberToUpdate) {
+        console.error(`Member not found with ID: ${id}`);
         throw new Error("Member not found");
       }
       
@@ -138,12 +139,14 @@ export default function Index() {
         user
       });
       
-      // Enhanced permission check: admin check first, then if it's the user's own profile
+      // Enhanced permission check with detailed logging
       const hasPermission = isAdmin || (user && memberToUpdate.user_id === user.id);
       
-      // If no permission, reject the update
+      // If no permission, reject the update and log details
       if (!hasPermission) {
         console.error(`Permission denied: User ${user?.id} cannot edit member ${id}`);
+        console.error(`  > Admin: ${isAdmin}, User: ${user?.id}, Member User ID: ${memberToUpdate.user_id}`);
+        
         toast({
           title: "Permission denied",
           description: "You can only update your own profile unless you're an admin.",
@@ -174,6 +177,8 @@ export default function Index() {
       );
     } catch (error: any) {
       console.error("Update team member error:", error);
+      console.error("Stack trace:", error?.stack);
+      
       toast({
         title: "Error updating team member",
         description: error?.message || "Failed to update team member. Please try again.",

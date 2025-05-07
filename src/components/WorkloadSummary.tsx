@@ -1,4 +1,3 @@
-
 import React, { useMemo } from "react";
 import { Card } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
@@ -53,7 +52,8 @@ const STATUS_WEIGHTS = {
 };
 
 // Fixed colors for roles - these will always be consistent
-const ROLE_COLORS = {
+// FIXED: Changed to proper type mapping to avoid TypeScript errors
+const ROLE_COLORS: Record<string, string> = {
   'Associate': "#D6BCFA",
   'Senior Associate': "#9b87f5",
   'Managing Associate': "#7E69AB",
@@ -67,7 +67,7 @@ const ROLE_COLORS = {
 };
 
 // Fixed icons for roles
-const ROLE_ICONS = {
+const ROLE_ICONS: Record<string, React.ElementType> = {
   'Associate': Briefcase,
   'Senior Associate': Star,
   'Managing Associate': Star,
@@ -260,12 +260,12 @@ function determineRoleFromPosition(position: string): TeamMemberRole {
 
 // Helper function to map role strings to consistent role colors
 function getRoleColor(role: string): string {
-  return ROLE_COLORS[role as keyof typeof ROLE_COLORS] || ROLE_COLORS['Associate'];
+  return ROLE_COLORS[role] || ROLE_COLORS['Associate'];
 }
 
 // Helper function to map role strings to consistent role icons
 function getRoleIcon(role: string): React.ElementType {
-  return ROLE_ICONS[role as keyof typeof ROLE_ICONS] || ROLE_ICONS['Associate'];
+  return ROLE_ICONS[role] || ROLE_ICONS['Associate'];
 }
 
 export default function WorkloadSummary({ 
@@ -314,7 +314,8 @@ export default function WorkloadSummary({
         m.role === 'Associate' || m.role === 'user'
       ),
       'Senior / Managing': membersWithRoles.filter(m => 
-        m.role === 'Senior Associate' || m.role === 'Managing Associate' || m.role === 'premium' || m.role === 'Senior Member'
+        m.role === 'Senior Associate' || m.role === 'Managing Associate' || 
+        m.role === 'premium' || m.role === 'Senior Member'
       ),
       'Partner': membersWithRoles.filter(m => 
         m.role === 'Partner' || m.role === 'admin' || m.role === 'Team Lead'
@@ -336,7 +337,7 @@ export default function WorkloadSummary({
           ? Math.min((totalCapacity / maxPossibleCapacity) * 100, 100) 
           : 0;
         
-        // Use consistent color mapping
+        // FIXED: Use string-based comparison instead of type comparison for safety
         const roleColor = groupName === 'Senior / Managing' 
           ? getRoleColor('Senior Associate')
           : getRoleColor(groupName.split(' /')[0]);
@@ -352,7 +353,7 @@ export default function WorkloadSummary({
           }
         );
 
-        // Use consistent icon mapping
+        // FIXED: Use string-based comparison instead of type comparison for safety
         const roleIcon = groupName === 'Senior / Managing'
           ? getRoleIcon('Senior Associate')
           : getRoleIcon(groupName.split(' /')[0]);

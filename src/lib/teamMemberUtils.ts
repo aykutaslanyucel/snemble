@@ -1,4 +1,3 @@
-
 import { TeamMember, TeamMemberStatus, TeamMemberRole } from "@/types/TeamMemberTypes";
 import { supabase } from "@/integrations/supabase/client";
 import { validate as isValidUUID } from 'uuid';
@@ -93,7 +92,7 @@ export const addTeamMember = async (teamMember: Omit<TeamMember, 'id'>): Promise
   return mapDbToTeamMember(data);
 };
 
-// Update a team member
+// Update a team member with improved error handling and debugging
 export const updateTeamMember = async (id: string, updates: Partial<TeamMember>): Promise<TeamMember> => {
   console.info(`Updating team member with ID: ${id}`, updates);
   
@@ -108,6 +107,9 @@ export const updateTeamMember = async (id: string, updates: Partial<TeamMember>)
   if ('customization' in updates) dbUpdates.customization = updates.customization;
   if ('user_id' in updates) dbUpdates.user_id = updates.user_id;
   
+  // Update last_updated timestamp to trigger UI refresh
+  dbUpdates.last_updated = new Date().toISOString();
+  
   try {
     const { data, error } = await supabase
       .from('team_members')
@@ -119,7 +121,8 @@ export const updateTeamMember = async (id: string, updates: Partial<TeamMember>)
     if (error) {
       console.error('Error updating team member:', error);
       console.error('Error details:', JSON.stringify(error));
-      console.error('Auth status:', supabase.auth.getSession() ? 'Authenticated' : 'Not authenticated');
+      console.error('Update payload:', JSON.stringify(dbUpdates));
+      console.error('Member ID:', id);
       throw error;
     }
 
@@ -127,6 +130,7 @@ export const updateTeamMember = async (id: string, updates: Partial<TeamMember>)
     return mapDbToTeamMember(data);
   } catch (error: any) {
     console.error('Exception in updateTeamMember:', error?.message || error);
+    console.error('Stack trace:', error?.stack);
     throw error;
   }
 };
@@ -148,20 +152,29 @@ export const deleteTeamMember = async (id: string): Promise<void> => {
   console.log(`Successfully deleted team member with ID: ${id}`);
 };
 
-// Simplified permission check - admins can edit any team member, users can only edit their own
+// Simplified permission check with improved logging
 export const canEditTeamMember = (
   teamMember: TeamMember, 
   currentUserId: string | undefined, 
   isAdmin: boolean
 ): boolean => {
-  if (!currentUserId) return false;
+  if (!currentUserId) {
+    console.log("Cannot edit: No current user ID provided");
+    return false;
+  }
   
-  if (isAdmin) return true;
+  if (isAdmin) {
+    console.log(`User ${currentUserId} can edit member ${teamMember.id} (admin privileges)`);
+    return true;
+  }
   
-  return teamMember.user_id === currentUserId;
+  const canEdit = teamMember.user_id === currentUserId;
+  console.log(`User ${currentUserId} ${canEdit ? 'can' : 'cannot'} edit member ${teamMember.id} (user_id: ${teamMember.user_id})`);
+  
+  return canEdit;
 };
 
-// Get or create a team member for a user
+// Get or create a team member for a user with fixed position handling
 export const getOrCreateTeamMemberForUser = async (userId: string, email: string, role: string): Promise<TeamMember> => {
   console.log(`Getting or creating team member for user: ${userId}, email: ${email}, role: ${role}`);
   
@@ -189,13 +202,13 @@ export const getOrCreateTeamMemberForUser = async (userId: string, email: string
 
   // If no existing member, create a new one
   const formattedName = formatNameFromEmail(email);
-  let position = "Team Member";
   
-  // Set position based on role - be consistent
+  // FIXED: Set position based on role without hardcoding specific roles
+  let position = "Team Member";
   if (role === 'admin') {
-    position = "Team Lead";
+    position = "Administrator"; // Changed from "Team Lead" to more accurately reflect role
   } else if (role === 'premium') {
-    position = "Senior Member";
+    position = "Senior Team Member"; // More generic position name
   }
   
   // Convert role string to TeamMemberRole type
@@ -263,7 +276,7 @@ export const ensureAllUsersHaveTeamMembers = async (): Promise<void> => {
   }
 };
 
-// Set up real-time subscription
+// Set up real-time subscription with improved error handling
 export const subscribeToTeamMembers = (
   callback: (teamMembers: TeamMember[]) => void
 ): (() => void) => {
@@ -271,7 +284,11 @@ export const subscribeToTeamMembers = (
   ensureAllUsersHaveTeamMembers()
     .then(() => fetchTeamMembers())
     .then(callback)
-    .catch(err => console.error('Error in initial team members fetch:', err));
+    .catch(err => {
+      console.error('Error in initial team members fetch:', err);
+      // Provide empty array as fallback to prevent UI crashes
+      callback([]);
+    });
   
   // Then set up real-time changes
   const subscription = supabase
