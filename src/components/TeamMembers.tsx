@@ -33,7 +33,9 @@ export function TeamMembers({ members, onUpdate, onDelete, currentUserId, isAdmi
     >
       <AnimatePresence>
         {members.map((member) => {
+          // Simplified permission logic - admin can edit all, users can edit their own
           const canEdit = isAdmin || member.user_id === currentUserId;
+          
           console.log(`Member ${member.name}:`, {
             memberId: member.id,
             memberUserId: member.user_id,

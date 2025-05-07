@@ -1,3 +1,4 @@
+
 import React, { useMemo } from "react";
 import { Card } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
@@ -18,7 +19,7 @@ interface Props {
 }
 
 // Fixed colors for statuses - these will always be consistent
-const statusColors = {
+const STATUS_COLORS = {
   available: "#D3E4FD",       // Blue
   someAvailability: "#F2FCE2", // Green
   busy: "#FEF7CD",           // Yellow
@@ -27,7 +28,7 @@ const statusColors = {
 };
 
 // Fixed gradient colors for statuses - these will always be consistent
-const statusGradientColors = {
+const STATUS_GRADIENT_COLORS = {
   available: "#B3D4FF",       // Slightly darker blue
   someAvailability: "#D2ECB2", // Slightly darker green
   busy: "#FEE69D",           // Slightly darker yellow
@@ -35,7 +36,7 @@ const statusGradientColors = {
   away: "#E1E0EB",           // Slightly darker gray
 };
 
-const statusLabels = {
+const STATUS_LABELS = {
   available: "Available",
   someAvailability: "Some Availability",
   busy: "Busy",
@@ -43,7 +44,7 @@ const statusLabels = {
   away: "Away",
 };
 
-const statusWeights = {
+const STATUS_WEIGHTS = {
   available: 0,
   someAvailability: 25,
   busy: 50,
@@ -52,24 +53,34 @@ const statusWeights = {
 };
 
 // Fixed colors for roles - these will always be consistent
-const roleColors = {
+const ROLE_COLORS = {
   'Associate': "#D6BCFA",
   'Senior Associate': "#9b87f5",
   'Managing Associate': "#7E69AB",
   'Partner': "#6E59A5",
   'Assistant': "#F1F0FB",
+  'Team Lead': "#6E59A5", // Same as Partner for consistency
+  'Senior Member': "#9b87f5", // Same as Senior Associate for consistency
+  'user': "#D6BCFA", // Same as Associate for consistency
+  'admin': "#6E59A5", // Same as Partner for consistency
+  'premium': "#9b87f5", // Same as Senior Associate for consistency
 };
 
 // Fixed icons for roles
-const roleIcons = {
+const ROLE_ICONS = {
   'Associate': Briefcase,
   'Senior Associate': Star,
   'Managing Associate': Star,
   'Partner': Shield,
   'Assistant': UserCog,
+  'Team Lead': Shield, // Same as Partner
+  'Senior Member': Star, // Same as Senior Associate
+  'user': Briefcase, // Same as Associate
+  'admin': Shield, // Same as Partner
+  'premium': Star, // Same as Senior Associate
 };
 
-const roleGroups = {
+const ROLE_GROUPS = {
   'Associate': 'Associate',
   'Senior / Managing': 'Senior / Managing',
   'Partner': 'Partner',
@@ -234,15 +245,27 @@ const DonutChart = ({ percentage, color, gradientColor, label, count, icon: Icon
   );
 };
 
+// This function determines the role from position consistently
 function determineRoleFromPosition(position: string): TeamMemberRole {
   position = position.toLowerCase();
   
+  if (position.includes('team lead')) return 'Partner';
   if (position.includes('partner')) return 'Partner';
   if (position.includes('senior') || position.includes('lead')) return 'Senior Associate';
   if (position.includes('managing')) return 'Managing Associate';
   if (position.includes('assistant') || position.includes('admin')) return 'Assistant';
   
   return 'Associate';
+}
+
+// Helper function to map role strings to consistent role colors
+function getRoleColor(role: string): string {
+  return ROLE_COLORS[role as keyof typeof ROLE_COLORS] || ROLE_COLORS['Associate'];
+}
+
+// Helper function to map role strings to consistent role icons
+function getRoleIcon(role: string): React.ElementType {
+  return ROLE_ICONS[role as keyof typeof ROLE_ICONS] || ROLE_ICONS['Associate'];
 }
 
 export default function WorkloadSummary({ 
@@ -259,7 +282,7 @@ export default function WorkloadSummary({
 
   // Use useMemo for workload data to prevent recalculation on each render
   const workloadData = useMemo(() => {
-    return Object.entries(statusLabels).map(([status, label], index) => {
+    return Object.entries(STATUS_LABELS).map(([status, label], index) => {
       const statusKey = status as TeamMemberStatus;
       const count = members.filter(m => m.status === statusKey).length;
       const totalMembers = members.length;
@@ -268,35 +291,44 @@ export default function WorkloadSummary({
       return {
         status: label,
         count,
-        color: statusColors[statusKey],
-        gradientColor: statusGradientColors[statusKey],
+        color: STATUS_COLORS[statusKey],
+        gradientColor: STATUS_GRADIENT_COLORS[statusKey],
         percentage,
         index,
       };
     });
   }, [members]);
 
-  // Use useMemo for role metrics data
+  // Use useMemo for role metrics data with consistent role mappings
   const roleMetricsData = useMemo(() => {
+    // Map members to their consistent roles
     const membersWithRoles = members.map(member => ({
       ...member,
+      // Use existing role or determine from position
       role: member.role || determineRoleFromPosition(member.position)
     }));
 
+    // Group members by role categories
     const roleGroups = {
-      'Associate': membersWithRoles.filter(m => m.role === 'Associate'),
-      'Senior / Managing': membersWithRoles.filter(m => 
-        m.role === 'Senior Associate' || m.role === 'Managing Associate'
+      'Associate': membersWithRoles.filter(m => 
+        m.role === 'Associate' || m.role === 'user'
       ),
-      'Partner': membersWithRoles.filter(m => m.role === 'Partner'),
-      'Assistant': membersWithRoles.filter(m => m.role === 'Assistant'),
+      'Senior / Managing': membersWithRoles.filter(m => 
+        m.role === 'Senior Associate' || m.role === 'Managing Associate' || m.role === 'premium' || m.role === 'Senior Member'
+      ),
+      'Partner': membersWithRoles.filter(m => 
+        m.role === 'Partner' || m.role === 'admin' || m.role === 'Team Lead'
+      ),
+      'Assistant': membersWithRoles.filter(m => 
+        m.role === 'Assistant'
+      ),
     };
 
     return Object.entries(roleGroups)
       .filter(([_, groupMembers]) => groupMembers.length > 0)
       .map(([groupName, groupMembers], index) => {
         const totalCapacity = groupMembers.reduce((acc, member) => {
-          return acc + (member.status !== 'away' ? statusWeights[member.status] : 0);
+          return acc + (member.status !== 'away' ? STATUS_WEIGHTS[member.status] : 0);
         }, 0);
         
         const maxPossibleCapacity = groupMembers.filter(m => m.status !== 'away').length * 100;
@@ -304,9 +336,10 @@ export default function WorkloadSummary({
           ? Math.min((totalCapacity / maxPossibleCapacity) * 100, 100) 
           : 0;
         
+        // Use consistent color mapping
         const roleColor = groupName === 'Senior / Managing' 
-          ? roleColors['Senior Associate'] 
-          : roleColors[groupName.split(' /')[0] as keyof typeof roleColors] || '#E5DEFF';
+          ? getRoleColor('Senior Associate')
+          : getRoleColor(groupName.split(' /')[0]);
         
         const darkerRoleColor = roleColor.replace(
           /^#([a-f0-9]{2})([a-f0-9]{2})([a-f0-9]{2})$/i,
@@ -319,9 +352,10 @@ export default function WorkloadSummary({
           }
         );
 
+        // Use consistent icon mapping
         const roleIcon = groupName === 'Senior / Managing'
-          ? roleIcons['Senior Associate']
-          : roleIcons[groupName.split(' /')[0] as keyof typeof roleIcons];
+          ? getRoleIcon('Senior Associate')
+          : getRoleIcon(groupName.split(' /')[0]);
 
         return {
           role: groupName,
@@ -340,7 +374,7 @@ export default function WorkloadSummary({
     const active = members.filter(m => m.status !== "away");
     const available = members.filter(m => m.status === "available" || m.status === "someAvailability");
     const usedCapacity = active.reduce((acc, member) => {
-      return acc + statusWeights[member.status];
+      return acc + STATUS_WEIGHTS[member.status];
     }, 0);
 
     const maxPossibleCapacity = active.length * 100;
@@ -374,7 +408,7 @@ export default function WorkloadSummary({
               transition: { duration: 1.2, ease: "easeInOut", delay: 0.3 }
             }}
             style={{
-              background: `linear-gradient(to right, ${statusColors.available}, ${statusColors.seriouslyBusy})`,
+              background: `linear-gradient(to right, ${STATUS_COLORS.available}, ${STATUS_COLORS.seriouslyBusy})`,
             }}
           />
         </motion.div>

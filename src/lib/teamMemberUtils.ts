@@ -97,6 +97,7 @@ export const addTeamMember = async (teamMember: Omit<TeamMember, 'id'>): Promise
 export const updateTeamMember = async (id: string, updates: Partial<TeamMember>): Promise<TeamMember> => {
   console.info(`Updating team member with ID: ${id}`, updates);
   
+  // Map updates to database format
   const dbUpdates: any = {};
   
   if ('name' in updates) dbUpdates.name = updates.name;
@@ -106,8 +107,6 @@ export const updateTeamMember = async (id: string, updates: Partial<TeamMember>)
   if ('role' in updates) dbUpdates.role = updates.role;
   if ('customization' in updates) dbUpdates.customization = updates.customization;
   if ('user_id' in updates) dbUpdates.user_id = updates.user_id;
-
-  // Note: We don't need to set last_updated as there's a trigger in the database
   
   try {
     const { data, error } = await supabase
@@ -128,9 +127,6 @@ export const updateTeamMember = async (id: string, updates: Partial<TeamMember>)
     return mapDbToTeamMember(data);
   } catch (error: any) {
     console.error('Exception in updateTeamMember:', error?.message || error);
-    if (error?.code === 'PGRST116') {
-      console.error('This appears to be a Row Level Security error. Checking authentication...');
-    }
     throw error;
   }
 };
@@ -152,30 +148,16 @@ export const deleteTeamMember = async (id: string): Promise<void> => {
   console.log(`Successfully deleted team member with ID: ${id}`);
 };
 
-// Check if current user can edit a team member
+// Simplified permission check - admins can edit any team member, users can only edit their own
 export const canEditTeamMember = (
   teamMember: TeamMember, 
   currentUserId: string | undefined, 
   isAdmin: boolean
 ): boolean => {
-  if (!currentUserId) {
-    console.log("No current user ID provided, cannot edit");
-    return false;
-  }
+  if (!currentUserId) return false;
   
-  // Admins can edit any team member
-  if (isAdmin) {
-    console.log(`Admin ${currentUserId} can edit team member ${teamMember.id}`);
-    return true;
-  }
+  if (isAdmin) return true;
   
-  console.log("Checking edit permission:", { 
-    teamMemberUserId: teamMember.user_id, 
-    currentUserId,
-    isMatch: teamMember.user_id === currentUserId
-  });
-  
-  // Non-admins can only edit their own team member
   return teamMember.user_id === currentUserId;
 };
 
@@ -209,7 +191,7 @@ export const getOrCreateTeamMemberForUser = async (userId: string, email: string
   const formattedName = formatNameFromEmail(email);
   let position = "Team Member";
   
-  // Set position based on role (can be refined with data from admin panel)
+  // Set position based on role - be consistent
   if (role === 'admin') {
     position = "Team Lead";
   } else if (role === 'premium') {

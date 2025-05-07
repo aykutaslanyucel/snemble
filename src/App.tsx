@@ -14,30 +14,55 @@ import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
 
-// Move these components inside the AuthProvider in the main render function
-// so they can access the useAuth hook safely
-function ProtectedRoute({ children }: { children: React.ReactNode }) {
-  const { user, loading } = useAuth();
-  
-  if (loading) return null;
-  
-  if (!user) {
-    return <Navigate to="/login" />;
-  }
-
-  return <>{children}</>;
-}
-
-function AdminRoute({ children }: { children: React.ReactNode }) {
+// Define route protection components inside the App component so they can use useAuth
+function AppRoutes() {
   const { user, isAdmin, loading } = useAuth();
-  
-  if (loading) return null;
-  
-  if (!user || !isAdmin) {
-    return <Navigate to="/" />;
+
+  // Helper component for protected routes requiring authentication
+  function ProtectedRoute({ children }: { children: React.ReactNode }) {
+    if (loading) return null;
+    
+    if (!user) {
+      return <Navigate to="/login" />;
+    }
+
+    return <>{children}</>;
   }
 
-  return <>{children}</>;
+  // Helper component for admin-only routes
+  function AdminRoute({ children }: { children: React.ReactNode }) {
+    if (loading) return null;
+    
+    if (!user || !isAdmin) {
+      return <Navigate to="/" />;
+    }
+
+    return <>{children}</>;
+  }
+
+  return (
+    <Routes>
+      <Route path="/login" element={<Login />} />
+      <Route path="/signup" element={<Signup />} />
+      <Route
+        path="/"
+        element={
+          <ProtectedRoute>
+            <Index />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/admin"
+        element={
+          <AdminRoute>
+            <Admin />
+          </AdminRoute>
+        }
+      />
+      <Route path="*" element={<NotFound />} />
+    </Routes>
+  );
 }
 
 const App = () => (
@@ -48,27 +73,7 @@ const App = () => (
           <Toaster />
           <Sonner />
           <BrowserRouter>
-            <Routes>
-              <Route path="/login" element={<Login />} />
-              <Route path="/signup" element={<Signup />} />
-              <Route
-                path="/"
-                element={
-                  <ProtectedRoute>
-                    <Index />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/admin"
-                element={
-                  <AdminRoute>
-                    <Admin />
-                  </AdminRoute>
-                }
-              />
-              <Route path="*" element={<NotFound />} />
-            </Routes>
+            <AppRoutes />
           </BrowserRouter>
         </TooltipProvider>
       </AuthProvider>

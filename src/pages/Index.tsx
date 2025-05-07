@@ -1,3 +1,4 @@
+
 import { useState, useMemo, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
@@ -62,6 +63,7 @@ export default function Index() {
     };
   }, [user, isAdmin, toast]);
 
+  // Active projects calculation
   const activeProjects = useMemo(() => {
     const projectSet = new Set<string>();
     members.forEach(member => {
@@ -70,6 +72,7 @@ export default function Index() {
     return Array.from(projectSet);
   }, [members]);
 
+  // Project-member mapping calculation
   const projectsWithMembers = useMemo(() => {
     const projectMap = new Map<string, TeamMember[]>();
     
@@ -83,6 +86,7 @@ export default function Index() {
     return projectMap;
   }, [activeProjects, members]);
 
+  // Available members calculation
   const availableMembers = useMemo(() => {
     return members.filter(member => member.status === 'available' || member.status === 'someAvailability');
   }, [members]);
@@ -117,70 +121,57 @@ export default function Index() {
 
   const handleUpdateMember = async (id: string, field: string, value: any) => {
     try {
+      // Find the member to update
       const memberToUpdate = members.find(m => m.id === id);
       
       if (!memberToUpdate) {
         throw new Error("Member not found");
       }
       
-      // Log detailed permission info for debugging
-      console.info(`Attempting to update member ${memberToUpdate.name}:`, { 
-        memberId: id,
+      // Debug information - detailed permission logging
+      console.info(`Attempting to update member ${memberToUpdate.name} (${id}):`, { 
+        field,
+        value,
         memberUserId: memberToUpdate.user_id, 
         currentUserId: user?.id,
         isAdmin,
-        canEdit: canEditTeamMember(memberToUpdate, user?.id, isAdmin),
         user
       });
       
-      // Admin check is done first for clarity
-      if (isAdmin) {
-        console.info(`Admin ${user?.id} updating team member ${id}`);
-        const updates: { [key: string]: any } = {};
-        
-        if (field === 'projects' && typeof value === 'string') {
-          updates.projects = value.split(/[;,]/).map(p => p.trim()).filter(p => p.length > 0);
-        } else {
-          updates[field] = value;
-        }
-        
-        await updateTeamMember(id, updates);
-        
-        sonnerToast.success(`Successfully updated ${memberToUpdate.name}`, {
-          description: `The ${field} was updated successfully.`
-        });
-        
-        return;
-      } 
+      // Enhanced permission check: admin check first, then if it's the user's own profile
+      const hasPermission = isAdmin || (user && memberToUpdate.user_id === user.id);
       
-      // Non-admin users can only edit their own profile
-      if (memberToUpdate.user_id === user?.id) {
-        console.info(`User ${user?.id} updating their own team member ${id}`);
-        const updates: { [key: string]: any } = {};
-        
-        if (field === 'projects' && typeof value === 'string') {
-          updates.projects = value.split(/[;,]/).map(p => p.trim()).filter(p => p.length > 0);
-        } else {
-          updates[field] = value;
-        }
-        
-        await updateTeamMember(id, updates);
-        
-        sonnerToast.success(`Your profile was updated`, {
-          description: `The ${field} was updated successfully.`
+      // If no permission, reject the update
+      if (!hasPermission) {
+        console.error(`Permission denied: User ${user?.id} cannot edit member ${id}`);
+        toast({
+          title: "Permission denied",
+          description: "You can only update your own profile unless you're an admin.",
+          variant: "destructive",
         });
-        
         return;
       }
       
-      // If we get here, the user doesn't have permission
-      console.error("Permission denied for user", user?.id, "to edit member", id);
-      toast({
-        title: "Permission denied",
-        description: "You can only update your own profile unless you're an admin.",
-        variant: "destructive",
-      });
+      // Prepare the updates object
+      const updates: { [key: string]: any } = {};
       
+      // Special handling for projects field - convert comma/semicolon separated string to array
+      if (field === 'projects' && typeof value === 'string') {
+        updates.projects = value.split(/[;,]/).map(p => p.trim()).filter(p => p.length > 0);
+      } else {
+        updates[field] = value;
+      }
+      
+      console.info(`Updating ${field} for member ${memberToUpdate.name} (${id})`, updates);
+      
+      // Perform the update
+      await updateTeamMember(id, updates);
+      
+      // Show success message
+      sonnerToast.success(
+        isAdmin ? `Successfully updated ${memberToUpdate.name}` : "Your profile was updated", 
+        { description: `The ${field} was updated successfully.` }
+      );
     } catch (error: any) {
       console.error("Update team member error:", error);
       toast({
@@ -199,8 +190,10 @@ export default function Index() {
         throw new Error("Member not found");
       }
       
-      // Check if user has permission to delete this member
-      if (!canEditTeamMember(memberToDelete, user?.id, isAdmin)) {
+      // Enhanced permission check for deletion
+      const hasPermission = isAdmin || (user && memberToDelete.user_id === user.id);
+      
+      if (!hasPermission) {
         toast({
           title: "Permission denied",
           description: "You can only delete your own profile unless you're an admin.",
