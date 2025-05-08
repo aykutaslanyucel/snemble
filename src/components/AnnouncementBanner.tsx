@@ -60,35 +60,17 @@ export function AnnouncementBanner({ announcements, onDelete }: AnnouncementBann
     );
   };
   
-  // Animation variants based on theme
-  const getAnimationProps = () => {
+  // Get animation class based on theme style
+  const getAnimationClass = () => {
     switch(theme.animationStyle) {
       case "fade":
-        return {
-          initial: { opacity: 0 },
-          animate: { opacity: 1 },
-          transition: { duration: 1 }
-        };
+        return "animate-fade";
       case "flash":
-        return {
-          animate: { 
-            backgroundColor: ["rgba(255,255,255,0.1)", "rgba(255,255,255,0.2)", "rgba(255,255,255,0.1)"] 
-          },
-          transition: { duration: 2, repeat: Infinity }
-        };
-      case "none":
-        return {};
+        return "animate-flash";
       case "scroll":
+        return "animate-scroll";
       default:
-        return {
-          initial: { x: "100%" },
-          animate: { x: "-100%" },
-          transition: {
-            duration: 20,
-            repeat: Infinity,
-            ease: "linear",
-          }
-        };
+        return "";
     }
   };
 
@@ -99,10 +81,7 @@ export function AnnouncementBanner({ announcements, onDelete }: AnnouncementBann
       onMouseLeave={() => setIsPaused(false)}
     >
       <div className="container py-3 px-4 overflow-hidden">
-        <motion.div 
-          className={`flex items-center justify-between ${theme.textColor}`}
-          {...getAnimationProps()}
-        >
+        <div className={`flex items-center justify-between ${theme.textColor} ${getAnimationClass()}`}>
           <div className="flex items-center space-x-8 whitespace-nowrap">
             {currentAnnouncement.htmlContent ? (
               <div 
@@ -113,10 +92,10 @@ export function AnnouncementBanner({ announcements, onDelete }: AnnouncementBann
               <p className="text-sm font-medium">{currentAnnouncement.message}</p>
             )}
             <span className="text-xs text-muted-foreground">
-              {currentAnnouncement.timestamp.toLocaleDateString()}
+              {new Date(currentAnnouncement.timestamp).toLocaleDateString()}
             </span>
           </div>
-        </motion.div>
+        </div>
         
         {sortedAnnouncements.length > 1 && (
           <div className="absolute right-4 top-1/2 transform -translate-y-1/2 flex space-x-1">

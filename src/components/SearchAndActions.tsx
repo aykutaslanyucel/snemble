@@ -31,8 +31,8 @@ export function SearchAndActions({
   members
 }: SearchAndActionsProps) {
   return (
-    <Card className="p-6">
-      <div className="flex items-center justify-between gap-4 flex-wrap">
+    <Card className="p-4">
+      <div className="flex items-center justify-between gap-3 flex-wrap">
         <SearchBar 
           searchQuery={searchQuery}
           onSearchChange={onSearchChange}

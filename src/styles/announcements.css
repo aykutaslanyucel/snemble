@@ -42,6 +42,32 @@
   animation: flash 2s infinite;
 }
 
+@keyframes fade {
+  0% {
+    opacity: 0;
+  }
+  100% {
+    opacity: 1;
+  }
+}
+
+.animate-fade {
+  animation: fade 1s ease-in-out;
+}
+
+@keyframes scroll {
+  0% {
+    transform: translateX(0);
+  }
+  100% {
+    transform: translateX(-100%);
+  }
+}
+
+.animate-scroll {
+  animation: scroll 15s linear infinite;
+}
+
 /* Ensure framer motion animations work properly */
 .motion-container {
   overflow: hidden;

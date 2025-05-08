@@ -20,6 +20,8 @@ import {
   getOrCreateTeamMemberForUser 
 } from "@/lib/teamMemberUtils";
 import { toast as sonnerToast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
+import { v4 as uuidv4 } from 'uuid';
 
 export default function Index() {
   const [members, setMembers] = useState<TeamMember[]>([]);
@@ -62,6 +64,61 @@ export default function Index() {
       unsubscribe();
     };
   }, [user, isAdmin, toast]);
+
+  // Fetch announcements from Supabase
+  useEffect(() => {
+    const fetchAnnouncements = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('announcements')
+          .select('*')
+          .order('priority', { ascending: false });
+          
+        if (error) throw error;
+        
+        if (data) {
+          // Transform the data to match our Announcement type
+          const formattedAnnouncements: Announcement[] = data.map(item => ({
+            id: item.id,
+            message: item.message || '',
+            htmlContent: item.html_content,
+            timestamp: new Date(item.timestamp),
+            expiresAt: item.expires_at ? new Date(item.expires_at) : undefined,
+            priority: item.priority,
+            theme: item.theme as any,
+            isActive: item.is_active
+          }));
+          
+          setAnnouncements(formattedAnnouncements);
+        }
+      } catch (error) {
+        console.error("Error fetching announcements:", error);
+        toast({
+          title: "Error",
+          description: "Failed to load announcements. Please refresh.",
+          variant: "destructive",
+        });
+      }
+    };
+
+    fetchAnnouncements();
+    
+    // Subscribe to announcement changes
+    const announcementsSubscription = supabase
+      .channel('public:announcements')
+      .on('postgres_changes', 
+        { event: '*', schema: 'public', table: 'announcements' },
+        (payload) => {
+          console.log('Announcement change received:', payload);
+          fetchAnnouncements();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      announcementsSubscription.unsubscribe();
+    };
+  }, [toast]);
 
   // Active projects calculation
   const activeProjects = useMemo(() => {
@@ -257,27 +314,92 @@ export default function Index() {
     }
   };
 
-  const handleAddAnnouncement = (announcement: Announcement) => {
-    setAnnouncements([announcement, ...announcements]);
+  const handleAddAnnouncement = async (announcement: Announcement) => {
+    if (!user) return;
+    
+    try {
+      // Prepare the announcement data for Supabase
+      const { id, message, htmlContent, timestamp, expiresAt, priority, theme, isActive } = announcement;
+      
+      const { error } = await supabase
+        .from('announcements')
+        .insert({
+          id: id || uuidv4(),
+          message,
+          html_content: htmlContent,
+          timestamp: timestamp.toISOString(),
+          expires_at: expiresAt?.toISOString(),
+          priority,
+          theme,
+          is_active: isActive,
+          created_by: user.id
+        });
+        
+      if (error) throw error;
+      
+      // New data will be fetched via subscription
+    } catch (error) {
+      console.error("Error adding announcement:", error);
+      toast({
+        title: "Error",
+        description: "Failed to add announcement.",
+        variant: "destructive",
+      });
+    }
   };
 
-  const handleUpdateAnnouncement = (id: string, data: Partial<Announcement>) => {
-    const updatedAnnouncements = announcements.map(announcement => {
-      if (announcement.id === id) {
-        return { ...announcement, ...data };
-      }
-      return announcement;
-    });
+  const handleUpdateAnnouncement = async (id: string, data: Partial<Announcement>) => {
+    if (!isAdmin) return;
     
-    setAnnouncements(updatedAnnouncements);
+    try {
+      // Convert the data for Supabase
+      const updateData: any = {};
+      
+      if (data.message !== undefined) updateData.message = data.message;
+      if (data.htmlContent !== undefined) updateData.htmlContent = data.htmlContent;
+      if (data.expiresAt !== undefined) updateData.expires_at = data.expiresAt?.toISOString();
+      if (data.priority !== undefined) updateData.priority = data.priority;
+      if (data.theme !== undefined) updateData.theme = data.theme;
+      if (data.isActive !== undefined) updateData.is_active = data.isActive;
+      
+      const { error } = await supabase
+        .from('announcements')
+        .update(updateData)
+        .eq('id', id);
+        
+      if (error) throw error;
+      
+      // New data will be fetched via subscription
+    } catch (error) {
+      console.error("Error updating announcement:", error);
+      toast({
+        title: "Error",
+        description: "Failed to update announcement.",
+        variant: "destructive",
+      });
+    }
   };
 
-  const handleDeleteAnnouncement = (id: string) => {
-    const updatedAnnouncements = announcements.filter(
-      announcement => announcement.id !== id
-    );
+  const handleDeleteAnnouncement = async (id: string) => {
+    if (!isAdmin) return;
     
-    setAnnouncements(updatedAnnouncements);
+    try {
+      const { error } = await supabase
+        .from('announcements')
+        .delete()
+        .eq('id', id);
+        
+      if (error) throw error;
+      
+      // New data will be fetched via subscription
+    } catch (error) {
+      console.error("Error deleting announcement:", error);
+      toast({
+        title: "Error",
+        description: "Failed to delete announcement.",
+        variant: "destructive",
+      });
+    }
   };
 
   const handleLogout = async () => {
@@ -326,7 +448,7 @@ export default function Index() {
         />
       )}
       
-      <div className="container py-12 space-y-10">
+      <div className="container py-8 space-y-6">
         <NavigationHeader 
           isAdmin={isAdmin} 
           members={members} 
@@ -356,7 +478,7 @@ export default function Index() {
 
         <WorkloadDashboard members={members} />
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <ProjectList 
             activeProjects={activeProjects}
             projectsWithMembers={projectsWithMembers}

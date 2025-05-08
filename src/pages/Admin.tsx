@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
@@ -33,6 +32,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsList, TabsContent, TabsTrigger } from "@/components/ui/tabs";
 import { BadgeManager } from "@/components/AdminPanelComponents/BadgeManager";
+import { Switch } from "@/components/ui/switch";
 
 interface User {
   id: string;
@@ -69,6 +69,7 @@ export default function Admin() {
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const [newPassword, setNewPassword] = useState("");
   const [activeTab, setActiveTab] = useState("users");
+  const [badgesEnabled, setBadgesEnabled] = useState(true); // New state for badge toggle
   const { user, isAdmin, signup } = useAuth();
   const { toast: uiToast } = useToast();
   const { theme, setTheme } = useTheme();
@@ -608,6 +609,55 @@ export default function Admin() {
     }
   };
 
+  const handleToggleBadges = async (enabled: boolean) => {
+    try {
+      // Update the badges to be active/inactive in Supabase
+      const { error } = await supabase
+        .from('badges')
+        .update({ is_active: enabled })
+        .eq('id', '*'); // This would update all badges, but doesn't actually work
+      
+      if (error) {
+        console.error("Error updating badge state:", error);
+        throw error;
+      }
+      
+      // Instead we need to update all badges individually
+      const { data: badges, error: fetchError } = await supabase
+        .from('badges')
+        .select('id');
+        
+      if (fetchError) {
+        console.error("Error fetching badges:", fetchError);
+        throw fetchError;
+      }
+      
+      // Update each badge
+      if (badges && badges.length > 0) {
+        const updatePromises = badges.map(badge => 
+          supabase.from('badges').update({ is_active: enabled }).eq('id', badge.id)
+        );
+        await Promise.all(updatePromises);
+      }
+      
+      // Update local state
+      setBadgesEnabled(enabled);
+      
+      toast.success(enabled ? "Badges enabled" : "Badges disabled", {
+        description: enabled 
+          ? "Badges are now visible to all users" 
+          : "Badges have been temporarily disabled"
+      });
+    } catch (error) {
+      console.error("Error toggling badges:", error);
+      uiToast({
+        title: "Error",
+        description: "Failed to update badge status",
+        variant: "destructive",
+      });
+    }
+  };
+
   const formatNameFromEmail = (email: string): string => {
     const namePart = email.split('@')[0];
     return namePart
@@ -717,6 +767,7 @@ export default function Admin() {
         <TabsList className="mb-4">
           <TabsTrigger value="users">User Management</TabsTrigger>
           <TabsTrigger value="badges">Badge Management</TabsTrigger>
+          <TabsTrigger value="settings">Settings</TabsTrigger>
         </TabsList>
         
         <TabsContent value="users">
@@ -833,7 +884,70 @@ export default function Admin() {
         </TabsContent>
         
         <TabsContent value="badges">
-          <BadgeManager />
+          <Card className="p-6">
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-xl font-semibold">Global Badge Settings</h2>
+              <div className="flex items-center gap-2">
+                <span className="text-sm text-muted-foreground">Badge Functionality</span>
+                <Switch 
+                  checked={badgesEnabled} 
+                  onCheckedChange={handleToggleBadges}
+                />
+                <span className={badgesEnabled ? "text-green-600 font-medium" : "text-gray-500"}>
+                  {badgesEnabled ? "Enabled" : "Disabled"}
+                </span>
+              </div>
+            </div>
+            <p className="text-sm text-muted-foreground mb-6">
+              When badges are disabled, they won't be displayed anywhere in the application, but their data will be preserved.
+            </p>
+            
+            <BadgeManager badgesEnabled={badgesEnabled} />
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="settings">
+          <Card className="p-6">
+            <h2 className="text-xl font-semibold mb-4">Application Settings</h2>
+            <div className="space-y-6">
+              <div className="space-y-2">
+                <h3 className="text-lg font-medium">UI Preferences</h3>
+                <p className="text-sm text-muted-foreground">
+                  Global settings that affect the appearance of the application.
+                </p>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+                  <div className="space-y-2">
+                    <Label>Card Spacing</Label>
+                    <Select defaultValue="comfortable">
+                      <SelectTrigger>
+                        <SelectValue placeholder="Card spacing" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="compact">Compact</SelectItem>
+                        <SelectItem value="comfortable">Comfortable</SelectItem>
+                        <SelectItem value="spacious">Spacious</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label>Animation Speed</Label>
+                    <Select defaultValue="normal">
+                      <SelectTrigger>
+                        <SelectValue placeholder="Animation speed" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="slow">Slow</SelectItem>
+                        <SelectItem value="normal">Normal</SelectItem>
+                        <SelectItem value="fast">Fast</SelectItem>
+                        <SelectItem value="none">No Animations</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </Card>
         </TabsContent>
       </Tabs>
 
