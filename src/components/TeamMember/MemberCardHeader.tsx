@@ -1,23 +1,33 @@
 
-import React from "react";
 import { CardHeader, CardTitle } from "@/components/ui/card";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { 
+  MoreVertical, Edit, Trash2, Briefcase, Palette, CalendarDays
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { MoreVertical, Edit, Trash2, Briefcase, Palette } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Badge } from "@/components/ui/badge";
 
 interface MemberCardHeaderProps {
   name: string;
   isEditingName: boolean;
-  setIsEditingName: (isEditing: boolean) => void;
+  setIsEditingName: (editing: boolean) => void;
   nameValue: string;
   setNameValue: (name: string) => void;
   handleNameChange: () => void;
   canEdit: boolean;
   isPremium: boolean;
-  onEditProjects: () => void;
   onCustomize: () => void;
+  onEditProjects: () => void;
   onDelete: () => void;
+  onVacation: () => void;
+  isOnVacation?: boolean;
 }
 
 export function MemberCardHeader({
@@ -29,18 +39,21 @@ export function MemberCardHeader({
   handleNameChange,
   canEdit,
   isPremium,
-  onEditProjects,
   onCustomize,
-  onDelete
+  onEditProjects,
+  onDelete,
+  onVacation,
+  isOnVacation = false,
 }: MemberCardHeaderProps) {
   return (
-    <CardHeader className="p-4 flex-row items-start justify-between space-y-0">
-      <div className="mr-2">
-        <CardTitle className="text-gray-800 dark:text-gray-200 text-xl font-semibold mb-0.5">
+    <CardHeader className="p-6 pb-2">
+      <div className="flex items-start justify-between">
+        <div>
           {isEditingName ? (
-            <div className="flex items-center gap-1">
-              <Input
-                className="border-gray-300 bg-white/80 text-gray-800 text-sm p-1 h-8 rounded-md"
+            <div className="flex items-center">
+              <input
+                type="text"
+                className="bg-white/90 rounded-xl border border-gray-100 px-3 py-2 text-lg font-medium"
                 value={nameValue}
                 onChange={(e) => setNameValue(e.target.value)}
                 onBlur={handleNameChange}
@@ -49,67 +62,64 @@ export function MemberCardHeader({
               />
             </div>
           ) : (
-            <span 
-              onClick={() => canEdit && setIsEditingName(true)} 
-              className={`${canEdit ? 'cursor-pointer hover:underline' : ''}`}
+            <CardTitle
+              onClick={() => canEdit && setIsEditingName(true)}
+              className={canEdit ? "cursor-pointer hover:text-primary" : ""}
             >
               {name}
-            </span>
+            </CardTitle>
           )}
-        </CardTitle>
-      </div>
-      
-      {canEdit && (
-        <Popover>
-          <PopoverTrigger asChild>
-            <Button variant="ghost" size="sm" className="h-8 w-8 p-0 rounded-full bg-white/70 hover:bg-white/90 shadow-sm">
-              <MoreVertical className="h-4 w-4 text-gray-700 dark:text-gray-300" />
-            </Button>
-          </PopoverTrigger>
-          <PopoverContent className="w-56" align="end">
-            <div className="grid gap-1">
-              <Button
-                variant="ghost"
-                size="sm"
-                className="justify-start"
-                onClick={() => setIsEditingName(true)}
-              >
-                <Edit className="mr-2 h-4 w-4" />
-                Edit Name
-              </Button>
-              <Button
-                variant="ghost"
-                size="sm"
-                className="justify-start"
-                onClick={onEditProjects}
-              >
-                <Briefcase className="mr-2 h-4 w-4" />
-                Edit Projects
-              </Button>
-              {isPremium && (
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="justify-start"
-                  onClick={onCustomize}
-                >
-                  <Palette className="mr-2 h-4 w-4" />
-                  Customize Card
+        </div>
+
+        <div className="flex gap-2">
+          {isOnVacation && (
+            <Badge variant="outline" className="bg-orange-100 text-orange-800 border-orange-300">
+              On Vacation
+            </Badge>
+          )}
+          
+          {canEdit && (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="icon" className="ml-auto">
+                  <MoreVertical className="h-4 w-4" />
+                  <span className="sr-only">Open menu</span>
                 </Button>
-              )}
-              <Button
-                variant="ghost"
-                size="sm"
-                className="justify-start text-red-500 hover:text-red-600 hover:bg-red-50"
-                onClick={onDelete}
-              >
-                <Trash2 className="mr-2 h-4 w-4" />
-                Delete
-              </Button>
-            </div>
-          </PopoverContent>
-        </Popover>
-      )}
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={() => setIsEditingName(true)}>
+                  <Edit className="mr-2 h-4 w-4" />
+                  <span>Edit Name</span>
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={onEditProjects}>
+                  <Briefcase className="mr-2 h-4 w-4" />
+                  <span>Edit Projects</span>
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={onVacation}>
+                  <CalendarDays className="mr-2 h-4 w-4" />
+                  <span>Set Vacation</span>
+                </DropdownMenuItem>
+                {isPremium && (
+                  <DropdownMenuItem onClick={onCustomize}>
+                    <Palette className="mr-2 h-4 w-4" />
+                    <span>Customize Card</span>
+                  </DropdownMenuItem>
+                )}
+                <DropdownMenuSeparator />
+                <DropdownMenuItem 
+                  onClick={onDelete}
+                  className="text-red-600 focus:text-red-600"
+                >
+                  <Trash2 className="mr-2 h-4 w-4" />
+                  <span>Delete</span>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          )}
+        </div>
+      </div>
     </CardHeader>
   );
 }

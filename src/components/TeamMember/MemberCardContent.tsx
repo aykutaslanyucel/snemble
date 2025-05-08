@@ -3,7 +3,7 @@ import React from "react";
 import { CardContent } from "@/components/ui/card";
 import { StatusSelector } from "./StatusSelector";
 import { TeamMember, TeamMemberStatus } from "@/types/TeamMemberTypes";
-import { Plus, Check, User, Clock, X, Coffee } from "lucide-react";
+import { Plus, Check, User, Clock, X, Coffee, Calendar } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { getCardBackground, getStatusText } from "./CardBackground";
@@ -16,6 +16,11 @@ interface MemberCardContentProps {
   currentStatus: TeamMemberStatus;
   onEditProjects?: () => void;
   lastUpdated: Date;
+  vacationStatus?: {
+    isOnVacation: boolean;
+    startDate: Date | null;
+    endDate: Date | null;
+  };
 }
 
 export function MemberCardContent({
@@ -25,7 +30,8 @@ export function MemberCardContent({
   onStatusChange,
   currentStatus,
   onEditProjects,
-  lastUpdated
+  lastUpdated,
+  vacationStatus
 }: MemberCardContentProps) {
   // Time since last update
   const getTimeAgo = () => {
@@ -56,10 +62,15 @@ export function MemberCardContent({
         return <X className="h-3.5 w-3.5 text-gray-700" />;
       case "away":
         return <Coffee className="h-3.5 w-3.5 text-gray-700" />;
+      case "vacation":
+        return <Calendar className="h-3.5 w-3.5 text-gray-700" />;
       default:
         return null;
     }
   };
+
+  // Format the position - ensure it's not "Junior Associate"
+  const formattedPosition = position === "Junior Associate" ? "Associate" : position;
 
   // Get color for this status - creating a mock TeamMember object to use the getCardBackground function
   const cardStyle = getCardBackground({ status: currentStatus } as TeamMember);
@@ -68,7 +79,7 @@ export function MemberCardContent({
     <CardContent className="px-6 pt-0 pb-6 space-y-6 relative">
       <div className="mb-2">
         <div className="text-gray-600 dark:text-gray-300 text-md">
-          {position}
+          {formattedPosition}
         </div>
       </div>
       
@@ -137,7 +148,20 @@ export function MemberCardContent({
           </Badge>
         </div>
       )}
-
+      
+      {/* Show vacation details if available */}
+      {vacationStatus?.isOnVacation && vacationStatus.startDate && vacationStatus.endDate && (
+        <div className="space-y-2">
+          <h4 className="text-gray-700 font-medium flex items-center gap-1">
+            <Calendar className="h-4 w-4 text-orange-600" />
+            Vacation
+          </h4>
+          <p className="text-sm text-gray-600">
+            {vacationStatus.startDate.toLocaleDateString()} - {vacationStatus.endDate.toLocaleDateString()}
+          </p>
+        </div>
+      )}
+      
       <div className="absolute bottom-4 right-6">
         <span className="text-xs text-gray-400">{getTimeAgo()}</span>
       </div>

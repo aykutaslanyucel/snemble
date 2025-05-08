@@ -2,8 +2,9 @@
 import { motion } from "framer-motion";
 import { Announcement } from "@/types/TeamMemberTypes";
 import { useEffect, useState } from "react";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { ChevronLeft, ChevronRight, X } from "lucide-react";
 import { Button } from "./ui/button";
+import "../styles/announcements.css";
 
 interface AnnouncementBannerProps {
   announcements: Announcement[];
@@ -75,14 +76,16 @@ export function AnnouncementBanner({ announcements, onDelete }: AnnouncementBann
   };
 
   return (
-    <div 
+    <motion.div 
+      initial={{ opacity: 0, height: 0 }}
+      animate={{ opacity: 1, height: "auto" }}
       className={`bg-gradient-to-r ${theme.backgroundColor} backdrop-blur-sm border-b ${theme.borderColor} relative`}
       onMouseEnter={() => setIsPaused(true)}
       onMouseLeave={() => setIsPaused(false)}
     >
       <div className="container py-3 px-4 overflow-hidden">
         <div className={`flex items-center justify-between ${theme.textColor} ${getAnimationClass()}`}>
-          <div className="flex items-center space-x-8 whitespace-nowrap">
+          <div className="flex-1 overflow-auto">
             {currentAnnouncement.htmlContent ? (
               <div 
                 dangerouslySetInnerHTML={{ __html: currentAnnouncement.htmlContent }} 
@@ -91,7 +94,7 @@ export function AnnouncementBanner({ announcements, onDelete }: AnnouncementBann
             ) : (
               <p className="text-sm font-medium">{currentAnnouncement.message}</p>
             )}
-            <span className="text-xs text-muted-foreground">
+            <span className="text-xs text-muted-foreground block mt-1">
               {new Date(currentAnnouncement.timestamp).toLocaleDateString()}
             </span>
           </div>
@@ -124,16 +127,14 @@ export function AnnouncementBanner({ announcements, onDelete }: AnnouncementBann
           <Button 
             variant="ghost" 
             size="icon" 
-            className="h-6 w-6 rounded-full absolute right-2 top-1/2 transform -translate-y-1/2"
+            className="absolute right-1 top-1 h-6 w-6 rounded-full hover:bg-background/20"
             onClick={() => onDelete(currentAnnouncement.id)}
           >
+            <X className="h-3 w-3" />
             <span className="sr-only">Delete</span>
-            <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M18 6L6 18M6 6l12 12" />
-            </svg>
           </Button>
         )}
       </div>
-    </div>
+    </motion.div>
   );
 }

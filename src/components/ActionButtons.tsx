@@ -1,25 +1,33 @@
 
-import { UserPlus, Settings, FileDown } from "lucide-react";
+import React, { useCallback, useState } from 'react';
 import { Button } from "@/components/ui/button";
-import { Announcement, TeamMember } from "@/types/TeamMemberTypes";
+import { Plus, MessageSquarePlus } from "lucide-react";
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { useAuth } from "@/contexts/AuthContext";
-import { AnnouncementManager } from "./AnnouncementManager";
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Announcement } from "@/types/TeamMemberTypes";
+import { RichTextEditor } from './RichTextEditor';
 
 interface ActionButtonsProps {
   onAddMember: () => void;
   announcements: Announcement[];
   newAnnouncement: string;
   onAnnouncementChange: (value: string) => void;
-  onAddAnnouncement: (announcement: Announcement) => void;
+  onAddAnnouncement: () => void;
   onUpdateAnnouncement?: (id: string, data: Partial<Announcement>) => void;
   onDeleteAnnouncement?: (id: string) => void;
-  members?: TeamMember[];
+  members?: any[];
+  htmlContent?: string;
+  onHtmlContentChange?: (html: string) => void;
 }
 
 export function ActionButtons({
@@ -28,44 +36,72 @@ export function ActionButtons({
   newAnnouncement,
   onAnnouncementChange,
   onAddAnnouncement,
-  onUpdateAnnouncement = () => {},
-  onDeleteAnnouncement = () => {},
-  members = [],
+  onUpdateAnnouncement,
+  onDeleteAnnouncement,
+  members,
+  htmlContent = "",
+  onHtmlContentChange = () => {}
 }: ActionButtonsProps) {
-  const { isAdmin } = useAuth();
+  const [announcementDialogOpen, setAnnouncementDialogOpen] = useState(false);
+  
+  const handleSubmit = useCallback(() => {
+    onAddAnnouncement();
+    setAnnouncementDialogOpen(false);
+  }, [onAddAnnouncement]);
 
   return (
-    <div className="flex gap-2">
-      {isAdmin && (
-        <>
-          <AnnouncementManager 
-            announcements={announcements}
-            onAddAnnouncement={onAddAnnouncement}
-            onUpdateAnnouncement={onUpdateAnnouncement}
-            onDeleteAnnouncement={onDeleteAnnouncement}
-          />
-          <Button variant="outline" onClick={onAddMember} className="bg-white/5">
-            <UserPlus className="h-4 w-4 mr-2" />
-            Add Member
+    <div className="flex space-x-2">
+      <Button onClick={onAddMember} variant="default" className="gap-1">
+        <Plus className="h-4 w-4" />
+        <span className="hidden md:inline">Add Member</span>
+      </Button>
+      
+      <Dialog open={announcementDialogOpen} onOpenChange={setAnnouncementDialogOpen}>
+        <DialogTrigger asChild>
+          <Button variant="outline" className="gap-1">
+            <MessageSquarePlus className="h-4 w-4" />
+            <span className="hidden md:inline">Add Announcement</span>
           </Button>
-        </>
-      )}
-      <DropdownMenu>
-        <DropdownMenuTrigger asChild>
-          <Button variant="outline" className="bg-white/5">
-            <Settings className="h-4 w-4" />
-          </Button>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent align="end">
-          <DropdownMenuItem 
-            className="cursor-pointer"
-            onClick={() => window.dispatchEvent(new CustomEvent("export-capacity-report"))}
-          >
-            <FileDown className="h-4 w-4 mr-2" />
-            Export Capacity Report
-          </DropdownMenuItem>
-        </DropdownMenuContent>
-      </DropdownMenu>
+        </DialogTrigger>
+        <DialogContent className="sm:max-w-[525px]">
+          <DialogHeader>
+            <DialogTitle>Create Announcement</DialogTitle>
+            <DialogDescription>
+              Create a new announcement to display at the top of the page.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="announcement">Message (plain text)</Label>
+              <Textarea
+                id="announcement"
+                value={newAnnouncement}
+                onChange={(e) => onAnnouncementChange(e.target.value)}
+                placeholder="Enter announcement text here..."
+                className="resize-none"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="rich-text">Rich Text Content (optional)</Label>
+              <div className="border rounded-md">
+                <RichTextEditor 
+                  value={htmlContent}
+                  onChange={onHtmlContentChange}
+                />
+              </div>
+              <p className="text-xs text-muted-foreground">
+                You can add formatting, links, and colors to make your announcement stand out.
+              </p>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setAnnouncementDialogOpen(false)}>
+              Cancel
+            </Button>
+            <Button onClick={handleSubmit}>Post Announcement</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

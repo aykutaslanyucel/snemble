@@ -1,105 +1,60 @@
 
-/* Existing base styles and animations */
-@keyframes gradient-shift {
-  0% {
-    background-position: 0% 50%;
-  }
-  50% {
-    background-position: 100% 50%;
-  }
-  100% {
-    background-position: 0% 50%;
-  }
+/* Gradient Animation Keyframes */
+@keyframes gradient-gentle {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
 }
 
-.animate-gradient {
-  background-size: 200% 200% !important;
-  animation: gradient-shift 5s ease infinite;
+@keyframes gradient-smooth {
+  0% { background-position: 0% 0%; }
+  25% { background-position: 100% 0%; }
+  50% { background-position: 100% 100%; }
+  75% { background-position: 0% 100%; }
+  100% { background-position: 0% 0%; }
 }
 
-/* Added: Additional gradient animations with different speeds and styles */
-@keyframes gentle-gradient-shift {
-  0% {
-    background-position: 0% 50%;
-  }
-  50% {
-    background-position: 100% 50%;
-  }
-  100% {
-    background-position: 0% 50%;
-  }
+@keyframes gradient-energetic {
+  0% { background-position: 0% 50%; }
+  25% { background-position: 100% 75%; }
+  50% { background-position: 100% 50%; }
+  75% { background-position: 0% 25%; }
+  100% { background-position: 0% 50%; }
 }
 
-@keyframes smooth-gradient-shift {
-  0% {
-    background-position: 0% 0%;
-  }
-  25% {
-    background-position: 50% 25%;
-  }
-  50% {
-    background-position: 100% 50%;
-  }
-  75% {
-    background-position: 50% 75%;
-  }
-  100% {
-    background-position: 0% 0%;
-  }
+@keyframes gradient-dramatic {
+  0% { background-position: 0% 0%; }
+  33% { background-position: 100% 0%; }
+  67% { background-position: 0% 100%; }
+  100% { background-position: 0% 0%; }
 }
 
-@keyframes energetic-gradient-shift {
-  0% {
-    background-position: 0% 50%;
-  }
-  25% {
-    background-position: 100% 50%;
-  }
-  50% {
-    background-position: 0% 50%;
-  }
-  75% {
-    background-position: 100% 50%;
-  }
-  100% {
-    background-position: 0% 50%;
-  }
-}
-
-@keyframes dramatic-gradient-shift {
-  0% {
-    background-position: 0% 0%;
-  }
-  25% {
-    background-position: 100% 0%;
-  }
-  50% {
-    background-position: 100% 100%;
-  }
-  75% {
-    background-position: 0% 100%;
-  }
-  100% {
-    background-position: 0% 0%;
-  }
-}
-
+/* Animation Classes */
 .animate-gradient-gentle {
-  background-size: 200% 200% !important;
-  animation: gentle-gradient-shift 8s ease infinite;
+  background-size: 200% 200%;
+  animation: gradient-gentle 4s ease infinite;
 }
 
 .animate-gradient-smooth {
-  background-size: 300% 300% !important;
-  animation: smooth-gradient-shift 10s ease-in-out infinite;
+  background-size: 250% 250%;
+  animation: gradient-smooth 6s ease infinite;
 }
 
 .animate-gradient-energetic {
-  background-size: 200% 200% !important;
-  animation: energetic-gradient-shift 4s ease infinite;
+  background-size: 300% 300%;
+  animation: gradient-energetic 3s ease infinite;
 }
 
 .animate-gradient-dramatic {
-  background-size: 400% 400% !important;
-  animation: dramatic-gradient-shift 15s cubic-bezier(0.45, 0.05, 0.55, 0.95) infinite;
+  background-size: 300% 300%;
+  animation: gradient-dramatic 5s ease infinite;
+}
+
+/* Badge Animation */
+.badge-element {
+  transition: transform 0.2s ease;
+}
+
+.badge-element:hover {
+  transform: scale(1.1);
 }

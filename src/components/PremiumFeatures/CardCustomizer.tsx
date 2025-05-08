@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { TeamMember, TeamMemberCustomization, GradientAnimationType } from "@/types/TeamMemberTypes";
@@ -13,6 +14,9 @@ import { BadgeSelector } from './BadgeSelector';
 import { supabase } from "@/integrations/supabase/client";
 import { Badge } from "@/types/TeamMemberTypes";
 import "@/styles/animations.css";
+import { BackgroundImageSelector } from './BackgroundImageSelector';
+import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
 
 interface CardCustomizerProps {
   teamMember: TeamMember;
@@ -28,6 +32,7 @@ export function CardCustomizer({ teamMember, onUpdate }: CardCustomizerProps) {
   // State for badges
   const [badges, setBadges] = useState<{ id: string; name: string; imageUrl: string }[]>([]);
   const [loadingBadges, setLoadingBadges] = useState(false);
+  const [imageUrlInput, setImageUrlInput] = useState(customization.backgroundImage || '');
   
   const { toast } = useToast();
 
@@ -65,14 +70,36 @@ export function CardCustomizer({ teamMember, onUpdate }: CardCustomizerProps) {
       }
     };
     
-    fetchBadges();
+    // Check admin settings if badges are enabled
+    const fetchBadgesStatus = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('admin_settings')
+          .select('setting_value')
+          .eq('setting_key', 'badges_enabled')
+          .single();
+          
+        if (!error && data && data.setting_value === 'false') {
+          setBadges([]);
+        } else {
+          fetchBadges();
+        }
+      } catch (error) {
+        console.error("Error checking badge status:", error);
+        fetchBadges(); // Try fetching badges anyway
+      }
+    };
+    
+    fetchBadgesStatus();
   }, []);
 
   // Update preview when customization changes
   useEffect(() => {
     let background = "";
     
-    if (customization.gradient) {
+    if (customization.backgroundImage) {
+      background = `url(${customization.backgroundImage}) center/cover no-repeat`;
+    } else if (customization.gradient) {
       background = customization.gradient;
     } else if (customization.color) {
       background = customization.color;
@@ -89,7 +116,8 @@ export function CardCustomizer({ teamMember, onUpdate }: CardCustomizerProps) {
     const newCustomization = {
       ...customization,
       color,
-      gradient: undefined // Remove gradient if color is selected
+      gradient: undefined,
+      backgroundImage: undefined // Remove background image if color is selected
     };
     
     setCustomization(newCustomization);
@@ -100,7 +128,8 @@ export function CardCustomizer({ teamMember, onUpdate }: CardCustomizerProps) {
     const newCustomization = {
       ...customization,
       gradient,
-      color: undefined // Remove color if gradient is selected
+      color: undefined,
+      backgroundImage: undefined // Remove background image if gradient is selected
     };
     
     setCustomization(newCustomization);
@@ -139,12 +168,32 @@ export function CardCustomizer({ teamMember, onUpdate }: CardCustomizerProps) {
     }
   };
   
-  const handleBadgePositionChange = (position: 'top-left' | 'top-right' | 'bottom-left' | 'bottom-right' | 'center') => {
+  const handleBadgePositionChange = (position: 'top-right' | 'bottom-right') => {
     setCustomization({ ...customization, badgePosition: position });
   };
   
   const handleBadgeSizeChange = (size: 'small' | 'medium' | 'large') => {
     setCustomization({ ...customization, badgeSize: size });
+  };
+
+  const handleSetBackgroundImage = () => {
+    if (!imageUrlInput) {
+      const { backgroundImage, ...restCustomization } = customization;
+      setCustomization(restCustomization);
+      return;
+    }
+    
+    setCustomization({ 
+      ...customization, 
+      backgroundImage: imageUrlInput,
+      color: undefined,
+      gradient: undefined 
+    });
+    
+    toast({
+      title: "Background image set",
+      description: "Your card background has been updated",
+    });
   };
 
   const handleSave = () => {
@@ -157,7 +206,7 @@ export function CardCustomizer({ teamMember, onUpdate }: CardCustomizerProps) {
   };
 
   return (
-    <div className="space-y-4 max-h-[70vh]">
+    <div className="space-y-4 max-h-[70vh] overflow-y-auto">
       {/* Preview */}
       <div className="pb-2 border-b mb-4">
         <CardPreview 
@@ -168,14 +217,16 @@ export function CardCustomizer({ teamMember, onUpdate }: CardCustomizerProps) {
           badge={customization.badge}
           badgePosition={customization.badgePosition}
           badgeSize={customization.badgeSize}
+          backgroundImage={customization.backgroundImage}
         />
       </div>
       
       <Tabs defaultValue="presets" className="w-full">
-        <TabsList className="grid w-full grid-cols-3 mb-2">
+        <TabsList className="grid w-full grid-cols-4 mb-2">
           <TabsTrigger value="presets">Presets</TabsTrigger>
           <TabsTrigger value="advanced">Advanced</TabsTrigger>
           <TabsTrigger value="badges">Badges</TabsTrigger>
+          <TabsTrigger value="background">Background</TabsTrigger>
         </TabsList>
         
         <TabsContent value="presets" className="space-y-4">
@@ -235,6 +286,44 @@ export function CardCustomizer({ teamMember, onUpdate }: CardCustomizerProps) {
             selectedSize={customization.badgeSize}
             isLoading={loadingBadges}
           />
+        </TabsContent>
+        
+        <TabsContent value="background" className="space-y-4">
+          {/* Background Image Selector */}
+          <div className="space-y-4">
+            <h3 className="text-sm font-medium">Background Image URL</h3>
+            <div className="flex gap-2">
+              <Input 
+                type="url"
+                placeholder="https://example.com/image.jpg"
+                value={imageUrlInput}
+                onChange={(e) => setImageUrlInput(e.target.value)}
+              />
+              <Button onClick={handleSetBackgroundImage} type="button">
+                Set
+              </Button>
+            </div>
+            <p className="text-xs text-muted-foreground">
+              Enter the URL of the image you want to use as background
+            </p>
+          </div>
+          
+          {customization.backgroundImage && (
+            <div className="pt-2 flex justify-between items-center">
+              <Label>Current background image:</Label>
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={() => {
+                  const { backgroundImage, ...rest } = customization;
+                  setCustomization(rest);
+                  setImageUrlInput('');
+                }}
+              >
+                Remove Image
+              </Button>
+            </div>
+          )}
         </TabsContent>
       </Tabs>
       

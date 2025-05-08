@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { TeamMember, TeamMemberStatus } from "@/types/TeamMemberTypes";
 import { motion } from "framer-motion";
@@ -8,6 +9,7 @@ import { MemberCardContent } from "./TeamMember/MemberCardContent";
 import { ProjectsDialog } from "@/components/TeamMember/ProjectsDialog";
 import { DeleteConfirmationDialog } from "@/components/TeamMember/DeleteConfirmationDialog";
 import { CustomizerDialog } from "@/components/TeamMember/CustomizerDialog";
+import { VacationDialog } from "@/components/TeamMember/VacationDialog";
 import { getCardBackground } from "./TeamMember/CardBackground";
 import "@/styles/animations.css";
 
@@ -25,6 +27,7 @@ export function MemberCard({ member, onUpdate, onDelete, canEdit }: MemberCardPr
   const [projects, setProjects] = useState(member.projects.join(", "));
   const [isConfirmingDelete, setIsConfirmingDelete] = useState(false);
   const [showCustomizer, setShowCustomizer] = useState(false);
+  const [showVacationDialog, setShowVacationDialog] = useState(false);
   const { isPremium } = useAuth();
   
   // Get custom background or default based on status
@@ -65,16 +68,16 @@ export function MemberCard({ member, onUpdate, onDelete, canEdit }: MemberCardPr
     };
     
     const offsets = getBadgeOffsets();
-    const position = member.customization.badgePosition;
+    
+    // Only allow top-right and bottom-right positions
+    const position = member.customization.badgePosition === 'bottom-right' ? 'bottom-right' : 'top-right';
     
     const positions = {
-      "top-left": { top: offsets.top, left: offsets.left },
       "top-right": { top: offsets.top, right: offsets.right },
-      "bottom-left": { bottom: offsets.bottom, left: offsets.left },
       "bottom-right": { bottom: offsets.bottom, right: offsets.right }
     };
     
-    const positionStyle = positions[position as keyof typeof positions] || positions["top-right"];
+    const positionStyle = positions[position] || positions["top-right"];
     
     return (
       <div 
@@ -124,6 +127,32 @@ export function MemberCard({ member, onUpdate, onDelete, canEdit }: MemberCardPr
     onDelete(member.id!);
     setIsConfirmingDelete(false);
   };
+  
+  const handleVacationUpdate = (startDate: Date | null, endDate: Date | null, isOnVacation: boolean) => {
+    onUpdate(member.id!, "vacationStart", startDate);
+    onUpdate(member.id!, "vacationEnd", endDate);
+    onUpdate(member.id!, "isOnVacation", isOnVacation);
+  };
+
+  // Create background style including background image if present
+  const getCardBackgroundStyle = () => {
+    let style = { 
+      background: cardStyle.background,
+      backgroundSize: "200% 200%",
+      boxShadow: "0 4px 20px rgba(0, 0, 0, 0.08)",
+      position: "relative" as const,
+      zIndex: 1
+    };
+    
+    if (member.customization?.backgroundImage) {
+      return {
+        ...style,
+        background: `url(${member.customization.backgroundImage}) center/cover no-repeat`,
+      };
+    }
+    
+    return style;
+  };
 
   return (
     <motion.div
@@ -135,15 +164,19 @@ export function MemberCard({ member, onUpdate, onDelete, canEdit }: MemberCardPr
       {/* Render badge outside card with proper positioning */}
       {member.customization?.badge && getBadgePosition()}
       
+      {/* Vacation status banner */}
+      {member.isOnVacation && (
+        <div className="absolute top-1 left-6 right-6 z-10 bg-orange-500 text-white px-3 py-1 rounded-t-md text-center text-xs font-medium">
+          On Vacation
+          {member.vacationStart && member.vacationEnd && (
+            <span> - {new Date(member.vacationStart).toLocaleDateString()} to {new Date(member.vacationEnd).toLocaleDateString()}</span>
+          )}
+        </div>
+      )}
+      
       <Card 
-        className={`h-full rounded-2xl shadow-md ${cardStyle.className} ${animationClass}`}
-        style={{ 
-          background: cardStyle.background,
-          boxShadow: "0 4px 20px rgba(0, 0, 0, 0.08)",
-          backgroundSize: "200% 200%",
-          position: "relative",
-          zIndex: 1
-        }}
+        className={`h-full rounded-2xl shadow-md ${cardStyle.className} ${animationClass} ${member.isOnVacation ? 'mt-5' : ''}`}
+        style={getCardBackgroundStyle()}
       >
         <MemberCardHeader
           name={name}
@@ -157,6 +190,8 @@ export function MemberCard({ member, onUpdate, onDelete, canEdit }: MemberCardPr
           onEditProjects={() => setIsEditingProjects(true)}
           onCustomize={() => setShowCustomizer(true)}
           onDelete={() => setIsConfirmingDelete(true)}
+          onVacation={() => setShowVacationDialog(true)}
+          isOnVacation={!!member.isOnVacation}
         />
         
         <MemberCardContent
@@ -167,6 +202,11 @@ export function MemberCard({ member, onUpdate, onDelete, canEdit }: MemberCardPr
           currentStatus={member.status}
           onEditProjects={() => setIsEditingProjects(true)}
           lastUpdated={new Date(member.lastUpdated)}
+          vacationStatus={{
+            isOnVacation: !!member.isOnVacation,
+            startDate: member.vacationStart ? new Date(member.vacationStart) : null,
+            endDate: member.vacationEnd ? new Date(member.vacationEnd) : null
+          }}
         />
       </Card>
       
@@ -193,6 +233,15 @@ export function MemberCard({ member, onUpdate, onDelete, canEdit }: MemberCardPr
         onUpdate={(updates) => {
           onUpdate(member.id!, "customization", updates);
         }}
+      />
+      
+      <VacationDialog
+        isOpen={showVacationDialog}
+        setIsOpen={setShowVacationDialog}
+        vacationStart={member.vacationStart ? new Date(member.vacationStart) : null}
+        vacationEnd={member.vacationEnd ? new Date(member.vacationEnd) : null}
+        isOnVacation={!!member.isOnVacation}
+        onSave={handleVacationUpdate}
       />
     </motion.div>
   );

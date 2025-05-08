@@ -6,6 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useAuth } from "@/contexts/AuthContext";
 import { Badge } from "@/components/ui/badge";
+import { BadgePosition } from "@/types/TeamMemberTypes";
 
 interface BadgeSelectorProps {
   badges: Array<{
@@ -15,7 +16,7 @@ interface BadgeSelectorProps {
   }>;
   selectedBadge?: string;
   onSelectBadge: (badgeUrl: string | null) => void;
-  onPositionChange: (position: 'top-left' | 'top-right' | 'bottom-left' | 'bottom-right') => void;
+  onPositionChange: (position: BadgePosition) => void;
   onSizeChange: (size: 'small' | 'medium' | 'large') => void;
   selectedPosition?: string;
   selectedSize?: string;
@@ -125,23 +126,10 @@ export function BadgeSelector({
               <h3 className="font-medium mb-3">Position</h3>
               <RadioGroup 
                 value={selectedPosition} 
-                onValueChange={(value) => onPositionChange(value as any)} 
+                onValueChange={(value) => onPositionChange(value as BadgePosition)} 
                 className="grid grid-cols-2 gap-2"
               >
-                {/* Position preview boxes */}
-                <div className="flex flex-col items-center space-y-2">
-                  <div className="p-4 border rounded-md bg-slate-50 relative" style={{ width: '90px', height: '90px', position: 'relative' }}>
-                    <div style={{ position: 'absolute', top: '-20px', left: '-15px', width: '30px', height: '30px', zIndex: 999 }}>
-                      <div className="bg-primary rounded-full w-full h-full"></div>
-                    </div>
-                    <div className="w-full h-full border border-dashed border-gray-300"></div>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <RadioGroupItem value="top-left" id="top-left" />
-                    <Label htmlFor="top-left">Top Left</Label>
-                  </div>
-                </div>
-                
+                {/* Position preview boxes - Only top-right and bottom-right allowed */}
                 <div className="flex flex-col items-center space-y-2">
                   <div className="p-4 border rounded-md bg-slate-50 relative" style={{ width: '90px', height: '90px', position: 'relative' }}>
                     <div style={{ position: 'absolute', top: '-20px', right: '-15px', width: '30px', height: '30px', zIndex: 999 }}>
@@ -152,19 +140,6 @@ export function BadgeSelector({
                   <div className="flex items-center space-x-2">
                     <RadioGroupItem value="top-right" id="top-right" />
                     <Label htmlFor="top-right">Top Right</Label>
-                  </div>
-                </div>
-                
-                <div className="flex flex-col items-center space-y-2">
-                  <div className="p-4 border rounded-md bg-slate-50 relative" style={{ width: '90px', height: '90px', position: 'relative' }}>
-                    <div style={{ position: 'absolute', bottom: '-20px', left: '-15px', width: '30px', height: '30px', zIndex: 999 }}>
-                      <div className="bg-primary rounded-full w-full h-full"></div>
-                    </div>
-                    <div className="w-full h-full border border-dashed border-gray-300"></div>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <RadioGroupItem value="bottom-left" id="bottom-left" />
-                    <Label htmlFor="bottom-left">Bottom Left</Label>
                   </div>
                 </div>
                 

@@ -13,6 +13,7 @@ interface CardPreviewProps {
   badge?: string;
   badgePosition?: string;
   badgeSize?: string;
+  backgroundImage?: string;
 }
 
 export function CardPreview({ 
@@ -22,7 +23,8 @@ export function CardPreview({
   animationType = "gentle",
   badge,
   badgePosition = "top-right",
-  badgeSize = "medium"
+  badgeSize = "medium",
+  backgroundImage
 }: CardPreviewProps) {
   // Determine the animation class based on the type
   const animationClass = animate && previewStyle.background.includes('gradient') ? 
@@ -56,11 +58,9 @@ export function CardPreview({
       
       const offsetsBySize = offsets[badgeSize as keyof typeof offsets] || offsets.medium;
       
-      // Position mapping
+      // Position mapping - only allow top-right and bottom-right
       const positions = {
-        "top-left": { top: offsetsBySize.top, left: offsetsBySize.left },
         "top-right": { top: offsetsBySize.top, right: offsetsBySize.right },
-        "bottom-left": { bottom: offsetsBySize.bottom, left: offsetsBySize.left },
         "bottom-right": { bottom: offsetsBySize.bottom, right: offsetsBySize.right }
       };
       
@@ -87,6 +87,22 @@ export function CardPreview({
     );
   };
 
+  // Create compound background style
+  const getBackgroundStyle = () => {
+    if (backgroundImage) {
+      return {
+        background: `url(${backgroundImage})`,
+        backgroundSize: 'cover',
+        backgroundPosition: 'center'
+      };
+    }
+    
+    return {
+      ...previewStyle,
+      backgroundSize: "200% 200%",
+    };
+  };
+
   return (
     <div className="w-full py-3 px-6 relative">
       {/* Render the badge separately outside the card */}
@@ -95,8 +111,7 @@ export function CardPreview({
       <Card 
         className={`border relative ${animationClass}`}
         style={{
-          ...previewStyle,
-          backgroundSize: "200% 200%",
+          ...getBackgroundStyle(),
           position: "relative",
           zIndex: 1
         }}

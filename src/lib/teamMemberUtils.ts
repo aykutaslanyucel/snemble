@@ -12,18 +12,26 @@ export const formatNameFromEmail = (email: string): string => {
     .join(' ');
 };
 
+// Fix position to avoid using "Junior Associate"
+export const formatPosition = (position: string): string => {
+  return position === "Junior Associate" ? "Associate" : position;
+};
+
 // Convert Supabase team member to app TeamMember
 export const mapDbToTeamMember = (dbTeamMember: any): TeamMember => {
   return {
     id: dbTeamMember.id,
     name: dbTeamMember.name,
-    position: dbTeamMember.position,
+    position: formatPosition(dbTeamMember.position),
     status: dbTeamMember.status as TeamMemberStatus,
     projects: dbTeamMember.projects || [],
     lastUpdated: new Date(dbTeamMember.last_updated),
     user_id: dbTeamMember.user_id,
     role: dbTeamMember.role || 'user',
-    customization: dbTeamMember.customization
+    customization: dbTeamMember.customization,
+    vacationStart: dbTeamMember.vacation_start ? new Date(dbTeamMember.vacation_start) : undefined,
+    vacationEnd: dbTeamMember.vacation_end ? new Date(dbTeamMember.vacation_end) : undefined,
+    isOnVacation: dbTeamMember.is_on_vacation || false
   };
 };
 
@@ -32,13 +40,16 @@ export const mapTeamMemberToDb = (teamMember: TeamMember) => {
   return {
     id: teamMember.id,
     name: teamMember.name,
-    position: teamMember.position,
+    position: formatPosition(teamMember.position),
     status: teamMember.status,
     projects: teamMember.projects,
     last_updated: teamMember.lastUpdated ? teamMember.lastUpdated.toISOString() : new Date().toISOString(),
     user_id: teamMember.user_id,
     role: teamMember.role,
-    customization: teamMember.customization as unknown as Json
+    customization: teamMember.customization as unknown as Json,
+    vacation_start: teamMember.vacationStart instanceof Date ? teamMember.vacationStart.toISOString() : teamMember.vacationStart,
+    vacation_end: teamMember.vacationEnd instanceof Date ? teamMember.vacationEnd.toISOString() : teamMember.vacationEnd,
+    is_on_vacation: teamMember.isOnVacation
   };
 };
 
@@ -69,30 +80,41 @@ export const addTeamMember = async (teamMember: Omit<TeamMember, 'id'>): Promise
   
   console.log(`Adding team member for user: ${teamMember.user_id || 'unknown'}`);
   
+  // Make sure we use proper position format
+  const position = formatPosition(teamMember.position);
+  
   const newTeamMemberData = {
     name: teamMember.name,
-    position: teamMember.position,
+    position: position,
     status: teamMember.status,
     projects: teamMember.projects || [],
     user_id: teamMember.user_id,
     role: teamMember.role,
-    customization: teamMember.customization as unknown as Json
+    customization: teamMember.customization as unknown as Json,
+    vacation_start: teamMember.vacationStart instanceof Date ? teamMember.vacationStart.toISOString() : teamMember.vacationStart,
+    vacation_end: teamMember.vacationEnd instanceof Date ? teamMember.vacationEnd.toISOString() : teamMember.vacationEnd,
+    is_on_vacation: teamMember.isOnVacation || false
     // last_updated will be set by default in the database
   };
 
-  const { data, error } = await supabase
-    .from('team_members')
-    .insert(newTeamMemberData)
-    .select()
-    .single();
+  try {
+    const { data, error } = await supabase
+      .from('team_members')
+      .insert(newTeamMemberData)
+      .select()
+      .single();
 
-  if (error) {
-    console.error('Error adding team member:', error);
+    if (error) {
+      console.error('Error adding team member:', error);
+      throw error;
+    }
+
+    console.log(`Successfully added team member with ID: ${data.id}`);
+    return mapDbToTeamMember(data);
+  } catch (error) {
+    console.error('Error in addTeamMember:', error);
     throw error;
   }
-
-  console.log(`Successfully added team member with ID: ${data.id}`);
-  return mapDbToTeamMember(data);
 };
 
 // Update a team member with improved error handling and debugging
@@ -103,7 +125,7 @@ export const updateTeamMember = async (id: string, updates: Partial<TeamMember>)
   const dbUpdates: any = {};
   
   if ('name' in updates) dbUpdates.name = updates.name;
-  if ('position' in updates) dbUpdates.position = updates.position;
+  if ('position' in updates) dbUpdates.position = formatPosition(updates.position);
   if ('status' in updates) dbUpdates.status = updates.status;
   if ('projects' in updates) dbUpdates.projects = updates.projects;
   if ('role' in updates) dbUpdates.role = updates.role;
@@ -112,6 +134,23 @@ export const updateTeamMember = async (id: string, updates: Partial<TeamMember>)
   // Fix the customization type casting
   if ('customization' in updates) {
     dbUpdates.customization = updates.customization as unknown as Json;
+  }
+  
+  // Handle vacation fields
+  if ('vacationStart' in updates) {
+    dbUpdates.vacation_start = updates.vacationStart instanceof Date 
+      ? updates.vacationStart.toISOString() 
+      : updates.vacationStart;
+  }
+  
+  if ('vacationEnd' in updates) {
+    dbUpdates.vacation_end = updates.vacationEnd instanceof Date 
+      ? updates.vacationEnd.toISOString() 
+      : updates.vacationEnd;
+  }
+  
+  if ('isOnVacation' in updates) {
+    dbUpdates.is_on_vacation = updates.isOnVacation;
   }
   
   // Update last_updated timestamp to trigger UI refresh
@@ -222,8 +261,9 @@ export const getOrCreateTeamMemberForUser = async (userId: string, email: string
   // Format name from email
   const formattedName = formatNameFromEmail(email);
   
-  // Use seniority directly as position, with fallback to Junior Associate
-  const position = profileData?.seniority || "Junior Associate";
+  // Use seniority directly as position, with fallback to Associate (not Junior Associate)
+  let position = profileData?.seniority || "Associate";
+  position = formatPosition(position); // Ensure "Junior Associate" is converted to "Associate"
   
   // Convert role string to TeamMemberRole type
   const memberRole: TeamMemberRole = (role === 'admin' || role === 'user' || role === 'premium') 
@@ -232,7 +272,7 @@ export const getOrCreateTeamMemberForUser = async (userId: string, email: string
   
   const newTeamMember: Omit<TeamMember, 'id'> = {
     name: formattedName,
-    position: position, // Use seniority directly as position
+    position: position,
     status: 'available',
     projects: [],
     lastUpdated: new Date(),

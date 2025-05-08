@@ -1,5 +1,5 @@
 
-export type TeamMemberStatus = 'available' | 'someAvailability' | 'busy' | 'seriouslyBusy' | 'away';
+export type TeamMemberStatus = 'available' | 'someAvailability' | 'busy' | 'seriouslyBusy' | 'away' | 'vacation';
 
 // FIXED: Include all role types that are used throughout the application
 export type TeamMemberRole = 
@@ -12,14 +12,16 @@ export type TeamMemberRole =
   | 'user' 
   | 'premium' 
   | 'Team Lead' 
-  | 'Senior Member'
-  | 'Junior Associate';
+  | 'Senior Member';
 
 // Define gradient animation types
 export type GradientAnimationType = 'none' | 'gentle' | 'smooth' | 'energetic' | 'dramatic';
 
 // Define gradient types
 export type GradientType = 'linear' | 'radial';
+
+// Define badge position types
+export type BadgePosition = 'top-right' | 'bottom-right';
 
 // Define a consistent customization interface
 export interface TeamMemberCustomization {
@@ -32,10 +34,9 @@ export interface TeamMemberCustomization {
   gradientAngle?: string;
   radialPosition?: string;
   badge?: string;
-  badgePosition?: 'top-left' | 'top-right' | 'bottom-left' | 'bottom-right' | 'center';
+  badgePosition?: BadgePosition;
   badgeSize?: 'small' | 'medium' | 'large';
-  hat?: string;
-  emoji?: string;
+  backgroundImage?: string;
 }
 
 export interface TeamMember {
@@ -48,6 +49,9 @@ export interface TeamMember {
   user_id: string;
   role?: TeamMemberRole;
   customization?: TeamMemberCustomization;
+  vacationStart?: Date;
+  vacationEnd?: Date;
+  isOnVacation?: boolean;
 }
 
 export interface Announcement {
