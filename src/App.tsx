@@ -35,8 +35,21 @@ function useAppDebug() {
     try {
       const testObj = { test: true };
       console.log("JSON stringify test:", JSON.stringify(testObj));
+      
+      // Test Supabase connection
+      const testSupabase = async () => {
+        const { supabase } = await import("@/integrations/supabase/client");
+        const { error } = await supabase.from('admin_settings').select('*').limit(1);
+        if (error) {
+          console.error("Supabase connection test failed:", error);
+        } else {
+          console.log("Supabase connection test successful");
+        }
+      };
+      
+      testSupabase();
     } catch (error) {
-      console.error("JSON stringify error:", error);
+      console.error("Initialization test error:", error);
     }
   }, []);
 }

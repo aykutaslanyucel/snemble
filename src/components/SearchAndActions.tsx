@@ -6,7 +6,7 @@ import { ActionButtons } from "@/components/ActionButtons";
 import { TeamMember, Announcement } from "@/types/TeamMemberTypes";
 import { useToast } from "@/hooks/use-toast";
 import { v4 as uuidv4 } from 'uuid';
-import { saveAnnouncement, updateAnnouncement, deleteAnnouncement } from "@/lib/announcementHelpers";
+import { saveAnnouncement } from "@/lib/announcementHelpers";
 
 interface SearchAndActionsProps {
   searchQuery: string;
