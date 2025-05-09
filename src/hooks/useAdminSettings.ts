@@ -10,6 +10,12 @@ interface AdminSettings {
   [key: string]: any;
 }
 
+// Define the type for the response from the RPC function
+interface AdminSettingRecord {
+  key: string;
+  value: string;
+}
+
 export function useAdminSettings() {
   const [settings, setSettings] = useState<AdminSettings | null>(null);
   const [loading, setLoading] = useState(true);
@@ -20,14 +26,14 @@ export function useAdminSettings() {
       try {
         // Use the rpc function to get admin settings
         const { data, error } = await supabase
-          .rpc('get_admin_settings');
+          .rpc('get_admin_settings') as { data: AdminSettingRecord[] | null, error: any };
           
         if (error) throw error;
         
         // Transform array of settings to an object
         const settingsObj: AdminSettings = {};
         if (data && Array.isArray(data)) {
-          data.forEach((setting: {key: string, value: any}) => {
+          data.forEach((setting: AdminSettingRecord) => {
             try {
               // Handle different value types
               if (typeof setting.value === 'string') {
