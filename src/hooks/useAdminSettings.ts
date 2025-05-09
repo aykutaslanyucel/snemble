@@ -18,7 +18,7 @@ export function useAdminSettings() {
   useEffect(() => {
     const fetchSettings = async () => {
       try {
-        // Use raw SQL query instead of the problematic .from() call
+        // Use the rpc function to get admin settings
         const { data, error } = await supabase
           .rpc('get_admin_settings');
           
@@ -26,7 +26,7 @@ export function useAdminSettings() {
         
         // Transform array of settings to an object
         const settingsObj: AdminSettings = {};
-        if (data) {
+        if (data && Array.isArray(data)) {
           data.forEach((setting: {key: string, value: any}) => {
             try {
               // Handle different value types

@@ -337,7 +337,10 @@ export function AnnouncementManager({
                                   size="sm"
                                   onClick={() => {
                                     onDeleteAnnouncement(announcement.id);
-                                    toast.success("Announcement deleted");
+                                    toast({
+                                      title: "Announcement deleted",
+                                      description: "The announcement has been removed",
+                                    });
                                   }}
                                 >
                                   Delete

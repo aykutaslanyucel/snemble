@@ -79,7 +79,7 @@ export const fetchAnnouncements = async (): Promise<Announcement[]> => {
     timestamp: new Date(item.timestamp),
     expiresAt: item.expires_at ? new Date(item.expires_at) : undefined,
     priority: item.priority || 0,
-    theme: item.theme || {},
+    theme: item.theme as Announcement['theme'],
     isActive: item.is_active === undefined ? true : item.is_active
   }));
 };
