@@ -9,6 +9,30 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      admin_settings: {
+        Row: {
+          created_at: string | null
+          id: string
+          setting_key: string
+          setting_value: Json
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          setting_key: string
+          setting_value: Json
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          setting_key?: string
+          setting_value?: Json
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       announcements: {
         Row: {
           created_by: string | null
@@ -176,7 +200,17 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      get_admin_settings: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          key: string
+          value: string
+        }[]
+      }
+      update_admin_setting: {
+        Args: { p_key: string; p_value: string }
+        Returns: undefined
+      }
     }
     Enums: {
       [_ in never]: never

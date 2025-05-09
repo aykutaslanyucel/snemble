@@ -1,6 +1,7 @@
 
 import { supabase } from "@/integrations/supabase/client";
 import { Announcement } from "@/types/TeamMemberTypes";
+import { Json } from "@/integrations/supabase/types";
 
 export const saveAnnouncement = async (announcement: Announcement) => {
   const { error } = await supabase
@@ -79,7 +80,11 @@ export const fetchAnnouncements = async (): Promise<Announcement[]> => {
     timestamp: new Date(item.timestamp),
     expiresAt: item.expires_at ? new Date(item.expires_at) : undefined,
     priority: item.priority || 0,
-    theme: item.theme as Announcement['theme'],
+    theme: typeof item.theme === 'object' ? item.theme as Announcement['theme'] : {
+      backgroundColor: "from-primary/5 via-primary/10 to-primary/5",
+      textColor: "text-foreground",
+      animationStyle: "fade"
+    },
     isActive: item.is_active === undefined ? true : item.is_active
   }));
 };
