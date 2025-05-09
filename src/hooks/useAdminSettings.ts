@@ -1,7 +1,7 @@
 
 import { useState, useEffect } from 'react';
 import { supabase } from "@/integrations/supabase/client";
-import { useToast } from "@/hooks/use-toast";
+import { useToast } from "@/components/ui/use-toast";
 
 // Define admin settings interface
 interface AdminSettings {
@@ -18,30 +18,34 @@ export function useAdminSettings() {
   useEffect(() => {
     const fetchSettings = async () => {
       try {
+        // Use raw SQL query instead of the problematic .from() call
         const { data, error } = await supabase
-          .from('admin_settings')
-          .select('*');
+          .rpc('get_admin_settings');
           
         if (error) throw error;
         
         // Transform array of settings to an object
         const settingsObj: AdminSettings = {};
         if (data) {
-          data.forEach(setting => {
+          data.forEach((setting: {key: string, value: any}) => {
             try {
               // Handle different value types
-              if (typeof setting.setting_value === 'string') {
-                if (setting.setting_value === 'true' || setting.setting_value === 'false') {
-                  settingsObj[setting.setting_key] = setting.setting_value === 'true';
+              if (typeof setting.value === 'string') {
+                if (setting.value === 'true' || setting.value === 'false') {
+                  settingsObj[setting.key] = setting.value === 'true';
                 } else {
-                  settingsObj[setting.setting_key] = JSON.parse(setting.setting_value);
+                  try {
+                    settingsObj[setting.key] = JSON.parse(setting.value);
+                  } catch (e) {
+                    settingsObj[setting.key] = setting.value;
+                  }
                 }
               } else {
-                settingsObj[setting.setting_key] = setting.setting_value;
+                settingsObj[setting.key] = setting.value;
               }
             } catch (e) {
               // If it's not a valid JSON, use as is
-              settingsObj[setting.setting_key] = setting.setting_value;
+              settingsObj[setting.key] = setting.value;
             }
           });
         }
@@ -70,18 +74,21 @@ export function useAdminSettings() {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [toast]);
+  }, []);
 
   // Update a setting
   const updateSetting = async (key: string, value: any) => {
     try {
       setLoading(true);
-      const { error } = await supabase
-        .from('admin_settings')
-        .upsert({
-          setting_key: key,
-          setting_value: typeof value === 'object' ? value : JSON.stringify(value)
-        });
+      
+      // Convert value to string if it's an object or boolean
+      const stringValue = typeof value === 'object' ? JSON.stringify(value) : 
+                         typeof value === 'boolean' ? String(value) : value;
+      
+      const { error } = await supabase.rpc('update_admin_setting', {
+        p_key: key,
+        p_value: stringValue
+      });
         
       if (error) throw error;
       

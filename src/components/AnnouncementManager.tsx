@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Announcement } from "@/types/TeamMemberTypes";
 import { RichTextEditor } from "./RichTextEditor";
@@ -18,7 +17,7 @@ import { Badge } from "./ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "./ui/tabs";
 import { ChevronUp, ChevronDown, Trash2, AlertCircle, Calendar, MessageSquarePlus } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "./ui/popover";
-import { toast } from "sonner";
+import { useToast } from "@/hooks/use-toast";
 
 interface AnnouncementManagerProps {
   announcements: Announcement[];
@@ -63,10 +62,15 @@ export function AnnouncementManager({
   });
   
   const [currentTab, setCurrentTab] = useState("create");
+  const { toast } = useToast();
   
   const handleAddAnnouncement = () => {
     if (!newAnnouncement.message.trim() && !newAnnouncement.htmlContent.trim()) {
-      toast.error("Please enter an announcement message");
+      toast({
+        title: "Error",
+        description: "Please enter an announcement message",
+        variant: "destructive",
+      });
       return;
     }
     
@@ -98,7 +102,10 @@ export function AnnouncementManager({
       isActive: true
     });
     
-    toast.success("Announcement created successfully");
+    toast({
+      title: "Success",
+      description: "Announcement created successfully",
+    });
   };
   
   const handleColorSelect = (bgColor: string, textColor: string) => {
@@ -192,7 +199,7 @@ export function AnnouncementManager({
             <div className="space-y-2">
               <Label>Message Content</Label>
               <RichTextEditor 
-                content={newAnnouncement.htmlContent} 
+                value={newAnnouncement.htmlContent} 
                 onChange={(html) => setNewAnnouncement({...newAnnouncement, htmlContent: html})}
               />
             </div>

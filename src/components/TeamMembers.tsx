@@ -18,7 +18,7 @@ export function TeamMembers({ members, onUpdate, onDelete, currentUserId, isAdmi
   const badgesEnabled = settings?.badges_enabled === undefined ? true : settings?.badges_enabled === true;
   
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-2 sm:gap-x-3 gap-y-3">
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-1 sm:gap-2">
       {members.map((member) => (
         <MemberCard
           key={member.id}

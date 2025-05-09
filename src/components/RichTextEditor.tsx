@@ -5,9 +5,10 @@ import StarterKit from '@tiptap/starter-kit';
 import Link from '@tiptap/extension-link';
 import TextStyle from '@tiptap/extension-text-style';
 import Color from '@tiptap/extension-color';
+import Underline from '@tiptap/extension-underline';
 import { Button } from "./ui/button";
 import { 
-  Bold, Italic, Underline, Strikethrough, Link as LinkIcon,
+  Bold, Italic, Underline as UnderlineIcon, Strikethrough, Link as LinkIcon,
   AlignLeft, AlignCenter, AlignRight, List, ListOrdered, Palette
 } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "./ui/popover";
@@ -36,7 +37,8 @@ export function RichTextEditor({ value, onChange }: RichTextEditorProps) {
         },
       }),
       TextStyle,
-      Color
+      Color,
+      Underline
     ],
     content: value,
     editorProps: {
@@ -104,7 +106,7 @@ export function RichTextEditor({ value, onChange }: RichTextEditorProps) {
           onClick={() => editor.chain().focus().toggleUnderline().run()}
           className={editor.isActive('underline') ? 'bg-secondary' : ''}
         >
-          <Underline className="h-4 w-4" />
+          <UnderlineIcon className="h-4 w-4" />
         </Button>
         <Button
           variant="ghost"

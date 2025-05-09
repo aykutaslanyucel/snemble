@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { TeamMember, TeamMemberCustomization, GradientAnimationType } from "@/types/TeamMemberTypes";
@@ -17,6 +16,7 @@ import "@/styles/animations.css";
 import { BackgroundImageSelector } from './BackgroundImageSelector';
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
+import { useAdminSettings } from "@/hooks/useAdminSettings";
 
 interface CardCustomizerProps {
   teamMember: TeamMember;
@@ -35,6 +35,7 @@ export function CardCustomizer({ teamMember, onUpdate }: CardCustomizerProps) {
   const [imageUrlInput, setImageUrlInput] = useState(customization.backgroundImage || '');
   
   const { toast } = useToast();
+  const { settings } = useAdminSettings();
 
   // Used for preview
   const [previewStyle, setPreviewStyle] = useState({
@@ -71,27 +72,14 @@ export function CardCustomizer({ teamMember, onUpdate }: CardCustomizerProps) {
     };
     
     // Check admin settings if badges are enabled
-    const fetchBadgesStatus = async () => {
-      try {
-        const { data, error } = await supabase
-          .from('admin_settings')
-          .select('setting_value')
-          .eq('setting_key', 'badges_enabled')
-          .single();
-          
-        if (!error && data && data.setting_value === 'false') {
-          setBadges([]);
-        } else {
-          fetchBadges();
-        }
-      } catch (error) {
-        console.error("Error checking badge status:", error);
-        fetchBadges(); // Try fetching badges anyway
-      }
-    };
+    const badgesEnabled = settings?.badges_enabled === undefined ? true : settings?.badges_enabled === true;
     
-    fetchBadgesStatus();
-  }, []);
+    if (badgesEnabled) {
+      fetchBadges();
+    } else {
+      setBadges([]);
+    }
+  }, [settings]);
 
   // Update preview when customization changes
   useEffect(() => {

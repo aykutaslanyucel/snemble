@@ -5,8 +5,8 @@ import { SearchBar } from "@/components/SearchBar";
 import { ActionButtons } from "@/components/ActionButtons";
 import { TeamMember, Announcement } from "@/types/TeamMemberTypes";
 import { useToast } from "@/hooks/use-toast";
-import { supabase } from "@/integrations/supabase/client";
 import { v4 as uuidv4 } from 'uuid';
+import { saveAnnouncement, updateAnnouncement, deleteAnnouncement } from "@/lib/announcementHelpers";
 
 interface SearchAndActionsProps {
   searchQuery: string;
@@ -62,21 +62,9 @@ export function SearchAndActions({
     };
 
     try {
-      // Add directly to Supabase for persistence
-      const { error } = await supabase
-        .from('announcements')
-        .insert({
-          id: announcement.id,
-          message: announcement.message,
-          html_content: announcement.htmlContent,
-          timestamp: announcement.timestamp.toISOString(),
-          priority: announcement.priority,
-          theme: announcement.theme,
-          is_active: announcement.isActive
-        });
-
-      if (error) throw error;
-
+      // Persist to Supabase
+      await saveAnnouncement(announcement);
+      
       // Call the parent callback for UI update
       onAddAnnouncement(announcement);
       

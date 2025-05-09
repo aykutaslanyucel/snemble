@@ -1,12 +1,12 @@
 
 import React from "react";
 import { CardContent } from "@/components/ui/card";
-import { StatusSelector } from "./StatusSelector";
 import { TeamMember, TeamMemberStatus } from "@/types/TeamMemberTypes";
 import { Plus, Check, User, Clock, X, Coffee, Calendar } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { getCardBackground, getStatusText } from "./CardBackground";
+import { StatusButton } from "./StatusButton";
 
 interface MemberCardContentProps {
   position: string;
@@ -118,21 +118,43 @@ export function MemberCardContent({
       {canEdit ? (
         <div className="space-y-3">
           <h4 className="text-gray-700 font-medium">Status</h4>
-          <div>
-            <StatusSelector
+          <div className="flex flex-wrap gap-2">
+            <StatusButton
+              status="available"
               currentStatus={currentStatus}
-              onStatusChange={onStatusChange}
+              onClick={onStatusChange}
+              tooltip="Available"
             />
-            <div className="mt-2">
-              <Badge 
-                className="inline-flex items-center gap-1 px-3 py-1.5"
-                style={{ background: cardStyle.background }}
-                variant="outline"
-              >
-                <span className="flex-shrink-0">{getStatusIcon(currentStatus)}</span>
-                <span className="text-xs font-medium text-gray-700">{getStatusText(currentStatus)}</span>
-              </Badge>
-            </div>
+            <StatusButton
+              status="someAvailability"
+              currentStatus={currentStatus}
+              onClick={onStatusChange}
+              tooltip="Some Availability"
+            />
+            <StatusButton
+              status="busy"
+              currentStatus={currentStatus}
+              onClick={onStatusChange}
+              tooltip="Busy"
+            />
+            <StatusButton
+              status="seriouslyBusy"
+              currentStatus={currentStatus}
+              onClick={onStatusChange}
+              tooltip="Seriously Busy"
+            />
+            <StatusButton
+              status="away"
+              currentStatus={currentStatus}
+              onClick={onStatusChange}
+              tooltip="Away"
+            />
+            <StatusButton
+              status="vacation"
+              currentStatus={currentStatus}
+              onClick={onStatusChange}
+              tooltip="Vacation"
+            />
           </div>
         </div>
       ) : (

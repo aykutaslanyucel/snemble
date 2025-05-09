@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -8,6 +8,7 @@ import { Switch } from "@/components/ui/switch";
 import { useAdminSettings } from "@/hooks/useAdminSettings";
 import { AlertTriangle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { Badge } from "@/components/ui/badge";
 
 export function StripeSettings() {
   const { settings, updateSetting, loading } = useAdminSettings();
@@ -16,6 +17,16 @@ export function StripeSettings() {
   const [testMode, setTestMode] = useState(settings?.stripe_test_mode || true);
   const [priceId, setPriceId] = useState(settings?.stripe_price_id || "");
   const { toast } = useToast();
+
+  // Update state when settings change
+  useEffect(() => {
+    if (settings) {
+      setStripeApiKey(settings.stripe_api_key || "");
+      setStripeEnabled(settings.stripe_enabled || false);
+      setTestMode(settings.stripe_test_mode === undefined ? true : settings.stripe_test_mode);
+      setPriceId(settings.stripe_price_id || "");
+    }
+  }, [settings]);
 
   const handleSaveSettings = async () => {
     try {
@@ -46,7 +57,10 @@ export function StripeSettings() {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Premium Subscription Settings</CardTitle>
+        <CardTitle className="flex items-center justify-between">
+          Premium Subscription Settings
+          {stripeEnabled && <Badge variant="outline" className="bg-green-100 text-green-800">Enabled</Badge>}
+        </CardTitle>
         <CardDescription>
           Configure Stripe for premium subscriptions
         </CardDescription>
