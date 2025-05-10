@@ -132,11 +132,11 @@ export function RichTextEditor({ value, onChange }: RichTextEditorProps) {
 
         <Popover>
           <PopoverTrigger asChild>
-            <Button variant="ghost" size="icon">
+            <Button variant="ghost" size="icon" className="z-10">
               <Palette className="h-4 w-4" />
             </Button>
           </PopoverTrigger>
-          <PopoverContent className="w-64 p-2">
+          <PopoverContent className="w-64 p-2 z-50">
             <div className="grid grid-cols-10 gap-1">
               {colors.map((color) => (
                 <button
@@ -144,6 +144,7 @@ export function RichTextEditor({ value, onChange }: RichTextEditorProps) {
                   className="w-5 h-5 rounded cursor-pointer"
                   style={{ backgroundColor: color }}
                   onClick={() => setColor(color)}
+                  type="button"
                 />
               ))}
             </div>
@@ -151,7 +152,7 @@ export function RichTextEditor({ value, onChange }: RichTextEditorProps) {
         </Popover>
       </div>
 
-      <EditorContent editor={editor} />
+      <EditorContent editor={editor} className="z-0" />
     </div>
   );
 }

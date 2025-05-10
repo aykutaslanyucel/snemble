@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 
 export function BadgeSettings() {
-  const { settings, updateSetting, loading } = useAdminSettings();
+  const { settings, updateSetting, loading, fetchSettings } = useAdminSettings();
   const [badgesEnabled, setBadgesEnabled] = useState<boolean>(
     settings?.badges_enabled === undefined ? true : !!settings?.badges_enabled
   );
@@ -17,12 +17,14 @@ export function BadgeSettings() {
   // Update local state when settings change
   useEffect(() => {
     if (settings?.badges_enabled !== undefined) {
+      console.log("Setting badges_enabled from settings:", settings.badges_enabled);
       setBadgesEnabled(!!settings.badges_enabled);
     }
   }, [settings]);
   
   const handleSave = async () => {
     try {
+      console.log("Saving badge settings:", badgesEnabled);
       await updateSetting('badges_enabled', badgesEnabled);
       toast({
         title: "Settings updated",
@@ -57,7 +59,10 @@ export function BadgeSettings() {
           <Switch
             id="badges-enabled"
             checked={badgesEnabled}
-            onCheckedChange={setBadgesEnabled}
+            onCheckedChange={(checked) => {
+              console.log("Switch toggled to:", checked);
+              setBadgesEnabled(checked);
+            }}
           />
         </div>
       </CardContent>

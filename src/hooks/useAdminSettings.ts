@@ -1,12 +1,15 @@
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { supabase } from "@/integrations/supabase/client";
-import { useToast } from "@/components/ui/use-toast";
+import { useToast } from "@/hooks/use-toast";
 
 // Define admin settings interface
 interface AdminSettings {
   badges_enabled?: boolean;
   stripe_enabled?: boolean;
+  stripe_api_key?: string;
+  stripe_price_id?: string;
+  stripe_test_mode?: boolean;
   [key: string]: any;
 }
 
@@ -21,49 +24,58 @@ export function useAdminSettings() {
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
 
-  useEffect(() => {
-    const fetchSettings = async () => {
-      try {
-        // Use the rpc function to get admin settings
-        const { data, error } = await supabase
-          .rpc('get_admin_settings') as { data: AdminSettingRecord[] | null, error: any };
-          
-        if (error) throw error;
+  const fetchSettings = useCallback(async () => {
+    try {
+      setLoading(true);
+      console.log("Fetching admin settings...");
+      
+      // Use the rpc function to get admin settings
+      const { data, error } = await supabase
+        .rpc('get_admin_settings') as { data: AdminSettingRecord[] | null, error: any };
         
-        // Transform array of settings to an object
-        const settingsObj: AdminSettings = {};
-        if (data && Array.isArray(data)) {
-          data.forEach((setting: AdminSettingRecord) => {
-            try {
-              // Handle different value types
-              if (typeof setting.value === 'string') {
-                if (setting.value === 'true' || setting.value === 'false') {
-                  settingsObj[setting.key] = setting.value === 'true';
-                } else {
-                  try {
-                    settingsObj[setting.key] = JSON.parse(setting.value);
-                  } catch (e) {
-                    settingsObj[setting.key] = setting.value;
-                  }
-                }
+      if (error) {
+        console.error("Error fetching admin settings:", error);
+        throw error;
+      }
+      
+      console.log("Admin settings data:", data);
+      
+      // Transform array of settings to an object
+      const settingsObj: AdminSettings = {};
+      if (data && Array.isArray(data)) {
+        data.forEach((setting: AdminSettingRecord) => {
+          try {
+            // Handle different value types
+            if (typeof setting.value === 'string') {
+              if (setting.value === 'true' || setting.value === 'false') {
+                settingsObj[setting.key] = setting.value === 'true';
               } else {
-                settingsObj[setting.key] = setting.value;
+                try {
+                  settingsObj[setting.key] = JSON.parse(setting.value);
+                } catch (e) {
+                  settingsObj[setting.key] = setting.value;
+                }
               }
-            } catch (e) {
-              // If it's not a valid JSON, use as is
+            } else {
               settingsObj[setting.key] = setting.value;
             }
-          });
-        }
-        
-        setSettings(settingsObj);
-      } catch (error) {
-        console.error("Error fetching admin settings:", error);
-      } finally {
-        setLoading(false);
+          } catch (e) {
+            // If it's not a valid JSON, use as is
+            settingsObj[setting.key] = setting.value;
+          }
+        });
       }
-    };
+      
+      console.log("Parsed settings object:", settingsObj);
+      setSettings(settingsObj);
+    } catch (error) {
+      console.error("Error in fetchSettings:", error);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
 
+  useEffect(() => {
     fetchSettings();
 
     // Subscribe to changes
@@ -71,7 +83,8 @@ export function useAdminSettings() {
       .channel('admin_settings_changes')
       .on('postgres_changes', 
         { event: '*', schema: 'public', table: 'admin_settings' },
-        () => {
+        (payload) => {
+          console.log("Admin settings table changed:", payload);
           fetchSettings();
         }
       )
@@ -80,12 +93,13 @@ export function useAdminSettings() {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, []);
+  }, [fetchSettings]);
 
   // Update a setting
   const updateSetting = async (key: string, value: any) => {
     try {
       setLoading(true);
+      console.log(`Updating setting ${key} to:`, value);
       
       // Convert value to string if it's an object or boolean
       const stringValue = typeof value === 'object' ? JSON.stringify(value) : 
@@ -96,7 +110,12 @@ export function useAdminSettings() {
         p_value: stringValue
       });
         
-      if (error) throw error;
+      if (error) {
+        console.error(`Error updating ${key} setting:`, error);
+        throw error;
+      }
+      
+      console.log(`Setting ${key} updated successfully`);
       
       toast({
         title: "Setting updated",
@@ -117,5 +136,5 @@ export function useAdminSettings() {
     }
   };
 
-  return { settings, loading, updateSetting };
+  return { settings, loading, updateSetting, fetchSettings };
 }

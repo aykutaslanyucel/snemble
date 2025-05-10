@@ -46,26 +46,26 @@ export function SearchAndActions({
       return;
     }
 
-    const newId = uuidv4();
-    const announcement: Announcement = {
-      id: newId,
-      message: newAnnouncement,
-      htmlContent: htmlContent,
-      timestamp: new Date(),
-      priority: 1,
-      isActive: true,
-      theme: {
-        backgroundColor: "from-primary/5 via-primary/10 to-primary/5",
-        textColor: "text-foreground",
-        animationStyle: "fade"
-      }
-    };
-
     try {
-      // Persist to Supabase
+      const newId = uuidv4();
+      const announcement: Announcement = {
+        id: newId,
+        message: newAnnouncement,
+        htmlContent: htmlContent,
+        timestamp: new Date(),
+        priority: 1,
+        isActive: true,
+        theme: {
+          backgroundColor: "from-primary/5 via-primary/10 to-primary/5",
+          textColor: "text-foreground",
+          animationStyle: "fade"
+        }
+      };
+      
+      // First save to Supabase
       await saveAnnouncement(announcement);
       
-      // Call the parent callback for UI update
+      // Then update the UI
       onAddAnnouncement(announcement);
       
       // Reset form

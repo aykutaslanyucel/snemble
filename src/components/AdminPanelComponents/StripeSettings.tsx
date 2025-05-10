@@ -14,7 +14,7 @@ export function StripeSettings() {
   const { settings, updateSetting, loading } = useAdminSettings();
   const [stripeApiKey, setStripeApiKey] = useState(settings?.stripe_api_key || "");
   const [stripeEnabled, setStripeEnabled] = useState(settings?.stripe_enabled || false);
-  const [testMode, setTestMode] = useState(settings?.stripe_test_mode || true);
+  const [testMode, setTestMode] = useState(settings?.stripe_test_mode !== false);
   const [priceId, setPriceId] = useState(settings?.stripe_price_id || "");
   const { toast } = useToast();
 
@@ -22,14 +22,16 @@ export function StripeSettings() {
   useEffect(() => {
     if (settings) {
       setStripeApiKey(settings.stripe_api_key || "");
-      setStripeEnabled(settings.stripe_enabled || false);
-      setTestMode(settings.stripe_test_mode === undefined ? true : settings.stripe_test_mode);
+      setStripeEnabled(!!settings.stripe_enabled);
+      setTestMode(settings.stripe_test_mode !== false);
       setPriceId(settings.stripe_price_id || "");
     }
   }, [settings]);
 
   const handleSaveSettings = async () => {
     try {
+      console.log("Saving Stripe settings:", { stripeEnabled, testMode, priceId });
+      
       // Save all Stripe settings
       await updateSetting('stripe_enabled', stripeEnabled);
       await updateSetting('stripe_test_mode', testMode);
@@ -76,7 +78,10 @@ export function StripeSettings() {
           <Switch
             id="stripe-enabled"
             checked={stripeEnabled}
-            onCheckedChange={setStripeEnabled}
+            onCheckedChange={(checked) => {
+              console.log("Stripe enabled set to:", checked);
+              setStripeEnabled(checked);
+            }}
           />
         </div>
 
@@ -127,7 +132,7 @@ export function StripeSettings() {
             <div>
               <h4 className="font-medium text-yellow-800 dark:text-yellow-500">Implementation Required</h4>
               <p className="text-sm text-yellow-700 dark:text-yellow-600 mt-1">
-                This is a configuration UI only. You'll need additional server-side implementation to process subscriptions securely.
+                For complete Stripe integration, set up the STRIPE_SECRET_KEY in your Supabase edge function secrets.
               </p>
             </div>
           </div>

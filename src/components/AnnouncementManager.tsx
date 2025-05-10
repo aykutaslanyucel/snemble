@@ -1,4 +1,5 @@
-import { useState } from "react";
+
+import { useState, useCallback } from "react";
 import { Announcement } from "@/types/TeamMemberTypes";
 import { RichTextEditor } from "./RichTextEditor";
 import { Button } from "./ui/button";
@@ -62,9 +63,10 @@ export function AnnouncementManager({
   });
   
   const [currentTab, setCurrentTab] = useState("create");
+  const [isOpen, setIsOpen] = useState(false);
   const { toast } = useToast();
   
-  const handleAddAnnouncement = () => {
+  const handleAddAnnouncement = useCallback(() => {
     if (!newAnnouncement.message.trim() && !newAnnouncement.htmlContent.trim()) {
       toast({
         title: "Error",
@@ -85,6 +87,7 @@ export function AnnouncementManager({
       isActive: true
     };
     
+    console.log("Adding announcement:", announcement);
     onAddAnnouncement(announcement);
     
     // Reset form
@@ -106,7 +109,10 @@ export function AnnouncementManager({
       title: "Success",
       description: "Announcement created successfully",
     });
-  };
+    
+    // Close the sheet after adding
+    setIsOpen(false);
+  }, [newAnnouncement, onAddAnnouncement, toast]);
   
   const handleColorSelect = (bgColor: string, textColor: string) => {
     setNewAnnouncement({
@@ -164,7 +170,7 @@ export function AnnouncementManager({
   };
 
   return (
-    <Sheet>
+    <Sheet open={isOpen} onOpenChange={setIsOpen}>
       <SheetTrigger asChild>
         <Button variant="outline" className="bg-white/5">
           <MessageSquarePlus className="h-4 w-4 mr-2" />
@@ -198,10 +204,12 @@ export function AnnouncementManager({
             
             <div className="space-y-2">
               <Label>Message Content</Label>
-              <RichTextEditor 
-                value={newAnnouncement.htmlContent} 
-                onChange={(html) => setNewAnnouncement({...newAnnouncement, htmlContent: html})}
-              />
+              <div className="bg-white rounded-md">
+                <RichTextEditor 
+                  value={newAnnouncement.htmlContent} 
+                  onChange={(html) => setNewAnnouncement({...newAnnouncement, htmlContent: html})}
+                />
+              </div>
             </div>
             
             <div className="space-y-2">
@@ -324,7 +332,7 @@ export function AnnouncementManager({
                               <Trash2 className="h-3 w-3" />
                             </Button>
                           </PopoverTrigger>
-                          <PopoverContent className="w-80">
+                          <PopoverContent className="w-80 z-50">
                             <div className="space-y-3">
                               <h4 className="font-medium">Are you sure?</h4>
                               <p className="text-sm text-muted-foreground">
