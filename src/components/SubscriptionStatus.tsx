@@ -3,7 +3,7 @@ import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
-import { supabase } from "@/integrations/supabase/client";
+import { checkUserSubscription } from "@/utils/stripeHelpers";
 import { SubscriptionButton } from './SubscriptionButton';
 import { ManageSubscriptionButton } from './ManageSubscriptionButton';
 import { format } from 'date-fns';
@@ -23,18 +23,13 @@ export function SubscriptionStatus({ className }: SubscriptionStatusProps) {
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
 
-  const checkSubscription = async () => {
+  const fetchSubscriptionStatus = async () => {
     try {
       setLoading(true);
       
-      // Call the check-subscription edge function
-      const { data, error } = await supabase.functions.invoke('check-subscription');
-      
-      if (error) {
-        throw error;
-      }
-      
-      setStatus(data);
+      // Use the helper function to check subscription status
+      const subscriptionDetails = await checkUserSubscription();
+      setStatus(subscriptionDetails);
       
     } catch (error) {
       console.error("Error checking subscription:", error);
@@ -49,10 +44,10 @@ export function SubscriptionStatus({ className }: SubscriptionStatusProps) {
   };
 
   useEffect(() => {
-    checkSubscription();
+    fetchSubscriptionStatus();
     
     // Check subscription status every minute
-    const interval = setInterval(checkSubscription, 60000);
+    const interval = setInterval(fetchSubscriptionStatus, 60000);
     
     return () => clearInterval(interval);
   }, []);

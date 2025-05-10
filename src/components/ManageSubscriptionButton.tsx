@@ -3,7 +3,7 @@ import { useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { Settings } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { supabase } from "@/integrations/supabase/client";
+import { openCustomerPortal } from "@/utils/stripeHelpers";
 
 interface ManageSubscriptionButtonProps {
   className?: string;
@@ -17,22 +17,11 @@ export function ManageSubscriptionButton({ className }: ManageSubscriptionButton
     try {
       setLoading(true);
       
-      // Call the customer-portal edge function
-      const { data, error } = await supabase.functions.invoke('customer-portal');
-      
-      if (error) {
-        console.error("Error invoking customer-portal:", error);
-        throw new Error(`Failed to create customer portal session: ${error.message || 'Unknown error'}`);
-      }
-      
-      if (!data?.url) {
-        throw new Error("No customer portal URL returned");
-      }
-      
-      console.log("Customer portal URL received:", data.url);
+      // Use the helper function to get the customer portal URL
+      const portalUrl = await openCustomerPortal();
       
       // Redirect to the customer portal
-      window.location.href = data.url;
+      window.location.href = portalUrl;
       
     } catch (error: any) {
       console.error("Error creating customer portal session:", error);
