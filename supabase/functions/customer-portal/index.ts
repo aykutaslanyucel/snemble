@@ -1,84 +1,100 @@
 
-import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
-import Stripe from "https://esm.sh/stripe@14.21.0";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
+import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import Stripe from "https://esm.sh/stripe@12.7.0";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.32.0";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
+// Helper logging function for improved debugging
+const logStep = (step: string, details?: any) => {
+  const detailsStr = details ? ` - ${JSON.stringify(details)}` : '';
+  console.log(`[CUSTOMER-PORTAL] ${step}${detailsStr}`);
+};
+
 serve(async (req) => {
+  // Handle CORS preflight requests
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    console.log("Creating customer portal session");
-    
-    // Create a Supabase client
+    logStep("Function started");
+
+    const stripeKey = Deno.env.get("STRIPE_SECRET_KEY");
+    if (!stripeKey) {
+      throw new Error("STRIPE_SECRET_KEY is not set");
+    }
+    logStep("Stripe key verified");
+
+    // Create Supabase client for authentication
     const supabaseUrl = Deno.env.get("SUPABASE_URL");
-    const supabaseKey = Deno.env.get("SUPABASE_ANON_KEY");
+    const supabaseAnonKey = Deno.env.get("SUPABASE_ANON_KEY");
     
-    if (!supabaseUrl || !supabaseKey) {
-      throw new Error("SUPABASE_URL or SUPABASE_ANON_KEY not set");
+    if (!supabaseUrl || !supabaseAnonKey) {
+      throw new Error("Supabase environment variables are not set");
     }
     
-    const supabaseClient = createClient(supabaseUrl, supabaseKey);
-
-    // Get auth user
+    const supabaseClient = createClient(supabaseUrl, supabaseAnonKey);
+    
+    // Get the user from the auth header
     const authHeader = req.headers.get("Authorization");
     if (!authHeader) {
-      throw new Error("No authorization header");
+      throw new Error("No authorization header provided");
     }
     
     const token = authHeader.replace("Bearer ", "");
     const { data: userData, error: userError } = await supabaseClient.auth.getUser(token);
     
-    if (userError || !userData?.user) {
-      throw new Error("Invalid user token");
+    if (userError) {
+      throw new Error(`Authentication error: ${userError.message}`);
     }
     
     const user = userData.user;
-    console.log("User authenticated:", user.email);
-
-    // Initialize Stripe
-    const stripeSecretKey = Deno.env.get("STRIPE_SECRET_KEY");
-    if (!stripeSecretKey) {
-      throw new Error("STRIPE_SECRET_KEY not set");
+    if (!user?.email) {
+      throw new Error("User not authenticated or email not available");
     }
     
-    const stripe = new Stripe(stripeSecretKey, { apiVersion: "2023-10-16" });
+    logStep("User authenticated", { userId: user.id, email: user.email });
 
-    // Check if user is a Stripe customer
+    // Initialize Stripe
+    const stripe = new Stripe(stripeKey, { apiVersion: "2023-10-16" });
+
+    // Find the customer record for this user
     const customers = await stripe.customers.list({ email: user.email, limit: 1 });
     
     if (customers.data.length === 0) {
       throw new Error("No Stripe customer found for this user");
     }
-
-    const customerId = customers.data[0].id;
-    console.log("Found customer:", customerId);
-
-    const origin = req.headers.get("Origin") || "http://localhost:3000";
     
-    // Create customer portal session
-    const session = await stripe.billingPortal.sessions.create({
+    const customerId = customers.data[0].id;
+    logStep("Found Stripe customer", { customerId });
+
+    // Create a Stripe billing portal session
+    const origin = req.headers.get("origin") || "http://localhost:3000";
+    const portalSession = await stripe.billingPortal.sessions.create({
       customer: customerId,
       return_url: `${origin}/`,
     });
     
-    console.log("Created customer portal session:", session.id);
-    
-    return new Response(JSON.stringify({ url: session.url }), {
-      status: 200,
+    logStep("Created billing portal session", { 
+      sessionId: portalSession.id,
+      url: portalSession.url 
+    });
+
+    return new Response(JSON.stringify({ url: portalSession.url }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
+      status: 200,
     });
   } catch (error) {
-    console.error("Error creating customer portal session:", error);
-    return new Response(JSON.stringify({ error: error.message }), {
-      status: 500,
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    console.error(`[CUSTOMER-PORTAL] Error: ${errorMessage}`);
+    
+    return new Response(JSON.stringify({ error: errorMessage }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
+      status: 500,
     });
   }
 });

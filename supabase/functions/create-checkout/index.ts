@@ -1,129 +1,151 @@
 
-import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
-import Stripe from "https://esm.sh/stripe@14.21.0";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
+import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import Stripe from "https://esm.sh/stripe@12.7.0";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.32.0";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
+// Helper logging function for improved debugging
+const logStep = (step: string, details?: any) => {
+  const detailsStr = details ? ` - ${JSON.stringify(details)}` : '';
+  console.log(`[CREATE-CHECKOUT] ${step}${detailsStr}`);
+};
+
 serve(async (req) => {
+  // Handle CORS preflight requests
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    console.log("Processing checkout request");
-    
-    // Create a Supabase client
+    logStep("Function started");
+
+    const stripeKey = Deno.env.get("STRIPE_SECRET_KEY");
+    if (!stripeKey) {
+      throw new Error("STRIPE_SECRET_KEY is not set");
+    }
+    logStep("Stripe key verified");
+
+    // Create Supabase client using anon key for authentication
     const supabaseUrl = Deno.env.get("SUPABASE_URL");
-    const supabaseKey = Deno.env.get("SUPABASE_ANON_KEY");
+    const supabaseAnonKey = Deno.env.get("SUPABASE_ANON_KEY");
     
-    if (!supabaseUrl || !supabaseKey) {
-      throw new Error("SUPABASE_URL or SUPABASE_ANON_KEY not set");
+    if (!supabaseUrl || !supabaseAnonKey) {
+      throw new Error("Supabase environment variables are not set");
     }
     
-    const supabaseClient = createClient(supabaseUrl, supabaseKey);
-
-    // Get auth user
+    const supabaseClient = createClient(supabaseUrl, supabaseAnonKey);
+    
+    // Get the user from the auth header
     const authHeader = req.headers.get("Authorization");
     if (!authHeader) {
-      throw new Error("No authorization header");
+      throw new Error("No authorization header provided");
     }
     
     const token = authHeader.replace("Bearer ", "");
     const { data: userData, error: userError } = await supabaseClient.auth.getUser(token);
     
-    if (userError || !userData?.user) {
-      throw new Error("Invalid user token");
+    if (userError) {
+      throw new Error(`Authentication error: ${userError.message}`);
     }
     
     const user = userData.user;
-    console.log("User authenticated:", user.email);
+    if (!user?.email) {
+      throw new Error("User not authenticated or email not available");
+    }
+    
+    logStep("User authenticated", { userId: user.id, email: user.email });
 
     // Initialize Stripe
-    const stripeSecretKey = Deno.env.get("STRIPE_SECRET_KEY");
-    if (!stripeSecretKey) {
-      throw new Error("STRIPE_SECRET_KEY not set");
-    }
-    
-    const stripe = new Stripe(stripeSecretKey, { apiVersion: "2023-10-16" });
-    
-    // Get admin settings for Stripe configuration
-    const { data: settingsData } = await supabaseClient.rpc('get_admin_settings');
-    const settings = {};
-    if (settingsData && Array.isArray(settingsData)) {
-      settingsData.forEach((setting) => {
-        try {
-          if (setting.value === 'true' || setting.value === 'false') {
-            settings[setting.key] = setting.value === 'true';
-          } else {
-            try {
-              settings[setting.key] = JSON.parse(setting.value);
-            } catch (e) {
-              settings[setting.key] = setting.value;
-            }
-          }
-        } catch (e) {
-          settings[setting.key] = setting.value;
-        }
-      });
-    }
-    
-    console.log("Retrieved settings:", settings);
-    
-    const priceId = settings['stripe_price_id'];
-    if (!priceId) {
-      throw new Error("No price ID configured in admin settings");
-    }
+    const stripe = new Stripe(stripeKey, { apiVersion: "2023-10-16" });
 
-    // Check if user already exists as a customer
+    // Check if a Stripe customer already exists for this user
     const customers = await stripe.customers.list({ email: user.email, limit: 1 });
-    let customerId;
+    let customerId: string | undefined;
     
     if (customers.data.length > 0) {
       customerId = customers.data[0].id;
-      console.log("Found existing customer:", customerId);
+      logStep("Found existing Stripe customer", { customerId });
     } else {
-      // Create a new customer
-      const customer = await stripe.customers.create({
+      // Create a new customer if one doesn't exist
+      const newCustomer = await stripe.customers.create({
         email: user.email,
-        metadata: {
-          user_id: user.id
-        }
+        metadata: { user_id: user.id }
       });
-      customerId = customer.id;
-      console.log("Created new customer:", customerId);
+      
+      customerId = newCustomer.id;
+      logStep("Created new Stripe customer", { customerId });
     }
 
-    const origin = req.headers.get("Origin") || "http://localhost:3000";
+    // Get price info from admin settings
+    const supabaseAdminClient = createClient(
+      supabaseUrl,
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || "",
+      { auth: { persistSession: false } }
+    );
     
-    // Create Checkout session
+    const { data: settingsData } = await supabaseAdminClient.rpc('get_admin_settings');
+    
+    // Default price data if settings aren't configured
+    let priceId = null;
+    let priceAmount = 999; // $9.99 default
+    let productName = "Premium Subscription";
+    
+    // Extract Stripe settings from admin_settings
+    if (settingsData && Array.isArray(settingsData)) {
+      for (const setting of settingsData) {
+        if (setting.key === 'stripe_price_id' && setting.value) {
+          priceId = setting.value;
+        }
+        if (setting.key === 'stripe_product_name' && setting.value) {
+          productName = setting.value;
+        }
+        if (setting.key === 'stripe_price_amount' && setting.value) {
+          const amount = parseInt(setting.value, 10);
+          if (!isNaN(amount)) priceAmount = amount;
+        }
+      }
+    }
+
+    // Either use the saved price ID or create a price data object
+    const lineItems = priceId ? 
+      [{ price: priceId, quantity: 1 }] : 
+      [{
+        price_data: {
+          currency: "usd",
+          product_data: { name: productName },
+          unit_amount: priceAmount,
+          recurring: { interval: "month" }
+        },
+        quantity: 1,
+      }];
+
+    // Create a Checkout session
     const session = await stripe.checkout.sessions.create({
       customer: customerId,
-      line_items: [
-        {
-          price: priceId,
-          quantity: 1,
-        },
-      ],
+      payment_method_types: ["card"],
+      line_items: lineItems,
       mode: "subscription",
-      success_url: `${origin}/subscription-success?session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${origin}/subscription-canceled`,
+      success_url: `${req.headers.get("origin")}/subscription-success?session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: `${req.headers.get("origin")}/subscription-canceled`,
     });
 
-    console.log("Created checkout session:", session.id);
-    
+    logStep("Checkout session created", { sessionId: session.id, url: session.url });
+
     return new Response(JSON.stringify({ url: session.url }), {
-      status: 200,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
+      status: 200,
     });
   } catch (error) {
-    console.error("Error creating checkout session:", error);
-    return new Response(JSON.stringify({ error: error.message }), {
-      status: 500,
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    console.error(`[CREATE-CHECKOUT] Error: ${errorMessage}`);
+    
+    return new Response(JSON.stringify({ error: errorMessage }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
+      status: 500,
     });
   }
 });

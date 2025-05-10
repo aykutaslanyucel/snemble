@@ -9,6 +9,8 @@ interface AdminSettings {
   stripe_enabled?: boolean;
   stripe_api_key?: string;
   stripe_price_id?: string;
+  stripe_product_name?: string;
+  stripe_price_amount?: number;
   stripe_test_mode?: boolean;
   [key: string]: any;
 }
@@ -31,7 +33,7 @@ export function useAdminSettings() {
       
       // Use the rpc function to get admin settings
       const { data, error } = await supabase
-        .rpc('get_admin_settings') as { data: AdminSettingRecord[] | null, error: any };
+        .rpc('get_admin_settings');
         
       if (error) {
         console.error("Error fetching admin settings:", error);
@@ -49,10 +51,16 @@ export function useAdminSettings() {
             if (typeof setting.value === 'string') {
               if (setting.value === 'true' || setting.value === 'false') {
                 settingsObj[setting.key] = setting.value === 'true';
+              } else if (!isNaN(Number(setting.value)) && setting.key.includes('amount')) {
+                // Special handling for amount fields - store as numbers
+                settingsObj[setting.key] = Number(setting.value);
               } else {
                 try {
-                  settingsObj[setting.key] = JSON.parse(setting.value);
+                  // Try to parse as JSON
+                  const parsedValue = JSON.parse(setting.value);
+                  settingsObj[setting.key] = parsedValue;
                 } catch (e) {
+                  // Not valid JSON, use as string
                   settingsObj[setting.key] = setting.value;
                 }
               }
@@ -60,7 +68,7 @@ export function useAdminSettings() {
               settingsObj[setting.key] = setting.value;
             }
           } catch (e) {
-            // If it's not a valid JSON, use as is
+            // If parsing fails, use as is
             settingsObj[setting.key] = setting.value;
           }
         });
@@ -103,7 +111,8 @@ export function useAdminSettings() {
       
       // Convert value to string if it's an object or boolean
       const stringValue = typeof value === 'object' ? JSON.stringify(value) : 
-                         typeof value === 'boolean' ? String(value) : value;
+                         typeof value === 'boolean' ? String(value) : 
+                         String(value);
       
       const { error } = await supabase.rpc('update_admin_setting', {
         p_key: key,

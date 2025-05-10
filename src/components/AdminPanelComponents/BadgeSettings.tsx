@@ -9,16 +9,18 @@ import { useToast } from "@/hooks/use-toast";
 
 export function BadgeSettings() {
   const { settings, updateSetting, loading, fetchSettings } = useAdminSettings();
-  const [badgesEnabled, setBadgesEnabled] = useState<boolean>(
-    settings?.badges_enabled === undefined ? true : !!settings?.badges_enabled
-  );
+  const [badgesEnabled, setBadgesEnabled] = useState<boolean>(true);
   const { toast } = useToast();
   
   // Update local state when settings change
   useEffect(() => {
-    if (settings?.badges_enabled !== undefined) {
+    if (settings) {
       console.log("Setting badges_enabled from settings:", settings.badges_enabled);
-      setBadgesEnabled(!!settings.badges_enabled);
+      // Default to true if undefined
+      setBadgesEnabled(settings.badges_enabled === undefined ? true : !!settings.badges_enabled);
+    } else {
+      // Default to true if no settings loaded
+      setBadgesEnabled(true);
     }
   }, [settings]);
   
@@ -30,6 +32,9 @@ export function BadgeSettings() {
         title: "Settings updated",
         description: `Badges are now ${badgesEnabled ? 'enabled' : 'disabled'}.`,
       });
+      
+      // Refresh the settings to ensure the UI is up to date
+      fetchSettings();
     } catch (error) {
       console.error('Error updating badge settings:', error);
       toast({

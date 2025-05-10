@@ -21,21 +21,24 @@ export function ManageSubscriptionButton({ className }: ManageSubscriptionButton
       const { data, error } = await supabase.functions.invoke('customer-portal');
       
       if (error) {
-        throw error;
+        console.error("Error invoking customer-portal:", error);
+        throw new Error(`Failed to create customer portal session: ${error.message || 'Unknown error'}`);
       }
       
       if (!data?.url) {
         throw new Error("No customer portal URL returned");
       }
       
+      console.log("Customer portal URL received:", data.url);
+      
       // Redirect to the customer portal
       window.location.href = data.url;
       
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error creating customer portal session:", error);
       toast({
         title: "Error",
-        description: "Failed to open subscription management portal.",
+        description: error?.message || "Failed to open subscription management portal.",
         variant: "destructive",
       });
     } finally {

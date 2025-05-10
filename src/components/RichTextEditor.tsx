@@ -1,6 +1,6 @@
 
-import React, { useCallback } from 'react';
-import { useEditor, EditorContent, type Editor } from '@tiptap/react';
+import React, { useCallback, useRef } from 'react';
+import { useEditor, EditorContent } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import Link from '@tiptap/extension-link';
 import TextStyle from '@tiptap/extension-text-style';
@@ -77,6 +77,8 @@ export function RichTextEditor({ value, onChange }: RichTextEditorProps) {
     editor.chain().focus().setColor(color).run();
   }, [editor]);
 
+  const colorPickerRef = useRef<HTMLDivElement>(null);
+
   if (!editor) {
     return null;
   }
@@ -89,6 +91,7 @@ export function RichTextEditor({ value, onChange }: RichTextEditorProps) {
           size="icon"
           onClick={() => editor.chain().focus().toggleBold().run()}
           className={editor.isActive('bold') ? 'bg-secondary' : ''}
+          type="button"
         >
           <Bold className="h-4 w-4" />
         </Button>
@@ -97,6 +100,7 @@ export function RichTextEditor({ value, onChange }: RichTextEditorProps) {
           size="icon"
           onClick={() => editor.chain().focus().toggleItalic().run()}
           className={editor.isActive('italic') ? 'bg-secondary' : ''}
+          type="button"
         >
           <Italic className="h-4 w-4" />
         </Button>
@@ -105,6 +109,7 @@ export function RichTextEditor({ value, onChange }: RichTextEditorProps) {
           size="icon"
           onClick={() => editor.chain().focus().toggleUnderline().run()}
           className={editor.isActive('underline') ? 'bg-secondary' : ''}
+          type="button"
         >
           <UnderlineIcon className="h-4 w-4" />
         </Button>
@@ -113,6 +118,7 @@ export function RichTextEditor({ value, onChange }: RichTextEditorProps) {
           size="icon"
           onClick={() => editor.chain().focus().toggleStrike().run()}
           className={editor.isActive('strike') ? 'bg-secondary' : ''}
+          type="button"
         >
           <Strikethrough className="h-4 w-4" />
         </Button>
@@ -124,35 +130,44 @@ export function RichTextEditor({ value, onChange }: RichTextEditorProps) {
           size="icon"
           onClick={setLink}
           className={editor.isActive('link') ? 'bg-secondary' : ''}
+          type="button"
         >
           <LinkIcon className="h-4 w-4" />
         </Button>
 
         <span className="w-px bg-muted h-6 mx-1" />
 
-        <Popover>
-          <PopoverTrigger asChild>
-            <Button variant="ghost" size="icon" className="z-10">
-              <Palette className="h-4 w-4" />
-            </Button>
-          </PopoverTrigger>
-          <PopoverContent className="w-64 p-2 z-50">
-            <div className="grid grid-cols-10 gap-1">
-              {colors.map((color) => (
-                <button
-                  key={color}
-                  className="w-5 h-5 rounded cursor-pointer"
-                  style={{ backgroundColor: color }}
-                  onClick={() => setColor(color)}
-                  type="button"
-                />
-              ))}
-            </div>
-          </PopoverContent>
-        </Popover>
+        <div ref={colorPickerRef} className="relative">
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                type="button"
+                className="relative z-10 focus-visible:ring-offset-0"
+              >
+                <Palette className="h-4 w-4" />
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-64 p-2 z-[100]" align="start" side="bottom">
+              <div className="grid grid-cols-10 gap-1">
+                {colors.map((color) => (
+                  <button
+                    key={color}
+                    className="w-5 h-5 rounded cursor-pointer hover:ring-2 hover:ring-primary"
+                    style={{ backgroundColor: color }}
+                    onClick={() => setColor(color)}
+                    type="button"
+                    title={color}
+                  />
+                ))}
+              </div>
+            </PopoverContent>
+          </Popover>
+        </div>
       </div>
 
-      <EditorContent editor={editor} className="z-0" />
+      <EditorContent editor={editor} className="relative z-0" />
     </div>
   );
 }

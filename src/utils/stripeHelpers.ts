@@ -10,6 +10,7 @@ interface CheckSubscriptionResponse {
 
 export const checkUserSubscription = async (): Promise<CheckSubscriptionResponse> => {
   try {
+    console.log("Checking user subscription status...");
     const { data, error } = await supabase.functions.invoke<CheckSubscriptionResponse>('check-subscription');
     
     if (error) {
@@ -17,6 +18,7 @@ export const checkUserSubscription = async (): Promise<CheckSubscriptionResponse
       throw error;
     }
     
+    console.log("Subscription status received:", data);
     return data || { subscribed: false };
   } catch (error) {
     console.error("Failed to check subscription status:", error);
@@ -26,6 +28,7 @@ export const checkUserSubscription = async (): Promise<CheckSubscriptionResponse
 
 export const startCheckoutProcess = async (): Promise<string> => {
   try {
+    console.log("Starting checkout process...");
     const { data, error } = await supabase.functions.invoke<{ url: string }>('create-checkout');
     
     if (error) {
@@ -37,6 +40,7 @@ export const startCheckoutProcess = async (): Promise<string> => {
       throw new Error("No checkout URL returned");
     }
     
+    console.log("Checkout URL received:", data.url);
     return data.url;
   } catch (error) {
     console.error("Failed to start checkout process:", error);
@@ -46,6 +50,7 @@ export const startCheckoutProcess = async (): Promise<string> => {
 
 export const openCustomerPortal = async (): Promise<string> => {
   try {
+    console.log("Opening customer portal...");
     const { data, error } = await supabase.functions.invoke<{ url: string }>('customer-portal');
     
     if (error) {
@@ -57,6 +62,7 @@ export const openCustomerPortal = async (): Promise<string> => {
       throw new Error("No customer portal URL returned");
     }
     
+    console.log("Customer portal URL received:", data.url);
     return data.url;
   } catch (error) {
     console.error("Failed to open customer portal:", error);
@@ -71,7 +77,7 @@ export const isFeatureEnabled = async (feature: string): Promise<boolean> => {
     const { data: settingsData } = await supabase.rpc('get_admin_settings');
     
     // Parse settings
-    const settings = {};
+    const settings: Record<string, any> = {};
     if (settingsData && Array.isArray(settingsData)) {
       settingsData.forEach((setting) => {
         try {

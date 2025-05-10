@@ -21,21 +21,24 @@ export function SubscriptionButton({ className }: SubscriptionButtonProps) {
       const { data, error } = await supabase.functions.invoke('create-checkout');
       
       if (error) {
-        throw error;
+        console.error("Error invoking create-checkout:", error);
+        throw new Error(`Failed to create checkout session: ${error.message || 'Unknown error'}`);
       }
       
       if (!data?.url) {
         throw new Error("No checkout URL returned");
       }
       
+      console.log("Checkout URL received:", data.url);
+      
       // Redirect to the checkout page
       window.location.href = data.url;
       
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error creating checkout session:", error);
       toast({
         title: "Error",
-        description: "Failed to start the subscription process.",
+        description: error?.message || "Failed to start the subscription process.",
         variant: "destructive",
       });
     } finally {
