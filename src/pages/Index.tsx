@@ -1,3 +1,4 @@
+
 import { useState, useMemo, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
@@ -16,7 +17,6 @@ import {
   deleteTeamMember, 
   addTeamMember, 
   subscribeToTeamMembers,
-  canEditTeamMember,
   getOrCreateTeamMemberForUser 
 } from "@/lib/teamMemberUtils";
 import { toast as sonnerToast } from "sonner";
@@ -29,18 +29,66 @@ export default function Index() {
   const [announcements, setAnnouncements] = useState<Announcement[]>([]);
   const [newAnnouncement, setNewAnnouncement] = useState("");
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<Error | null>(null);
   const { toast } = useToast();
   const { user, isAdmin, logout } = useAuth();
+
+  // Add a loading timeout to prevent infinite loading
+  useEffect(() => {
+    if (loading) {
+      const timeoutId = setTimeout(() => {
+        if (loading) {
+          console.warn("Application has been loading for too long, forcing render");
+          setLoading(false);
+          toast({
+            title: "Loading timeout",
+            description: "Some data might not be available. Please refresh if needed.",
+            variant: "destructive",
+          });
+        }
+      }, 15000); // 15 second timeout
+      
+      return () => clearTimeout(timeoutId);
+    }
+  }, [loading, toast]);
 
   // Fetch members and set up subscription and ensure the current user has a team member
   useEffect(() => {
     setLoading(true);
+    let isMounted = true;
+    
+    // Attempt to fetch team members
+    const fetchData = async () => {
+      try {
+        const teamMembers = await fetchTeamMembers();
+        if (isMounted) {
+          console.log("Team members fetched successfully:", teamMembers.length);
+          setMembers(teamMembers);
+          setLoading(false);
+        }
+      } catch (err) {
+        console.error("Error fetching team members:", err);
+        if (isMounted) {
+          setError(err as Error);
+          setLoading(false);
+          toast({
+            title: "Error",
+            description: "Failed to load team data. Please refresh.",
+            variant: "destructive",
+          });
+        }
+      }
+    };
+    
+    fetchData();
     
     // Set up a real-time subscription to team members
     const unsubscribe = subscribeToTeamMembers(updatedMembers => {
       console.log("Team members updated via subscription", updatedMembers.length);
-      setMembers(updatedMembers);
-      setLoading(false);
+      if (isMounted) {
+        setMembers(updatedMembers);
+        setLoading(false);
+      }
     });
     
     // Check if current user has a team member
@@ -51,22 +99,27 @@ export default function Index() {
         })
         .catch(error => {
           console.error("Error ensuring user has team member:", error);
-          toast({
-            title: "Error",
-            description: "Failed to initialize your team profile. Please refresh.",
-            variant: "destructive",
-          });
+          if (isMounted) {
+            toast({
+              title: "Error",
+              description: "Failed to initialize your team profile. Please refresh.",
+              variant: "destructive",
+            });
+          }
         });
     }
     
     // Cleanup subscription on component unmount
     return () => {
+      isMounted = false;
       unsubscribe();
     };
   }, [user, isAdmin, toast]);
 
   // Fetch announcements from Supabase
   useEffect(() => {
+    let isMounted = true;
+    
     const fetchAnnouncements = async () => {
       try {
         const { data, error } = await supabase
@@ -76,7 +129,7 @@ export default function Index() {
           
         if (error) throw error;
         
-        if (data) {
+        if (data && isMounted) {
           // Transform the data to match our Announcement type
           const formattedAnnouncements: Announcement[] = data.map(item => ({
             id: item.id,
@@ -93,11 +146,13 @@ export default function Index() {
         }
       } catch (error) {
         console.error("Error fetching announcements:", error);
-        toast({
-          title: "Error",
-          description: "Failed to load announcements. Please refresh.",
-          variant: "destructive",
-        });
+        if (isMounted) {
+          toast({
+            title: "Error",
+            description: "Failed to load announcements. Please refresh.",
+            variant: "destructive",
+          });
+        }
       }
     };
 
@@ -110,12 +165,15 @@ export default function Index() {
         { event: '*', schema: 'public', table: 'announcements' },
         (payload) => {
           console.log('Announcement change received:', payload);
-          fetchAnnouncements();
+          if (isMounted) {
+            fetchAnnouncements();
+          }
         }
       )
       .subscribe();
 
     return () => {
+      isMounted = false;
       announcementsSubscription.unsubscribe();
     };
   }, [toast]);
@@ -426,14 +484,36 @@ export default function Index() {
     )
   );
 
-  const latestAnnouncement = announcements[0];
-
   if (loading) {
     return (
       <div className="min-h-screen bg-gradient-to-b from-background to-secondary/20 flex items-center justify-center">
         <div className="text-center space-y-4">
           <div className="animate-spin h-10 w-10 border-4 border-primary border-t-transparent rounded-full mx-auto"></div>
           <p className="text-lg">Loading team data...</p>
+          <button 
+            onClick={() => setLoading(false)} 
+            className="text-sm text-muted-foreground hover:text-primary transition-colors"
+          >
+            Taking too long? Click here
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen bg-gradient-to-b from-background to-secondary/20 flex items-center justify-center">
+        <div className="text-center space-y-4 max-w-md mx-auto p-6 bg-white rounded-lg shadow-lg">
+          <div className="text-red-500 text-5xl mb-4">⚠️</div>
+          <h2 className="text-xl font-semibold">Something went wrong</h2>
+          <p className="text-muted-foreground">{error.message || "Failed to load application data"}</p>
+          <button 
+            onClick={() => window.location.reload()} 
+            className="px-4 py-2 bg-primary text-white rounded-md hover:bg-primary/90"
+          >
+            Refresh Page
+          </button>
         </div>
       </div>
     );

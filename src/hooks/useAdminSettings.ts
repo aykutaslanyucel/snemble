@@ -2,6 +2,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { toast as sonnerToast } from "sonner";
 
 // Define admin settings interface
 interface AdminSettings {
@@ -24,16 +25,31 @@ interface AdminSettingRecord {
 export function useAdminSettings() {
   const [settings, setSettings] = useState<AdminSettings | null>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<Error | null>(null);
   const { toast } = useToast();
 
   const fetchSettings = useCallback(async () => {
     try {
       setLoading(true);
+      setError(null);
       console.log("Fetching admin settings...");
+      
+      // Set a timeout to prevent infinite loading
+      const timeoutId = setTimeout(() => {
+        console.warn("Admin settings fetch timeout after 10s");
+        setLoading(false);
+        setSettings({ badges_enabled: true }); // Default fallback value
+        sonnerToast.error("Settings fetch timeout", {
+          description: "Using default settings"
+        });
+      }, 10000);
       
       // Use the rpc function to get admin settings
       const { data, error } = await supabase
         .rpc('get_admin_settings');
+        
+      // Clear timeout since we got a response
+      clearTimeout(timeoutId);
         
       if (error) {
         console.error("Error fetching admin settings:", error);
@@ -74,14 +90,27 @@ export function useAdminSettings() {
         });
       }
       
+      // If no badges_enabled setting found, default to true to prevent UI issues
+      if (settingsObj.badges_enabled === undefined) {
+        settingsObj.badges_enabled = true;
+      }
+      
       console.log("Parsed settings object:", settingsObj);
       setSettings(settingsObj);
     } catch (error) {
       console.error("Error in fetchSettings:", error);
+      setError(error as Error);
+      // Use default values to prevent UI breakage
+      setSettings({ badges_enabled: true });
+      toast({
+        title: "Settings Error",
+        description: "Could not load settings. Using defaults.",
+        variant: "destructive",
+      });
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [toast]);
 
   useEffect(() => {
     fetchSettings();
@@ -145,5 +174,15 @@ export function useAdminSettings() {
     }
   };
 
-  return { settings, loading, updateSetting, fetchSettings };
+  return { 
+    settings, 
+    loading, 
+    error,
+    updateSetting, 
+    fetchSettings,
+    // Provide a safe way to access settings that won't throw errors
+    getSetting: (key: string, defaultValue: any = undefined) => {
+      return settings?.[key] ?? defaultValue;
+    }
+  };
 }

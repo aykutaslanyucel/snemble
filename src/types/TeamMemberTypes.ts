@@ -12,7 +12,8 @@ export type TeamMemberRole =
   | 'user' 
   | 'premium' 
   | 'Team Lead' 
-  | 'Senior Member';
+  | 'Senior Member'
+  | string; // Allow string for dynamic roles from the database
 
 // Define gradient animation types
 export type GradientAnimationType = 'none' | 'gentle' | 'smooth' | 'energetic' | 'dramatic';
@@ -37,6 +38,7 @@ export interface TeamMemberCustomization {
   badgePosition?: BadgePosition;
   badgeSize?: 'small' | 'medium' | 'large';
   backgroundImage?: string;
+  [key: string]: any; // Allow additional properties from database
 }
 
 export interface TeamMember {
@@ -66,6 +68,7 @@ export interface Announcement {
     textColor?: string;
     borderColor?: string;
     animationStyle?: 'scroll' | 'fade' | 'flash' | 'none';
+    [key: string]: any; // Allow additional properties from database
   };
   isActive?: boolean;    // Whether the announcement is currently active
 }
