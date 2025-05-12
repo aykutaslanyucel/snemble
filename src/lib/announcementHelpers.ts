@@ -21,7 +21,6 @@ export const saveAnnouncement = async (announcement: Announcement): Promise<bool
     }
 
     const announcementData = {
-      id: announcement.id,
       message: announcement.message || "",
       html_content: announcement.htmlContent || "",
       timestamp: announcement.timestamp.toISOString(),

@@ -9,3 +9,6 @@ verify_jwt = true
 
 [functions.check-subscription]
 verify_jwt = true
+
+[functions.create-rls-policies]
+verify_jwt = true

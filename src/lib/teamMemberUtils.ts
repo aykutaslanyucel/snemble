@@ -246,6 +246,43 @@ export const getOrCreateTeamMemberForUser = async (userId: string, email: string
     return mapDbToTeamMember(existingMember);
   }
 
+  // If email is empty, try to get it from the profiles table
+  if (!email) {
+    const { data: profileData, error: profileError } = await supabase
+      .from('profiles')
+      .select('email, seniority')
+      .eq('id', userId)
+      .single();
+    
+    if (profileError) {
+      console.error('Error fetching user profile:', profileError);
+      throw profileError;
+    }
+    
+    if (profileData) {
+      email = profileData.email;
+      // Use seniority from profile if available
+      const position = profileData.seniority || "Other";
+    }
+  }
+
+  // Format name from email if we have it
+  let formattedName = "Unknown User";
+  if (email) {
+    formattedName = formatNameFromEmail(email);
+  } else {
+    // Try to get the name from profiles
+    const { data: profileData, error: profileError } = await supabase
+      .from('profiles')
+      .select('name')
+      .eq('id', userId)
+      .maybeSingle();
+    
+    if (!profileError && profileData?.name) {
+      formattedName = profileData.name;
+    }
+  }
+  
   // Get the user's seniority directly from profiles table
   const { data: profileData, error: profileError } = await supabase
     .from('profiles')
@@ -254,15 +291,12 @@ export const getOrCreateTeamMemberForUser = async (userId: string, email: string
     .maybeSingle();
   
   if (profileError) {
-    console.error('Error fetching user profile:', profileError);
+    console.error('Error fetching user profile seniority:', profileError);
     throw profileError;
   }
 
-  // Format name from email
-  const formattedName = formatNameFromEmail(email);
-  
   // Use seniority directly as position, with fallback to Associate (not Junior Associate)
-  let position = profileData?.seniority || "Associate";
+  let position = profileData?.seniority || "Other";
   position = formatPosition(position); // Ensure "Junior Associate" is converted to "Associate"
   
   // Convert role string to TeamMemberRole type

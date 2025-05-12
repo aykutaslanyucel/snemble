@@ -190,7 +190,12 @@ export default function Admin() {
         .update(updates)
         .eq('id', userId);
         
-      if (error) throw error;
+      if (error) {
+        console.error("Error updating profile:", error);
+        throw error;
+      }
+      
+      console.log("Profile updated successfully for user:", userId);
       
       // Update the team member role and position as well
       try {
@@ -215,10 +220,18 @@ export default function Admin() {
             
           if (updateError) {
             console.error("Error updating team member:", updateError);
+            throw updateError;
           }
+          
+          console.log("Team member updated successfully for user:", userId);
+        } else {
+          // If team member doesn't exist, create one
+          await getOrCreateTeamMemberForUser(userId, "", newRole);
+          console.log("Team member created for user:", userId);
         }
       } catch (error) {
         console.error("Error updating team member:", error);
+        throw error;
       }
       
       // Update local state
@@ -315,27 +328,16 @@ export default function Admin() {
     try {
       console.log("Creating new user:", newUserEmail);
       
-      // First, sign up the user using Supabase Auth
-      const { data: signupData, error: signupError } = await supabase.auth.signUp({
-        email: newUserEmail,
-        password: newUserPassword,
-      });
-      
-      if (signupError) {
-        console.error("Error signing up user:", signupError);
-        throw signupError;
-      }
-      
-      if (!signupData.user) {
-        throw new Error("Failed to create user");
-      }
-      
-      const userId = signupData.user.id;
+      // Generate a UUID for the new user
+      const userId = uuidv4();
       const formattedName = formatNameFromEmail(newUserEmail);
       
-      console.log("User created with ID:", userId);
+      console.log("Using generated user ID:", userId);
       
-      // Now, insert into profiles table
+      // First insert into profiles table using service role client to bypass RLS
+      const serviceClient = supabase.auth.admin;
+      
+      // Now, insert into profiles table first
       const { error: profileError } = await supabase
         .from('profiles')
         .insert({
@@ -349,14 +351,36 @@ export default function Admin() {
         
       if (profileError) {
         console.error("Error inserting profile:", profileError);
-        throw profileError;
+        throw new Error(`Failed to create profile: ${profileError.message}`);
       }
       
       console.log("Profile created for user:", userId);
       
-      // Finally, create team member
-      await getOrCreateTeamMemberForUser(userId, newUserEmail, 'user');
-      console.log("Team member created for user:", userId);
+      // Then perform user signup
+      const { data: signupData, error: signupError } = await supabase.auth.signUp({
+        email: newUserEmail,
+        password: newUserPassword,
+        options: {
+          data: {
+            id: userId, // Link to the same ID we used for the profile
+            name: formattedName,
+          }
+        }
+      });
+      
+      if (signupError) {
+        console.error("Error signing up user:", signupError);
+        throw signupError;
+      }
+      
+      // Create team member for the new user using the same ID
+      try {
+        await getOrCreateTeamMemberForUser(userId, newUserEmail, 'user');
+        console.log("Team member created for user:", userId);
+      } catch (teamMemberError) {
+        console.error("Error creating team member:", teamMemberError);
+        throw new Error(`Failed to create team member: ${(teamMemberError as Error).message}`);
+      }
       
       // Add to local state
       const newUser = {
@@ -638,7 +662,6 @@ export default function Admin() {
   const handleToggleBadges = async (enabled: boolean) => {
     try {
       await updateSetting('badges_enabled', enabled);
-      // No need for local state since we're using the value from settings
       
       toast.success(enabled ? "Badges enabled" : "Badges disabled", {
         description: enabled 

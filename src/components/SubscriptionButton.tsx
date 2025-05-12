@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { CreditCard } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { startCheckoutProcess } from "@/utils/stripeHelpers";
+import { useNavigate } from "react-router-dom";
 
 interface SubscriptionButtonProps {
   className?: string;
@@ -12,6 +13,7 @@ interface SubscriptionButtonProps {
 export function SubscriptionButton({ className }: SubscriptionButtonProps) {
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
+  const navigate = useNavigate();
 
   const handleSubscribe = async () => {
     try {
@@ -21,12 +23,12 @@ export function SubscriptionButton({ className }: SubscriptionButtonProps) {
       const checkoutUrl = await startCheckoutProcess();
       console.log("Got checkout URL:", checkoutUrl);
       
-      // Open in a new tab
-      window.open(checkoutUrl, '_blank');
+      // Redirect to checkout URL in the same window for better user experience
+      window.location.href = checkoutUrl;
       
       toast({
-        title: "Checkout started",
-        description: "Checkout page opened in a new tab",
+        title: "Redirecting to checkout",
+        description: "You will be redirected to the payment page",
       });
       
     } catch (error: any) {
