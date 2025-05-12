@@ -88,7 +88,7 @@ export function RichTextEditor({ value, onChange }: RichTextEditorProps) {
         onSubmit={handleSubmitLink}
       />
       
-      <style jsx global>{`
+      <style>{`
         .ql-toolbar, .ql-container {
           z-index: 10 !important;
           position: relative;
