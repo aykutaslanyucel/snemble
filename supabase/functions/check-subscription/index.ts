@@ -1,6 +1,6 @@
 
 import { serve } from "https://deno.land/std@0.177.0/http/server.ts";
-import Stripe from "https://esm.sh/stripe@11.16.0";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.24.0";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -8,167 +8,103 @@ const corsHeaders = {
 };
 
 serve(async (req) => {
-  // Handle CORS preflight requests
+  // Handle CORS
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
-
+  
   try {
-    const authHeader = req.headers.get("Authorization");
+    // Get the authorization header
+    const authHeader = req.headers.get('Authorization');
     if (!authHeader) {
-      throw new Error("No authorization header provided");
+      throw new Error('Missing Authorization header');
     }
 
     // Initialize Supabase client
     const supabaseUrl = Deno.env.get("SUPABASE_URL") || "";
     const supabaseAnonKey = Deno.env.get("SUPABASE_ANON_KEY") || "";
-    const { createClient } = await import("https://esm.sh/@supabase/supabase-js@2.24.0");
-    const supabase = createClient(supabaseUrl, supabaseAnonKey);
-
-    // Verify the user's token
-    const token = authHeader.replace("Bearer ", "");
-    const { data: userData, error: userError } = await supabase.auth.getUser(token);
     
-    if (userError || !userData.user) {
-      throw new Error("Not authenticated");
-    }
-    
-    const user = userData.user;
-    console.log("User authenticated:", user.email);
-
-    // Initialize Stripe
-    const stripeSecretKey = Deno.env.get("STRIPE_SECRET_KEY");
-    if (!stripeSecretKey) {
-      throw new Error("Stripe secret key not configured");
-    }
-    
-    const stripe = new Stripe(stripeSecretKey, {
-      apiVersion: "2022-11-15",
-    });
-
-    // Get the Stripe customer for this user
-    const { data: customer, error: customerError } = await supabase
-      .from("stripe_customers")
-      .select("customer_id")
-      .eq("user_id", user.id)
-      .maybeSingle();
-      
-    if (customerError || !customer?.customer_id) {
-      return new Response(JSON.stringify({ 
-        subscribed: false,
-        subscription_tier: null,
-        subscription_end: null
-      }), {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-        status: 200,
-      });
-    }
-
-    const customerId = customer.customer_id;
-    console.log("Found customer ID:", customerId);
-
-    // Check for active subscriptions
-    const subscriptions = await stripe.subscriptions.list({
-      customer: customerId,
-      status: "active",
-      limit: 1,
-    });
-
-    if (subscriptions.data.length === 0) {
-      console.log("No active subscriptions found");
-      
-      // Update subscribers table
-      const { error: updateError } = await supabase
-        .from("subscribers")
-        .upsert({
-          user_id: user.id,
-          email: user.email,
-          stripe_customer_id: customerId,
-          subscribed: false,
-          subscription_tier: null,
-          subscription_end: null,
-          updated_at: new Date().toISOString(),
-        }, { 
-          onConflict: 'user_id' 
-        });
-        
-      if (updateError) {
-        console.error("Error updating subscriber record:", updateError);
+    const supabase = createClient(supabaseUrl, supabaseAnonKey, {
+      auth: {
+        autoRefreshToken: false,
+        persistSession: false,
+        detectSessionInUrl: false,
       }
-      
-      return new Response(JSON.stringify({ 
-        subscribed: false,
-        subscription_tier: null,
-        subscription_end: null
-      }), {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-        status: 200,
-      });
+    });
+
+    // Get the JWT token from the header
+    const token = authHeader.replace('Bearer ', '');
+    const { data: { user }, error: userError } = await supabase.auth.getUser(token);
+    
+    if (userError || !user) {
+      throw new Error('Invalid user token');
     }
 
-    // Get subscription details
-    const subscription = subscriptions.data[0];
-    const subscriptionEnd = new Date(subscription.current_period_end * 1000).toISOString();
-    
-    // Determine subscription tier based on price
-    const priceId = subscription.items.data[0].price.id;
-    const price = await stripe.prices.retrieve(priceId);
-    const amount = price.unit_amount || 0;
-    
-    let subscriptionTier;
-    if (amount <= 999) {
-      subscriptionTier = "Basic";
-    } else if (amount <= 1999) {
-      subscriptionTier = "Premium";
-    } else {
-      subscriptionTier = "Enterprise";
+    // Check if the user is a subscriber
+    const { data: subscription, error: subscriptionError } = await supabase
+      .from('subscribers')
+      .select('*')
+      .eq('user_id', user.id)
+      .maybeSingle();
+
+    if (subscriptionError) {
+      throw new Error(`Error checking subscription: ${subscriptionError.message}`);
     }
-    
-    console.log("Active subscription found:", {
-      id: subscription.id,
-      tier: subscriptionTier,
-      end: subscriptionEnd
-    });
-    
-    // Update subscribers table
-    const { error: updateError } = await supabase
-      .from("subscribers")
-      .upsert({
-        user_id: user.id,
-        email: user.email,
-        stripe_customer_id: customerId,
-        subscribed: true,
-        subscription_tier: subscriptionTier,
-        subscription_end: subscriptionEnd,
-        updated_at: new Date().toISOString(),
-      }, { 
-        onConflict: 'user_id' 
-      });
+
+    // Check if the user is an admin (who gets premium features by default)
+    const { data: profile, error: profileError } = await supabase
+      .from('profiles')
+      .select('role')
+      .eq('id', user.id)
+      .maybeSingle();
+
+    if (profileError) {
+      throw new Error(`Error checking profile: ${profileError.message}`);
+    }
+
+    const isAdmin = profile?.role === 'admin';
+    let isPremium = false;
+    let expiresAt = null;
+
+    if (subscription) {
+      // Check if subscription is valid and not expired
+      const subscriptionEnd = subscription.subscription_end 
+        ? new Date(subscription.subscription_end) 
+        : null;
       
-    if (updateError) {
-      console.error("Error updating subscriber record:", updateError);
+      isPremium = subscription.subscribed && 
+                (!subscriptionEnd || subscriptionEnd > new Date());
+      
+      if (subscriptionEnd) {
+        expiresAt = subscriptionEnd.toISOString();
+      }
     }
-    
-    return new Response(JSON.stringify({ 
-      subscribed: true,
-      subscription_tier: subscriptionTier,
-      subscription_end: subscriptionEnd
+
+    return new Response(JSON.stringify({
+      isPremium: isPremium || isAdmin,
+      isAdmin: isAdmin,
+      subscription: subscription || null,
+      expiresAt,
     }), {
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
       status: 200,
+      headers: {
+        ...corsHeaders,
+        'Content-Type': 'application/json'
+      }
     });
   } catch (error) {
     console.error("Error checking subscription:", error);
     
-    return new Response(
-      JSON.stringify({ 
-        error: error instanceof Error ? error.message : "Unknown error",
-        subscribed: false
-      }),
-      {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-        status: 500,
+    return new Response(JSON.stringify({
+      error: error instanceof Error ? error.message : String(error),
+      isPremium: false,
+      isAdmin: false
+    }), {
+      status: 500,
+      headers: {
+        ...corsHeaders,
+        'Content-Type': 'application/json'
       }
-    );
+    });
   }
 });

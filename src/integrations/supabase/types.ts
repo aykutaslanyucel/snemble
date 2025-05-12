@@ -264,6 +264,10 @@ export type Database = {
           value: string
         }[]
       }
+      is_admin: {
+        Args: Record<PropertyKey, never>
+        Returns: boolean
+      }
       update_admin_setting: {
         Args: { p_key: string; p_value: string }
         Returns: undefined

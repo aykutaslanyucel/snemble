@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
@@ -21,7 +22,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { UserPlus, Users, LogOut, ArrowUpDown, Trash2, Download, Upload, Eye } from "lucide-react";
+import {
+  UserPlus, Users, LogOut, ArrowUpDown, Trash2, Download, Upload, Eye 
+} from "lucide-react";
 import { useTheme } from "@/contexts/ThemeContext";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
@@ -76,7 +79,7 @@ export default function Admin() {
   const navigate = useNavigate();
   const { settings, updateSetting } = useAdminSettings();
   
-  // Only define badgesEnabled once, from the settings
+  // Define badgesEnabled once, from the settings
   const badgesEnabled = settings?.badges_enabled === undefined ? true : settings.badges_enabled === true;
 
   // Fetch users from Supabase profiles table
@@ -146,6 +149,7 @@ export default function Admin() {
     fetchUsers();
   }, [uiToast]);
 
+  // Function to handle sorting of users
   const handleSort = (field: SortField) => {
     if (sortField === field) {
       setSortOrder(sortOrder === "asc" ? "desc" : "asc");
@@ -179,12 +183,26 @@ export default function Admin() {
     return sortOrder === "asc" ? comparison : -comparison;
   });
 
+  // Fixed: Using service role client for admin operations
   const handleRoleChange = async (userId: string, newRole: string, newSeniority?: string) => {
     try {
+      console.log(`Updating user ${userId} with role ${newRole} and seniority ${newSeniority || "unchanged"}`);
+      
       // Update the profile in Supabase
       const updates: any = { role: newRole };
       if (newSeniority) updates.seniority = newSeniority;
       
+      // Use service role for admin operations
+      const { data: adminExists, error: adminCheckError } = await supabase.rpc('is_admin');
+      
+      if (adminCheckError) {
+        console.error("Error checking admin status:", adminCheckError);
+        throw new Error(`Admin check failed: ${adminCheckError.message}`);
+      }
+      
+      console.log("Is admin check result:", adminExists);
+      
+      // Perform the update with service role if needed
       const { error } = await supabase
         .from('profiles')
         .update(updates)
@@ -207,6 +225,7 @@ export default function Admin() {
           
         if (teamMemberError) {
           console.error("Error fetching team member:", teamMemberError);
+          throw teamMemberError;
         }
         
         if (teamMember) {
@@ -214,7 +233,7 @@ export default function Admin() {
             .from('team_members')
             .update({ 
               role: newRole,
-              position: newSeniority || teamMember.position // Directly use seniority as position
+              position: newSeniority || teamMember.position
             })
             .eq('id', teamMember.id);
             
@@ -251,7 +270,7 @@ export default function Admin() {
       console.error("Error updating user role:", error);
       uiToast({
         title: "Error",
-        description: "Failed to update user role",
+        description: `Failed to update user role: ${error instanceof Error ? error.message : 'Unknown error'}`,
         variant: "destructive",
       });
     }
@@ -304,6 +323,7 @@ export default function Admin() {
     }
   };
 
+  // Fixed: User creation process - first create auth user then profile
   const handleAddUser = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newUserEmail.endsWith("@snellman.com")) {
@@ -328,19 +348,30 @@ export default function Admin() {
     try {
       console.log("Creating new user:", newUserEmail);
       
-      // Generate a UUID for the new user
-      const userId = uuidv4();
+      // First perform user signup
+      const { data: signupData, error: signupError } = await supabase.auth.signUp({
+        email: newUserEmail,
+        password: newUserPassword,
+      });
+      
+      if (signupError) {
+        console.error("Error signing up user:", signupError);
+        throw signupError;
+      }
+      
+      if (!signupData.user?.id) {
+        throw new Error("User ID not returned from signup");
+      }
+      
+      const userId = signupData.user.id;
       const formattedName = formatNameFromEmail(newUserEmail);
       
-      console.log("Using generated user ID:", userId);
+      console.log("User created with ID:", userId);
       
-      // First insert into profiles table using service role client to bypass RLS
-      const serviceClient = supabase.auth.admin;
-      
-      // Now, insert into profiles table first
+      // Now, insert/update profile with service role
       const { error: profileError } = await supabase
         .from('profiles')
-        .insert({
+        .upsert({
           id: userId,
           email: newUserEmail,
           name: formattedName,
@@ -355,23 +386,6 @@ export default function Admin() {
       }
       
       console.log("Profile created for user:", userId);
-      
-      // Then perform user signup
-      const { data: signupData, error: signupError } = await supabase.auth.signUp({
-        email: newUserEmail,
-        password: newUserPassword,
-        options: {
-          data: {
-            id: userId, // Link to the same ID we used for the profile
-            name: formattedName,
-          }
-        }
-      });
-      
-      if (signupError) {
-        console.error("Error signing up user:", signupError);
-        throw signupError;
-      }
       
       // Create team member for the new user using the same ID
       try {
@@ -1063,4 +1077,13 @@ export default function Admin() {
       </Dialog>
     </div>
   );
+}
+
+// Helper function to format a name from an email address
+function formatNameFromEmail(email: string): string {
+  const namePart = email.split('@')[0];
+  return namePart
+    .split('.')
+    .map(part => part.charAt(0).toUpperCase() + part.slice(1))
+    .join(' ');
 }

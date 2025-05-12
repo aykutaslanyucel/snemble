@@ -36,6 +36,13 @@ serve(async (req) => {
     if (teamMembersError) {
       throw teamMembersError;
     }
+
+    // Call is_admin function to ensure it's activated
+    const { error: isAdminError } = await supabase.rpc('is_admin');
+    
+    if (isAdminError && !isAdminError.message.includes('function is_admin() does not exist')) {
+      console.error("Error calling is_admin:", isAdminError);
+    }
     
     return new Response(JSON.stringify({ 
       success: true, 

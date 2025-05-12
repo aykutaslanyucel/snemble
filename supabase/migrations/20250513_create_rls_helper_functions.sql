@@ -1,4 +1,5 @@
 
+
 -- Function to create admin insert policy for profiles
 CREATE OR REPLACE FUNCTION public.create_admin_insert_policy_for_profiles()
 RETURNS void
@@ -50,3 +51,19 @@ BEGIN
   END IF;
 END;
 $$;
+
+-- Function to check if current user is an admin
+-- This prevents infinite recursion in policies
+CREATE OR REPLACE FUNCTION public.is_admin()
+RETURNS boolean
+LANGUAGE plpgsql
+SECURITY DEFINER
+AS $$
+BEGIN
+  RETURN EXISTS (
+    SELECT 1 FROM public.profiles
+    WHERE id = auth.uid() AND role = 'admin'
+  );
+END;
+$$;
+

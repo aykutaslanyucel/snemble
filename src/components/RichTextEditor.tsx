@@ -1,118 +1,169 @@
 
-import { useState, useRef, useEffect } from "react";
+import React, { useRef, useEffect, useState } from "react";
 import ReactQuill from "react-quill";
 import "react-quill/dist/quill.snow.css";
-import { LinkDialog } from "./ui/link-dialog";
+import { Button } from "./ui/button";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "./ui/dialog";
+import { Label } from "./ui/label";
+import { Input } from "./ui/input";
+import "./ui/toast.tsx";
 
 interface RichTextEditorProps {
   value: string;
-  onChange: (html: string) => void;
+  onChange: (content: string) => void;
+  placeholder?: string;
 }
 
-export function RichTextEditor({ value, onChange }: RichTextEditorProps) {
-  const [editorHtml, setEditorHtml] = useState(value);
-  const [showLinkDialog, setShowLinkDialog] = useState(false);
+const RichTextEditor: React.FC<RichTextEditorProps> = ({
+  value,
+  onChange,
+  placeholder
+}) => {
   const quillRef = useRef<ReactQuill>(null);
-  
-  // Handle external value changes
+  const [showLinkDialog, setShowLinkDialog] = useState(false);
+  const [linkUrl, setLinkUrl] = useState('');
+  const [linkText, setLinkText] = useState('');
+  const [selectionRange, setSelectionRange] = useState<any>(null);
+
+  // Initialize toolbar handlers
   useEffect(() => {
-    if (value !== editorHtml) {
-      setEditorHtml(value);
-    }
-  }, [value]);
-  
-  const handleChange = (html: string) => {
-    setEditorHtml(html);
-    onChange(html);
-  };
-  
-  const handleInsertLink = () => {
-    setShowLinkDialog(true);
-  };
-  
-  const handleSubmitLink = (url: string, text: string) => {
-    const editor = quillRef.current?.getEditor();
-    if (editor) {
-      const range = editor.getSelection();
-      if (range) {
-        // If text is provided, insert it and format as link
-        if (text) {
-          editor.deleteText(range.index, range.length);
-          editor.insertText(range.index, text);
-          editor.formatText(range.index, text.length, 'link', url);
-          editor.setSelection(range.index + text.length, 0);
-        } else {
-          // If no selection, just format the selected text as link
-          editor.formatText(range.index, range.length, 'link', url);
-        }
+    if (!quillRef.current) return;
+    
+    const quill = quillRef.current.getEditor();
+    
+    // Custom handler for links to show dialog
+    const toolbar = quill.getModule('toolbar');
+    toolbar.addHandler('link', () => {
+      const range = quill.getSelection();
+      
+      if (range && range.length > 0) {
+        const text = quill.getText(range.index, range.length);
+        setLinkText(text);
+        setSelectionRange(range);
+        setShowLinkDialog(true);
       } else {
-        // If no selection, insert at the end
-        const length = editor.getLength();
-        const textToInsert = text || url;
-        editor.insertText(length - 1, textToInsert);
-        editor.formatText(length - 1, textToInsert.length, 'link', url);
+        setLinkText('');
+        setSelectionRange({ index: quill.getSelection()?.index || 0, length: 0 });
+        setShowLinkDialog(true);
+      }
+    });
+  }, []);
+
+  const insertLink = () => {
+    if (!quillRef.current || !selectionRange) return;
+    
+    const quill = quillRef.current.getEditor();
+    
+    if (linkUrl) {
+      if (selectionRange.length > 0) {
+        quill.formatText(selectionRange.index, selectionRange.length, 'link', linkUrl);
+      } else {
+        const linkToInsert = linkText || linkUrl;
+        quill.insertText(selectionRange.index, linkToInsert, 'link', linkUrl);
       }
     }
+    
+    setShowLinkDialog(false);
+    setLinkUrl('');
+    setLinkText('');
   };
 
-  // Custom toolbar handlers
+  // Custom module configuration for Quill
   const modules = {
     toolbar: {
       container: [
-        [{ 'header': [1, 2, 3, false] }],
+        [{ header: [1, 2, 3, 4, 5, 6, false] }],
         ['bold', 'italic', 'underline', 'strike'],
-        [{ 'color': [] }, { 'background': [] }],
-        [{ 'list': 'ordered'}, { 'list': 'bullet' }],
-        ['link', 'image'],
-        ['clean']
+        [{ color: [] }, { background: [] }],
+        [{ list: 'ordered' }, { list: 'bullet' }],
+        [{ align: [] }],
+        ['link'],
+        ['clean'],
       ],
-      handlers: {
-        link: handleInsertLink
-      }
-    }
+    },
   };
 
+  const formats = [
+    'header',
+    'bold', 'italic', 'underline', 'strike',
+    'color', 'background',
+    'list', 'bullet',
+    'align',
+    'link',
+  ];
+
   return (
-    <div className="rich-text-editor" style={{ zIndex: 50, position: "relative" }}>
+    <div className="relative">
+      <style jsx global>{`
+        .ql-toolbar {
+          position: sticky;
+          top: 0;
+          z-index: 50;
+          background-color: var(--background);
+          border: 1px solid var(--border);
+          border-top-left-radius: 0.375rem;
+          border-top-right-radius: 0.375rem;
+        }
+        .ql-container {
+          border: 1px solid var(--border);
+          border-bottom-left-radius: 0.375rem;
+          border-bottom-right-radius: 0.375rem;
+          border-top: none;
+          min-height: 150px;
+        }
+        .ql-editor {
+          min-height: 150px;
+          font-size: 1rem;
+        }
+      `}</style>
+
       <ReactQuill
         ref={quillRef}
         theme="snow"
-        value={editorHtml}
-        onChange={handleChange}
+        value={value}
+        onChange={onChange}
         modules={modules}
-        style={{ minHeight: '200px' }}
+        formats={formats}
+        placeholder={placeholder}
       />
-      <LinkDialog
-        open={showLinkDialog}
-        onOpenChange={setShowLinkDialog}
-        onSubmit={handleSubmitLink}
-      />
-      
-      <style>
-        {`
-        .rich-text-editor .ql-editor {
-          min-height: 150px;
-        }
-        
-        .rich-text-editor .ql-container {
-          border-bottom-left-radius: 0.375rem;
-          border-bottom-right-radius: 0.375rem;
-          z-index: 40 !important;
-          position: relative;
-        }
-        
-        .rich-text-editor .ql-toolbar {
-          border-top-left-radius: 0.375rem;
-          border-top-right-radius: 0.375rem;
-          z-index: 40 !important;
-          position: relative;
-        }
-        
-        .ql-tooltip {
-          z-index: 100 !important;
-        }
-        `}
-      </style>
+
+      <Dialog open={showLinkDialog} onOpenChange={setShowLinkDialog}>
+        <DialogContent className="sm:max-w-md" style={{ zIndex: 100 }}>
+          <DialogHeader>
+            <DialogTitle>Insert Link</DialogTitle>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="grid gap-2">
+              <Label htmlFor="link-text">Link Text</Label>
+              <Input
+                id="link-text"
+                value={linkText}
+                onChange={(e) => setLinkText(e.target.value)}
+                placeholder="Display text"
+              />
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="link-url">URL</Label>
+              <Input
+                id="link-url"
+                value={linkUrl}
+                onChange={(e) => setLinkUrl(e.target.value)}
+                placeholder="https://example.com"
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button type="button" variant="outline" onClick={() => setShowLinkDialog(false)}>
+              Cancel
+            </Button>
+            <Button type="button" onClick={insertLink}>
+              Insert Link
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
-}
+};
+
+export default RichTextEditor;

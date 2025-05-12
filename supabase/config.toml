@@ -12,3 +12,4 @@ verify_jwt = true
 
 [functions.create-rls-policies]
 verify_jwt = true
+

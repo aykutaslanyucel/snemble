@@ -1,41 +1,83 @@
 
-import { useState } from 'react';
-import { Button } from "@/components/ui/button";
-import { CreditCard } from "lucide-react";
-import { useToast } from "@/hooks/use-toast";
-import { startCheckoutProcess } from "@/utils/stripeHelpers";
-import { useNavigate } from "react-router-dom";
+import React, { useState } from 'react';
+import { Button } from '@/components/ui/button';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/contexts/AuthContext';
+import { useToast } from '@/hooks/use-toast';
+import { SparkleIcon, Loader2 } from 'lucide-react';
 
 interface SubscriptionButtonProps {
+  text?: string;
+  variant?: 'default' | 'outline' | 'secondary' | 'ghost' | 'link' | 'destructive';
   className?: string;
 }
 
-export function SubscriptionButton({ className }: SubscriptionButtonProps) {
-  const [loading, setLoading] = useState(false);
+export function SubscriptionButton({
+  text = "Upgrade to Premium",
+  variant = "default",
+  className = ""
+}: SubscriptionButtonProps) {
+  const { user } = useAuth();
   const { toast } = useToast();
-  const navigate = useNavigate();
+  const [loading, setLoading] = useState(false);
 
-  const handleSubscribe = async () => {
+  const PRICE_ID = "price_1OaGdZOCWA5HpHYPF8880g";  // Replace with your actual Stripe price ID
+  
+  const handleClick = async () => {
     try {
       setLoading(true);
       
-      // Use the helper function to start checkout process
-      const checkoutUrl = await startCheckoutProcess();
-      console.log("Got checkout URL:", checkoutUrl);
+      if (!user) {
+        toast({
+          title: "Authentication required",
+          description: "Please sign in to upgrade to Premium",
+          variant: "destructive",
+        });
+        return;
+      }
       
-      // Redirect to checkout URL in the same window for better user experience
-      window.location.href = checkoutUrl;
+      // Set up the success and cancel URLs
+      const origin = window.location.origin;
+      const successUrl = `${origin}/payment-success`;
+      const cancelUrl = `${origin}/payment-cancel`;
       
-      toast({
-        title: "Redirecting to checkout",
-        description: "You will be redirected to the payment page",
+      console.log("Creating checkout session...");
+      console.log("Success URL:", successUrl);
+      console.log("Cancel URL:", cancelUrl);
+      
+      // Get the user's JWT token
+      const { data: { session }, error: tokenError } = await supabase.auth.getSession();
+      
+      if (tokenError || !session) {
+        throw new Error("Failed to get auth session");
+      }
+      
+      // Call the Supabase Edge Function to create a checkout session
+      const { data, error } = await supabase.functions.invoke("create-checkout", {
+        body: {
+          price_id: PRICE_ID,
+          success_url: successUrl,
+          cancel_url: cancelUrl,
+        },
       });
       
-    } catch (error: any) {
-      console.error("Error creating checkout session:", error);
+      console.log("Checkout response:", data);
+      
+      if (error) {
+        throw new Error(`Checkout error: ${error.message || "Unknown error"}`);
+      }
+      
+      if (!data || !data.url) {
+        throw new Error("No checkout URL returned");
+      }
+      
+      // Redirect to Stripe checkout
+      window.location.href = data.url;
+    } catch (error) {
+      console.error("Subscription error:", error);
       toast({
-        title: "Error",
-        description: error?.message || "Failed to start the subscription process.",
+        title: "Checkout Error",
+        description: error instanceof Error ? error.message : "Failed to process subscription",
         variant: "destructive",
       });
     } finally {
@@ -45,12 +87,19 @@ export function SubscriptionButton({ className }: SubscriptionButtonProps) {
 
   return (
     <Button 
-      onClick={handleSubscribe} 
-      className={className}
+      onClick={handleClick} 
+      variant={variant} 
+      className={`gap-2 ${className}`} 
       disabled={loading}
     >
-      <CreditCard className="mr-2 h-4 w-4" />
-      {loading ? "Preparing Checkout..." : "Subscribe"}
+      {loading ? (
+        <Loader2 className="h-4 w-4 animate-spin" />
+      ) : (
+        <SparkleIcon className="h-4 w-4" />
+      )}
+      {text}
     </Button>
   );
 }
+
+export default SubscriptionButton;

@@ -12,6 +12,7 @@ import Login from "./pages/Login";
 import Signup from "./pages/Signup";
 import Admin from "./pages/Admin";
 import NotFound from "./pages/NotFound";
+import PaymentSuccess from "./pages/PaymentSuccess";
 
 // Create a more robust query client with better error handling
 const queryClient = new QueryClient({
@@ -135,6 +136,7 @@ function AppRoutes() {
           </AdminRoute>
         }
       />
+      <Route path="/payment-success" element={<PaymentSuccess />} />
       <Route path="*" element={<NotFound />} />
     </Routes>
   );
