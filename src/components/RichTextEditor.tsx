@@ -14,11 +14,11 @@ interface RichTextEditorProps {
   placeholder?: string;
 }
 
-const RichTextEditor: React.FC<RichTextEditorProps> = ({
+export function RichTextEditor({
   value,
   onChange,
   placeholder
-}) => {
+}: RichTextEditorProps) {
   const quillRef = useRef<ReactQuill>(null);
   const [showLinkDialog, setShowLinkDialog] = useState(false);
   const [linkUrl, setLinkUrl] = useState('');
@@ -94,7 +94,7 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
 
   return (
     <div className="relative">
-      <style jsx global>{`
+      <style>{`
         .ql-toolbar {
           position: sticky;
           top: 0;
@@ -164,6 +164,4 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
       </Dialog>
     </div>
   );
-};
-
-export default RichTextEditor;
+}
