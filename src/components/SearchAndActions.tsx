@@ -97,18 +97,7 @@ export function SearchAndActions({
           onSearchChange={onSearchChange}
         />
         <div className="flex space-x-2">
-          <ActionButtons
-            onAddMember={onAddMember}
-            announcements={announcements}
-            newAnnouncement={newAnnouncement}
-            onAnnouncementChange={onAnnouncementChange}
-            onAddAnnouncement={handleAddAnnouncement}
-            onUpdateAnnouncement={onUpdateAnnouncement}
-            onDeleteAnnouncement={onDeleteAnnouncement}
-            members={members}
-            htmlContent={htmlContent}
-            onHtmlContentChange={setHtmlContent}
-          />
+          <ActionButtons onAddMember={onAddMember} />
           
           {isAdmin && (
             <AnnouncementManager

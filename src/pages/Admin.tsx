@@ -16,7 +16,7 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { useAuth } from "@/contexts/AuthContext";
 
 export default function Admin() {
-  const { user, logoutUser } = useAuth();
+  const { user, logout } = useAuth();
   
   return (
     <div className="min-h-screen bg-gradient-to-b from-background to-secondary/20">
@@ -24,7 +24,7 @@ export default function Admin() {
         <NavigationHeader 
           isAdmin={true} 
           members={[]}
-          handleLogout={async () => logoutUser()}
+          handleLogout={async () => logout()}
         />
         
         <Card>
