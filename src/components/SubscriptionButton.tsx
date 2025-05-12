@@ -20,8 +20,8 @@ export function SubscriptionButton({ className }: SubscriptionButtonProps) {
       // Use the helper function to start checkout process
       const checkoutUrl = await startCheckoutProcess();
       
-      // Redirect to the checkout page
-      window.location.href = checkoutUrl;
+      // Open in a new tab instead of redirecting
+      window.open(checkoutUrl, '_blank');
       
     } catch (error: any) {
       console.error("Error creating checkout session:", error);

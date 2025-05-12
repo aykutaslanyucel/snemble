@@ -159,6 +159,27 @@ export type Database = {
         }
         Relationships: []
       }
+      stripe_customers: {
+        Row: {
+          created_at: string
+          customer_id: string
+          id: string
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          customer_id: string
+          id?: string
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          customer_id?: string
+          id?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       subscribers: {
         Row: {
           created_at: string

@@ -20,8 +20,8 @@ export function ManageSubscriptionButton({ className }: ManageSubscriptionButton
       // Use the helper function to get the customer portal URL
       const portalUrl = await openCustomerPortal();
       
-      // Redirect to the customer portal
-      window.location.href = portalUrl;
+      // Open in a new tab instead of redirecting
+      window.open(portalUrl, '_blank');
       
     } catch (error: any) {
       console.error("Error creating customer portal session:", error);
