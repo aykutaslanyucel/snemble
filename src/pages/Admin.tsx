@@ -16,12 +16,16 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { useAuth } from "@/contexts/AuthContext";
 
 export default function Admin() {
-  const { user } = useAuth();
+  const { user, logoutUser } = useAuth();
   
   return (
     <div className="min-h-screen bg-gradient-to-b from-background to-secondary/20">
       <div className="container py-8 space-y-6">
-        <NavigationHeader isAdmin={true} members={[]} handleLogout={async () => {}} />
+        <NavigationHeader 
+          isAdmin={true} 
+          members={[]}
+          handleLogout={async () => logoutUser()}
+        />
         
         <Card>
           <CardHeader>

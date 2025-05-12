@@ -6,15 +6,6 @@ import { Announcement } from "@/types/TeamMemberTypes";
 
 interface ActionButtonsProps {
   onAddMember: () => void;
-  announcements: Announcement[];
-  newAnnouncement: string;
-  onAnnouncementChange: (value: string) => void;
-  onAddAnnouncement: () => void;
-  onUpdateAnnouncement?: (id: string, data: Partial<Announcement>) => void;
-  onDeleteAnnouncement?: (id: string) => void;
-  members?: any[];
-  htmlContent?: string;
-  onHtmlContentChange?: (html: string) => void;
 }
 
 export function ActionButtons({

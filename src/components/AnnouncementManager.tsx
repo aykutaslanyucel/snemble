@@ -95,7 +95,7 @@ export function AnnouncementManager({
       
       console.log("Adding announcement:", announcement);
       
-      // Save to Supabase directly
+      // Save to Supabase directly - remove user_id to avoid permission issues
       const { error } = await supabase
         .from('announcements')
         .insert({
