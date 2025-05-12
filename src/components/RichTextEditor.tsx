@@ -88,7 +88,8 @@ export function RichTextEditor({ value, onChange }: RichTextEditorProps) {
         onSubmit={handleSubmitLink}
       />
       
-      <style jsx global>{`
+      <style>
+        {`
         .rich-text-editor .ql-editor {
           min-height: 150px;
         }
@@ -110,7 +111,8 @@ export function RichTextEditor({ value, onChange }: RichTextEditorProps) {
         .ql-tooltip {
           z-index: 100 !important;
         }
-      `}</style>
+        `}
+      </style>
     </div>
   );
 }

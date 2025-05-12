@@ -70,12 +70,13 @@ export default function Admin() {
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const [newPassword, setNewPassword] = useState("");
   const [activeTab, setActiveTab] = useState("users");
-  const [badgesEnabled, setBadgesEnabled] = useState(true); // New state for badge toggle
   const { user, isAdmin, signup } = useAuth();
   const { toast: uiToast } = useToast();
   const { theme, setTheme } = useTheme();
   const navigate = useNavigate();
   const { settings, updateSetting } = useAdminSettings();
+  
+  // Only define badgesEnabled once, from the settings
   const badgesEnabled = settings?.badges_enabled === undefined ? true : settings.badges_enabled === true;
 
   // Fetch users from Supabase profiles table
@@ -637,7 +638,7 @@ export default function Admin() {
   const handleToggleBadges = async (enabled: boolean) => {
     try {
       await updateSetting('badges_enabled', enabled);
-      setBadgesEnabled(enabled);
+      // No need for local state since we're using the value from settings
       
       toast.success(enabled ? "Badges enabled" : "Badges disabled", {
         description: enabled 
