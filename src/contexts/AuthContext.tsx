@@ -86,18 +86,22 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             if (data) {
               console.log("Impersonating user:", data);
               
-              // Create a simulated user object
+              // Create a simulated user object with the correct type casting
+              // Use unknown first to avoid direct type conversion errors
               const simulatedUser = {
                 id: data.id,
-                email: data.email,
+                email: data.email || '',
                 app_metadata: {
                   provider: "impersonated"
                 },
                 user_metadata: {
                   name: data.name,
                   role: data.role
-                }
-              } as User;
+                },
+                // Add required User properties
+                aud: 'authenticated',
+                created_at: new Date().toISOString()
+              } as unknown as User;
               
               // Set the user without a real session
               setUser(simulatedUser);

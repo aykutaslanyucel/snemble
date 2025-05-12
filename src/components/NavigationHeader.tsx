@@ -1,3 +1,4 @@
+
 import React from "react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -63,7 +64,8 @@ export function NavigationHeader({
           <ThemeToggle />
         </div>
       </div>
-      <TeamHeader members={members} />
+      {/* Removed members prop from TeamHeader since it doesn't accept it */}
+      <TeamHeader />
     </div>
   );
 }
