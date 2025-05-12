@@ -1,3 +1,4 @@
+
 import { useState, useCallback } from "react";
 import { Announcement } from "@/types/TeamMemberTypes";
 import { RichTextEditor } from "./RichTextEditor";
@@ -18,6 +19,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "./ui/tabs";
 import { ChevronUp, ChevronDown, Trash2, AlertCircle, Calendar, MessageSquarePlus } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "./ui/popover";
 import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
+import { v4 as uuidv4 } from 'uuid';
 
 interface AnnouncementManagerProps {
   announcements: Announcement[];
@@ -65,7 +68,7 @@ export function AnnouncementManager({
   const [isOpen, setIsOpen] = useState(false);
   const { toast } = useToast();
   
-  const handleAddAnnouncement = useCallback(() => {
+  const handleAddAnnouncement = useCallback(async () => {
     if (!newAnnouncement.message.trim() && !newAnnouncement.htmlContent.trim()) {
       toast({
         title: "Error",
@@ -75,43 +78,103 @@ export function AnnouncementManager({
       return;
     }
     
-    const announcement: Announcement = {
-      id: Date.now().toString(),
-      message: newAnnouncement.message,
-      htmlContent: newAnnouncement.htmlContent || undefined,
-      timestamp: new Date(),
-      expiresAt: newAnnouncement.expiresAt || undefined,
-      priority: newAnnouncement.priority,
-      theme: newAnnouncement.theme,
-      isActive: true
-    };
-    
-    console.log("Adding announcement:", announcement);
-    onAddAnnouncement(announcement);
-    
-    // Reset form
-    setNewAnnouncement({
-      message: "",
-      htmlContent: "",
-      priority: 0,
-      expiresAt: null,
-      theme: {
-        backgroundColor: "from-primary/5 via-primary/10 to-primary/5", 
-        textColor: "text-foreground",
-        borderColor: "border-white/10",
-        animationStyle: "scroll" as "scroll" | "fade" | "flash" | "none"
-      },
-      isActive: true
-    });
-    
-    toast({
-      title: "Success",
-      description: "Announcement created successfully",
-    });
-    
-    // Close the sheet after adding
-    setIsOpen(false);
+    try {
+      const id = uuidv4();
+      const timestamp = new Date();
+      
+      const announcement: Announcement = {
+        id: id,
+        message: newAnnouncement.message,
+        htmlContent: newAnnouncement.htmlContent || undefined,
+        timestamp: timestamp,
+        expiresAt: newAnnouncement.expiresAt || undefined,
+        priority: newAnnouncement.priority,
+        theme: newAnnouncement.theme,
+        isActive: true
+      };
+      
+      console.log("Adding announcement:", announcement);
+      
+      // Save to Supabase directly
+      const { error } = await supabase
+        .from('announcements')
+        .insert({
+          id: id,
+          message: newAnnouncement.message,
+          html_content: newAnnouncement.htmlContent || null,
+          timestamp: timestamp.toISOString(),
+          expires_at: newAnnouncement.expiresAt?.toISOString() || null,
+          priority: newAnnouncement.priority,
+          theme: newAnnouncement.theme,
+          is_active: true
+        });
+        
+      if (error) {
+        throw error;
+      }
+      
+      // If successful, update UI
+      onAddAnnouncement(announcement);
+      
+      // Reset form
+      setNewAnnouncement({
+        message: "",
+        htmlContent: "",
+        priority: 0,
+        expiresAt: null,
+        theme: {
+          backgroundColor: "from-primary/5 via-primary/10 to-primary/5", 
+          textColor: "text-foreground",
+          borderColor: "border-white/10",
+          animationStyle: "scroll" as "scroll" | "fade" | "flash" | "none"
+        },
+        isActive: true
+      });
+      
+      toast({
+        title: "Success",
+        description: "Announcement created successfully",
+      });
+      
+      // Close the sheet after adding
+      setIsOpen(false);
+      
+    } catch (error: any) {
+      console.error("Error adding announcement:", error);
+      toast({
+        title: "Error",
+        description: error.message || "Failed to create announcement",
+        variant: "destructive",
+      });
+    }
   }, [newAnnouncement, onAddAnnouncement, toast]);
+  
+  const handleUpdateAnnouncementTheme = async (id: string, theme: any) => {
+    try {
+      // Update in Supabase
+      const { error } = await supabase
+        .from('announcements')
+        .update({ theme })
+        .eq('id', id);
+      
+      if (error) throw error;
+      
+      // Update in UI
+      onUpdateAnnouncement(id, { theme });
+      
+      toast({
+        title: "Theme Updated",
+        description: "Announcement appearance has been updated.",
+      });
+    } catch (error) {
+      console.error("Error updating announcement theme:", error);
+      toast({
+        title: "Error",
+        description: "Failed to update appearance",
+        variant: "destructive",
+      });
+    }
+  };
   
   const handleColorSelect = (bgColor: string, textColor: string) => {
     setNewAnnouncement({
@@ -134,21 +197,61 @@ export function AnnouncementManager({
     });
   };
   
-  const handleMovePriority = (id: string, direction: "up" | "down") => {
+  const handleMovePriority = async (id: string, direction: "up" | "down") => {
     const currentIndex = announcements.findIndex(a => a.id === id);
     if (currentIndex === -1) return;
     
     const currentPriority = announcements[currentIndex].priority || 0;
+    const newPriority = direction === "up" ? currentPriority + 1 : Math.max(0, currentPriority - 1);
     
-    if (direction === "up") {
-      onUpdateAnnouncement(id, { priority: currentPriority + 1 });
-    } else {
-      onUpdateAnnouncement(id, { priority: Math.max(0, currentPriority - 1) });
+    try {
+      // Update in Supabase
+      const { error } = await supabase
+        .from('announcements')
+        .update({ priority: newPriority })
+        .eq('id', id);
+      
+      if (error) throw error;
+      
+      // Update in UI
+      onUpdateAnnouncement(id, { priority: newPriority });
+    } catch (error) {
+      console.error("Error updating announcement priority:", error);
+      toast({
+        title: "Error",
+        description: "Failed to change announcement priority",
+        variant: "destructive",
+      });
     }
   };
   
-  const handleToggleActive = (id: string, isActive: boolean) => {
-    onUpdateAnnouncement(id, { isActive });
+  const handleToggleActive = async (id: string, isActive: boolean) => {
+    try {
+      // Update in Supabase
+      const { error } = await supabase
+        .from('announcements')
+        .update({ is_active: isActive })
+        .eq('id', id);
+      
+      if (error) throw error;
+      
+      // Update in UI
+      onUpdateAnnouncement(id, { isActive });
+      
+      toast({
+        title: isActive ? "Announcement Activated" : "Announcement Deactivated",
+        description: isActive 
+          ? "The announcement is now visible to all users."
+          : "The announcement has been hidden from users.",
+      });
+    } catch (error) {
+      console.error("Error toggling announcement status:", error);
+      toast({
+        title: "Error",
+        description: "Failed to update announcement status",
+        variant: "destructive",
+      });
+    }
   };
   
   const handleExpiryDateChange = (value: string) => {
@@ -302,103 +405,110 @@ export function AnnouncementManager({
               <div className="space-y-4">
                 {[...announcements]
                   .sort((a, b) => (b.priority || 0) - (a.priority || 0))
-                  .map((announcement) => (
-                    <Card key={announcement.id} className="p-4 relative">
-                      <div className="absolute top-2 right-2 flex gap-1">
-                        <Button 
-                          variant="ghost" 
-                          size="icon" 
-                          className="h-6 w-6"
-                          onClick={() => handleMovePriority(announcement.id, "up")}
-                        >
-                          <ChevronUp className="h-3 w-3" />
-                        </Button>
-                        <Button 
-                          variant="ghost" 
-                          size="icon" 
-                          className="h-6 w-6"
-                          onClick={() => handleMovePriority(announcement.id, "down")}
-                        >
-                          <ChevronDown className="h-3 w-3" />
-                        </Button>
-                        <Popover>
-                          <PopoverTrigger asChild>
-                            <Button 
-                              variant="ghost" 
-                              size="icon" 
-                              className="h-6 w-6 text-destructive"
-                            >
-                              <Trash2 className="h-3 w-3" />
-                            </Button>
-                          </PopoverTrigger>
-                          <PopoverContent className="w-80 z-50">
-                            <div className="space-y-3">
-                              <h4 className="font-medium">Are you sure?</h4>
-                              <p className="text-sm text-muted-foreground">
-                                This will permanently delete this announcement.
-                              </p>
-                              <div className="flex justify-end gap-2">
-                                <Button variant="ghost" size="sm">Cancel</Button>
-                                <Button 
-                                  variant="destructive" 
-                                  size="sm"
-                                  onClick={() => {
-                                    onDeleteAnnouncement(announcement.id);
-                                    toast({
-                                      title: "Announcement deleted",
-                                      description: "The announcement has been removed",
-                                    });
-                                  }}
-                                >
-                                  Delete
-                                </Button>
+                  .map((announcement) => {
+                    // Make sure the announcement has a valid Date object for timestamp
+                    const timestamp = announcement.timestamp instanceof Date 
+                      ? announcement.timestamp 
+                      : new Date(announcement.timestamp);
+                    
+                    return (
+                      <Card key={announcement.id} className="p-4 relative">
+                        <div className="absolute top-2 right-2 flex gap-1">
+                          <Button 
+                            variant="ghost" 
+                            size="icon" 
+                            className="h-6 w-6"
+                            onClick={() => handleMovePriority(announcement.id, "up")}
+                          >
+                            <ChevronUp className="h-3 w-3" />
+                          </Button>
+                          <Button 
+                            variant="ghost" 
+                            size="icon" 
+                            className="h-6 w-6"
+                            onClick={() => handleMovePriority(announcement.id, "down")}
+                          >
+                            <ChevronDown className="h-3 w-3" />
+                          </Button>
+                          <Popover>
+                            <PopoverTrigger asChild>
+                              <Button 
+                                variant="ghost" 
+                                size="icon" 
+                                className="h-6 w-6 text-destructive"
+                              >
+                                <Trash2 className="h-3 w-3" />
+                              </Button>
+                            </PopoverTrigger>
+                            <PopoverContent className="w-80 z-50">
+                              <div className="space-y-3">
+                                <h4 className="font-medium">Are you sure?</h4>
+                                <p className="text-sm text-muted-foreground">
+                                  This will permanently delete this announcement.
+                                </p>
+                                <div className="flex justify-end gap-2">
+                                  <Button variant="ghost" size="sm">Cancel</Button>
+                                  <Button 
+                                    variant="destructive" 
+                                    size="sm"
+                                    onClick={() => {
+                                      onDeleteAnnouncement(announcement.id);
+                                      toast({
+                                        title: "Announcement deleted",
+                                        description: "The announcement has been removed",
+                                      });
+                                    }}
+                                  >
+                                    Delete
+                                  </Button>
+                                </div>
                               </div>
-                            </div>
-                          </PopoverContent>
-                        </Popover>
-                      </div>
-                      
-                      <div className="pr-20">
-                        {announcement.htmlContent ? (
-                          <div 
-                            dangerouslySetInnerHTML={{ __html: announcement.htmlContent }} 
-                            className="text-sm mb-2 announcement-content"
-                          />
-                        ) : (
-                          <p className="text-sm mb-2">{announcement.message}</p>
-                        )}
-                      </div>
-                      
-                      <div className="flex justify-between items-center mt-3">
-                        <div className="flex flex-wrap items-center gap-2">
-                          <Badge variant="secondary">
-                            {announcement.timestamp.toLocaleDateString()}
-                          </Badge>
-                          
-                          {announcement.priority ? (
-                            <Badge variant="outline">
-                              Priority: {announcement.priority}
-                            </Badge>
-                          ) : null}
-                          
-                          {announcement.expiresAt && (
-                            <Badge variant="outline" className="text-yellow-600">
-                              Expires: {new Date(announcement.expiresAt).toLocaleDateString()}
-                            </Badge>
+                            </PopoverContent>
+                          </Popover>
+                        </div>
+                        
+                        <div className="pr-20">
+                          {announcement.htmlContent ? (
+                            <div 
+                              dangerouslySetInnerHTML={{ __html: announcement.htmlContent }} 
+                              className="text-sm mb-2 announcement-content"
+                            />
+                          ) : (
+                            <p className="text-sm mb-2">{announcement.message}</p>
                           )}
                         </div>
                         
-                        <Button
-                          variant={announcement.isActive !== false ? "default" : "secondary"}
-                          size="sm"
-                          className="h-7 text-xs"
-                          onClick={() => handleToggleActive(announcement.id, announcement.isActive === false)}
-                        >
-                          {announcement.isActive !== false ? "Active" : "Inactive"}
-                        </Button>
-                      </div>
-                    </Card>
-                ))}
+                        <div className="flex justify-between items-center mt-3">
+                          <div className="flex flex-wrap items-center gap-2">
+                            <Badge variant="secondary">
+                              {timestamp.toLocaleDateString()}
+                            </Badge>
+                            
+                            {announcement.priority ? (
+                              <Badge variant="outline">
+                                Priority: {announcement.priority}
+                              </Badge>
+                            ) : null}
+                            
+                            {announcement.expiresAt && (
+                              <Badge variant="outline" className="text-yellow-600">
+                                Expires: {new Date(announcement.expiresAt).toLocaleDateString()}
+                              </Badge>
+                            )}
+                          </div>
+                          
+                          <Button
+                            variant={announcement.isActive !== false ? "default" : "secondary"}
+                            size="sm"
+                            className="h-7 text-xs"
+                            onClick={() => handleToggleActive(announcement.id, announcement.isActive === false)}
+                          >
+                            {announcement.isActive !== false ? "Active" : "Inactive"}
+                          </Button>
+                        </div>
+                      </Card>
+                    );
+                  })}
               </div>
             )}
           </TabsContent>

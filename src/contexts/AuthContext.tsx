@@ -1,4 +1,3 @@
-
 import { ReactNode, createContext, useContext, useEffect, useState, useCallback } from 'react';
 import { supabase } from '../integrations/supabase/client';
 import { Session, User } from '@supabase/supabase-js';
@@ -14,7 +13,10 @@ interface AuthContextType {
   login: (email: string, password: string) => Promise<any>;
   signup: (email: string, password: string, role?: string) => Promise<any>;
   logout: () => Promise<void>;
-  resetAuthState: () => void; // New function to reset auth state
+  resetAuthState: () => void;
+  isImpersonating: boolean;
+  impersonateUser?: (userId: string) => Promise<void>;
+  stopImpersonation?: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType>({
@@ -27,6 +29,7 @@ const AuthContext = createContext<AuthContextType>({
   signup: async () => null,
   logout: async () => {},
   resetAuthState: () => {},
+  isImpersonating: false,
 });
 
 export const useAuth = () => useContext(AuthContext);
@@ -37,6 +40,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [loading, setLoading] = useState<boolean>(true);
   const [isAdmin, setIsAdmin] = useState<boolean>(false);
   const [isPremium, setIsPremium] = useState<boolean>(false);
+  const [isImpersonating, setIsImpersonating] = useState<boolean>(false);
 
   // Function to reset auth state when stuck
   const resetAuthState = useCallback(() => {
@@ -49,6 +53,71 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   
   // Use our auth timeout hook to prevent infinite loading
   useAuthTimeout(loading, resetAuthState, 10000); // Reduced timeout to 10s for faster recovery
+
+  // Check if we're impersonating a user during initialization
+  useEffect(() => {
+    const originalUserId = localStorage.getItem('originalUserId');
+    if (originalUserId) {
+      setIsImpersonating(true);
+    }
+  }, []);
+
+  // Check for impersonation query parameter
+  useEffect(() => {
+    const checkImpersonationParams = () => {
+      const params = new URLSearchParams(window.location.search);
+      const impersonateId = params.get('impersonate');
+      
+      if (impersonateId) {
+        // Remove the query parameter but keep impersonating
+        window.history.replaceState({}, document.title, window.location.pathname);
+        
+        // Manually fetch the impersonated user's profile
+        const fetchImpersonatedUser = async () => {
+          try {
+            const { data, error } = await supabase
+              .from('profiles')
+              .select('*')
+              .eq('id', impersonateId)
+              .single();
+              
+            if (error) throw error;
+            
+            if (data) {
+              console.log("Impersonating user:", data);
+              
+              // Create a simulated user object
+              const simulatedUser = {
+                id: data.id,
+                email: data.email,
+                app_metadata: {
+                  provider: "impersonated"
+                },
+                user_metadata: {
+                  name: data.name,
+                  role: data.role
+                }
+              } as User;
+              
+              // Set the user without a real session
+              setUser(simulatedUser);
+              setIsAdmin(data.role === 'admin');
+              setIsPremium(data.role === 'premium' || data.role === 'admin');
+              setIsImpersonating(true);
+              setLoading(false);
+            }
+          } catch (error) {
+            console.error("Error impersonating user:", error);
+            resetAuthState();
+          }
+        };
+        
+        fetchImpersonatedUser();
+      }
+    };
+    
+    checkImpersonationParams();
+  }, [resetAuthState]);
 
   // Improved function to fetch user role with better error handling
   const fetchUserRole = async (userId: string) => {
@@ -78,6 +147,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   useEffect(() => {
+    // Skip normal auth flow if we're impersonating
+    if (isImpersonating) {
+      return;
+    }
+
     let mounted = true;
     console.log("AuthContext initializing...");
 
@@ -151,7 +225,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       mounted = false;
       subscription.unsubscribe();
     };
-  }, []);
+  }, [isImpersonating]);
 
   const login = async (email: string, password: string) => {
     try {
@@ -197,6 +271,15 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const logout = async () => {
     try {
       setLoading(true);
+      
+      // If impersonating, return to original user instead of logging out
+      if (isImpersonating) {
+        localStorage.removeItem('originalUserId');
+        setIsImpersonating(false);
+        window.location.href = '/';
+        return;
+      }
+      
       await supabase.auth.signOut();
     } catch (error) {
       console.error('Error signing out:', error);
@@ -204,6 +287,32 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     } finally {
       setLoading(false); // Always reset loading state after logout attempt
     }
+  };
+
+  // Function to impersonate a user (admin only)
+  const impersonateUser = async (userId: string) => {
+    if (!user) throw new Error("You must be logged in to impersonate a user");
+    
+    try {
+      // Store current user ID
+      localStorage.setItem('originalUserId', user.id);
+      
+      // Set impersonation flag
+      setIsImpersonating(true);
+      
+      // Redirect to impersonation URL
+      window.location.href = `/?impersonate=${userId}`;
+    } catch (error) {
+      console.error("Error impersonating user:", error);
+      throw error;
+    }
+  };
+  
+  // Function to stop impersonation
+  const stopImpersonation = async () => {
+    localStorage.removeItem('originalUserId');
+    setIsImpersonating(false);
+    window.location.href = '/';
   };
 
   const value = {
@@ -216,6 +325,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     signup,
     logout,
     resetAuthState,
+    isImpersonating,
+    impersonateUser,
+    stopImpersonation
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

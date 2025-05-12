@@ -1,7 +1,7 @@
 
 export type TeamMemberStatus = 'available' | 'someAvailability' | 'busy' | 'seriouslyBusy' | 'away' | 'vacation';
 
-// FIXED: Include all role types that are used throughout the application
+// Allow string for dynamic roles from the database
 export type TeamMemberRole = 
   | 'Associate' 
   | 'Senior Associate' 
@@ -24,7 +24,7 @@ export type GradientType = 'linear' | 'radial';
 // Define badge position types
 export type BadgePosition = 'top-right' | 'bottom-right';
 
-// Define a consistent customization interface
+// Define a consistent customization interface that allows for flexible properties
 export interface TeamMemberCustomization {
   color?: string;
   gradient?: string;
@@ -56,6 +56,15 @@ export interface TeamMember {
   isOnVacation?: boolean;
 }
 
+// Announcement theme with flexible properties for different styles
+export interface AnnouncementTheme {
+  backgroundColor?: string; 
+  textColor?: string;
+  borderColor?: string;
+  animationStyle?: 'scroll' | 'fade' | 'flash' | 'none';
+  [key: string]: any; // Allow additional properties from database
+}
+
 export interface Announcement {
   id: string;
   message: string;
@@ -63,13 +72,7 @@ export interface Announcement {
   timestamp: Date;
   expiresAt?: Date;      // When the announcement should expire
   priority?: number;     // For ordering announcements
-  theme?: {              // Theme customization
-    backgroundColor?: string;
-    textColor?: string;
-    borderColor?: string;
-    animationStyle?: 'scroll' | 'fade' | 'flash' | 'none';
-    [key: string]: any; // Allow additional properties from database
-  };
+  theme?: AnnouncementTheme;
   isActive?: boolean;    // Whether the announcement is currently active
 }
 
