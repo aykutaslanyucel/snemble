@@ -220,6 +220,7 @@ export type Database = {
         Row: {
           customization: Json | null
           id: string
+          is_on_vacation: boolean | null
           last_updated: string | null
           name: string
           position: string
@@ -227,10 +228,13 @@ export type Database = {
           role: string | null
           status: string
           user_id: string | null
+          vacation_end: string | null
+          vacation_start: string | null
         }
         Insert: {
           customization?: Json | null
           id?: string
+          is_on_vacation?: boolean | null
           last_updated?: string | null
           name: string
           position: string
@@ -238,10 +242,13 @@ export type Database = {
           role?: string | null
           status: string
           user_id?: string | null
+          vacation_end?: string | null
+          vacation_start?: string | null
         }
         Update: {
           customization?: Json | null
           id?: string
+          is_on_vacation?: boolean | null
           last_updated?: string | null
           name?: string
           position?: string
@@ -249,6 +256,8 @@ export type Database = {
           role?: string | null
           status?: string
           user_id?: string | null
+          vacation_end?: string | null
+          vacation_start?: string | null
         }
         Relationships: []
       }

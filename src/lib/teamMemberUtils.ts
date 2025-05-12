@@ -1,447 +1,257 @@
-import { TeamMember, TeamMemberStatus, TeamMemberRole } from "@/types/TeamMemberTypes";
 import { supabase } from "@/integrations/supabase/client";
-import { validate as isValidUUID } from 'uuid';
-import { Json } from "@/integrations/supabase/types";
+import { TeamMember, TeamMemberStatus } from "@/types/TeamMemberTypes";
+import { User } from "@supabase/supabase-js";
 
-// Format name from email
-export const formatNameFromEmail = (email: string): string => {
-  const namePart = email.split('@')[0];
-  return namePart
-    .split('.')
-    .map(part => part.charAt(0).toUpperCase() + part.slice(1))
-    .join(' ');
-};
-
-// Fix position to avoid using "Junior Associate"
-export const formatPosition = (position: string): string => {
-  return position === "Junior Associate" ? "Associate" : position;
-};
-
-// Convert Supabase team member to app TeamMember
-export const mapDbToTeamMember = (dbTeamMember: any): TeamMember => {
-  return {
-    id: dbTeamMember.id,
-    name: dbTeamMember.name,
-    position: formatPosition(dbTeamMember.position),
-    status: dbTeamMember.status as TeamMemberStatus,
-    projects: dbTeamMember.projects || [],
-    lastUpdated: new Date(dbTeamMember.last_updated),
-    user_id: dbTeamMember.user_id,
-    role: dbTeamMember.role || 'user',
-    customization: dbTeamMember.customization,
-    vacationStart: dbTeamMember.vacation_start ? new Date(dbTeamMember.vacation_start) : undefined,
-    vacationEnd: dbTeamMember.vacation_end ? new Date(dbTeamMember.vacation_end) : undefined,
-    isOnVacation: dbTeamMember.is_on_vacation || false
-  };
-};
-
-// Convert app TeamMember to Supabase format
-export const mapTeamMemberToDb = (teamMember: TeamMember) => {
-  return {
-    id: teamMember.id,
-    name: teamMember.name,
-    position: formatPosition(teamMember.position),
-    status: teamMember.status,
-    projects: teamMember.projects,
-    last_updated: teamMember.lastUpdated ? teamMember.lastUpdated.toISOString() : new Date().toISOString(),
-    user_id: teamMember.user_id,
-    role: teamMember.role,
-    customization: teamMember.customization as unknown as Json,
-    vacation_start: teamMember.vacationStart instanceof Date ? teamMember.vacationStart.toISOString() : teamMember.vacationStart,
-    vacation_end: teamMember.vacationEnd instanceof Date ? teamMember.vacationEnd.toISOString() : teamMember.vacationEnd,
-    is_on_vacation: teamMember.isOnVacation
-  };
-};
-
-// Fetch all team members
+/**
+ * Fetch all team members from Supabase
+ */
 export const fetchTeamMembers = async (): Promise<TeamMember[]> => {
-  console.log("Fetching team members...");
-  const { data, error } = await supabase
-    .from('team_members')
-    .select('*')
-    .order('last_updated', { ascending: false });
+  const { data, error } = await supabase.from("team_members").select("*");
 
   if (error) {
-    console.error('Error fetching team members:', error);
-    throw error;
+    console.error("Error fetching team members:", error);
+    throw new Error(`Failed to fetch team members: ${error.message}`);
   }
 
-  console.log(`Fetched ${data?.length || 0} team members`);
-  return data ? data.map(mapDbToTeamMember) : [];
+  // Map the data to our TeamMember type
+  return data.map((item) => ({
+    id: item.id,
+    name: item.name,
+    position: item.position,
+    status: item.status as TeamMemberStatus,
+    projects: item.projects || [],
+    lastUpdated: new Date(item.last_updated),
+    user_id: item.user_id,
+    role: item.role,
+    customization: item.customization,
+    vacationStart: item.vacation_start ? new Date(item.vacation_start) : undefined,
+    vacationEnd: item.vacation_end ? new Date(item.vacation_end) : undefined,
+    isOnVacation: item.is_on_vacation || false
+  }));
 };
 
-// Add a new team member
-export const addTeamMember = async (teamMember: Omit<TeamMember, 'id'>): Promise<TeamMember> => {
-  // Validate user_id is a valid UUID
-  if (teamMember.user_id && !isValidUUID(teamMember.user_id)) {
-    console.error(`Invalid UUID format for user_id: ${teamMember.user_id}`);
-    throw new Error(`Invalid UUID format for user_id: ${teamMember.user_id}`);
-  }
-  
-  console.log(`Adding team member for user: ${teamMember.user_id || 'unknown'}`);
-  
-  // Make sure we use proper position format
-  const position = formatPosition(teamMember.position);
-  
-  const newTeamMemberData = {
-    name: teamMember.name,
-    position: position,
-    status: teamMember.status,
-    projects: teamMember.projects || [],
-    user_id: teamMember.user_id,
-    role: teamMember.role,
-    customization: teamMember.customization as unknown as Json,
-    vacation_start: teamMember.vacationStart instanceof Date ? teamMember.vacationStart.toISOString() : teamMember.vacationStart,
-    vacation_end: teamMember.vacationEnd instanceof Date ? teamMember.vacationEnd.toISOString() : teamMember.vacationEnd,
-    is_on_vacation: teamMember.isOnVacation || false
-    // last_updated will be set by default in the database
-  };
-
-  try {
-    const { data, error } = await supabase
-      .from('team_members')
-      .insert(newTeamMemberData)
-      .select()
-      .single();
-
-    if (error) {
-      console.error('Error adding team member:', error);
-      throw error;
-    }
-
-    console.log(`Successfully added team member with ID: ${data.id}`);
-    return mapDbToTeamMember(data);
-  } catch (error) {
-    console.error('Error in addTeamMember:', error);
-    throw error;
-  }
-};
-
-// Update a team member with improved error handling and debugging
-export const updateTeamMember = async (id: string, updates: Partial<TeamMember>): Promise<TeamMember> => {
-  console.info(`Updating team member with ID: ${id}`, updates);
-  
-  // Map updates to database format
-  const dbUpdates: any = {};
-  
-  if ('name' in updates) dbUpdates.name = updates.name;
-  if ('position' in updates) dbUpdates.position = formatPosition(updates.position);
-  if ('status' in updates) dbUpdates.status = updates.status;
-  if ('projects' in updates) dbUpdates.projects = updates.projects;
-  if ('role' in updates) dbUpdates.role = updates.role;
-  if ('user_id' in updates) dbUpdates.user_id = updates.user_id;
-  
-  // Fix the customization type casting
-  if ('customization' in updates) {
-    dbUpdates.customization = updates.customization as unknown as Json;
-  }
-  
-  // Handle vacation fields
-  if ('vacationStart' in updates) {
-    dbUpdates.vacation_start = updates.vacationStart instanceof Date 
-      ? updates.vacationStart.toISOString() 
-      : updates.vacationStart;
-  }
-  
-  if ('vacationEnd' in updates) {
-    dbUpdates.vacation_end = updates.vacationEnd instanceof Date 
-      ? updates.vacationEnd.toISOString() 
-      : updates.vacationEnd;
-  }
-  
-  if ('isOnVacation' in updates) {
-    dbUpdates.is_on_vacation = updates.isOnVacation;
-  }
-  
-  // Update last_updated timestamp to trigger UI refresh
-  dbUpdates.last_updated = new Date().toISOString();
-  
-  try {
-    const { data, error } = await supabase
-      .from('team_members')
-      .update(dbUpdates)
-      .eq('id', id)
-      .select()
-      .single();
-
-    if (error) {
-      console.error('Error updating team member:', error);
-      console.error('Error details:', JSON.stringify(error));
-      console.error('Update payload:', JSON.stringify(dbUpdates));
-      console.error('Member ID:', id);
-      throw error;
-    }
-
-    console.info(`Successfully updated team member with ID: ${id}`);
-    return mapDbToTeamMember(data);
-  } catch (error: any) {
-    console.error('Exception in updateTeamMember:', error?.message || error);
-    console.error('Stack trace:', error?.stack);
-    throw error;
-  }
-};
-
-// Delete a team member
-export const deleteTeamMember = async (id: string): Promise<void> => {
-  console.log(`Deleting team member with ID: ${id}`);
-  
-  const { error } = await supabase
-    .from('team_members')
-    .delete()
-    .eq('id', id);
-
-  if (error) {
-    console.error('Error deleting team member:', error);
-    throw error;
-  }
-  
-  console.log(`Successfully deleted team member with ID: ${id}`);
-};
-
-// Simplified permission check with improved logging
-export const canEditTeamMember = (
-  teamMember: TeamMember, 
-  currentUserId: string | undefined, 
-  isAdmin: boolean
-): boolean => {
-  if (!currentUserId) {
-    console.log("Cannot edit: No current user ID provided");
-    return false;
-  }
-  
-  if (isAdmin) {
-    console.log(`User ${currentUserId} can edit member ${teamMember.id} (admin privileges)`);
-    return true;
-  }
-  
-  const canEdit = teamMember.user_id === currentUserId;
-  console.log(`User ${currentUserId} ${canEdit ? 'can' : 'cannot'} edit member ${teamMember.id} (user_id: ${teamMember.user_id})`);
-  
-  return canEdit;
-};
-
-// Get or create a team member for a user with position directly from seniority
-export const getOrCreateTeamMemberForUser = async (userId: string, email: string, role: string): Promise<TeamMember> => {
-  console.log(`Getting or creating team member for user: ${userId}, email: ${email}, role: ${role}`);
-  
-  if (!userId || !isValidUUID(userId)) {
-    console.error(`Invalid UUID format for userId: ${userId}`);
-    throw new Error(`Invalid UUID format for userId: ${userId}`);
-  }
-  
-  // First check if a team member already exists for this user
-  const { data: existingMember, error: fetchError } = await supabase
-    .from('team_members')
-    .select('*')
-    .eq('user_id', userId)
-    .maybeSingle();
-
-  if (fetchError) {
-    console.error('Error checking for existing team member:', fetchError);
-    throw fetchError;
-  }
-
-  if (existingMember) {
-    console.log(`Found existing team member for user ${userId}`);
-    return mapDbToTeamMember(existingMember);
-  }
-
-  // If email is empty, try to get it from the profiles table
-  if (!email) {
-    const { data: profileData, error: profileError } = await supabase
-      .from('profiles')
-      .select('email, seniority')
-      .eq('id', userId)
-      .single();
-    
-    if (profileError) {
-      console.error('Error fetching user profile:', profileError);
-      throw profileError;
-    }
-    
-    if (profileData) {
-      email = profileData.email;
-      // Use seniority from profile if available
-      const position = profileData.seniority || "Other";
-    }
-  }
-
-  // Format name from email if we have it
-  let formattedName = "Unknown User";
-  if (email) {
-    formattedName = formatNameFromEmail(email);
-  } else {
-    // Try to get the name from profiles
-    const { data: profileData, error: profileError } = await supabase
-      .from('profiles')
-      .select('name')
-      .eq('id', userId)
-      .maybeSingle();
-    
-    if (!profileError && profileData?.name) {
-      formattedName = profileData.name;
-    }
-  }
-  
-  // Get the user's seniority directly from profiles table
-  const { data: profileData, error: profileError } = await supabase
-    .from('profiles')
-    .select('seniority')
-    .eq('id', userId)
-    .maybeSingle();
-  
-  if (profileError) {
-    console.error('Error fetching user profile seniority:', profileError);
-    throw profileError;
-  }
-
-  // Use seniority directly as position, with fallback to Associate (not Junior Associate)
-  let position = profileData?.seniority || "Other";
-  position = formatPosition(position); // Ensure "Junior Associate" is converted to "Associate"
-  
-  // Convert role string to TeamMemberRole type
-  const memberRole: TeamMemberRole = (role === 'admin' || role === 'user' || role === 'premium') 
-    ? role as TeamMemberRole 
-    : 'user';
-  
-  const newTeamMember: Omit<TeamMember, 'id'> = {
-    name: formattedName,
-    position: position,
-    status: 'available',
-    projects: [],
-    lastUpdated: new Date(),
-    user_id: userId,
-    role: memberRole
-  };
-
-  try {
-    console.log(`Creating new team member for user ${userId} with position: ${position}`);
-    return await addTeamMember(newTeamMember);
-  } catch (error) {
-    console.error(`Failed to create team member for user ${userId}:`, error);
-    throw error;
-  }
-};
-
-// Ensure all users have team member entries
-export const ensureAllUsersHaveTeamMembers = async (): Promise<void> => {
-  console.log("Ensuring all users have team member entries...");
-  
-  try {
-    // Fetch all profiles
-    const { data: profiles, error: profilesError } = await supabase
-      .from('profiles')
-      .select('*');
-      
-    if (profilesError) {
-      console.error("Error fetching profiles:", profilesError);
-      throw profilesError;
-    }
-    
-    if (!profiles || profiles.length === 0) {
-      console.log("No profiles found to create team members for");
-      return;
-    }
-    
-    // For each profile, ensure a team member exists
-    for (const profile of profiles) {
-      try {
-        await getOrCreateTeamMemberForUser(
-          profile.id, 
-          profile.email, 
-          profile.role || 'user'
-        );
-      } catch (error) {
-        console.error(`Failed to ensure team member for user ${profile.id}:`, error);
-        // Continue with next profile even if one fails
-      }
-    }
-    
-    console.log(`Completed team member verification for ${profiles.length} profiles`);
-  } catch (error) {
-    console.error("Error in ensureAllUsersHaveTeamMembers:", error);
-    throw error;
-  }
-};
-
-// Set up real-time subscription with improved error handling and timeout protection
-export const subscribeToTeamMembers = (
-  callback: (teamMembers: TeamMember[]) => void
-): (() => void) => {
-  // Add timeout to prevent infinite loading
-  const timeoutId = setTimeout(() => {
-    console.warn("Team members fetch is taking too long, providing empty data");
-    callback([]);
-  }, 10000); // 10 seconds timeout
-
-  // First, ensure all users have team members then fetch all team members
-  ensureAllUsersHaveTeamMembers()
-    .then(() => fetchTeamMembers())
-    .then(members => {
-      clearTimeout(timeoutId); // Clear timeout on success
-      callback(members);
-    })
-    .catch(err => {
-      clearTimeout(timeoutId); // Clear timeout on error
-      console.error('Error in initial team members fetch:', err);
-      // Provide empty array as fallback to prevent UI crashes
-      callback([]);
-    });
-  
-  // Then set up real-time changes - FIXED IMPLEMENTATION
-  const channel = supabase
-    .channel('team_members_changes')
-    .on('postgres_changes', 
-      { event: '*', schema: 'public', table: 'team_members' },
-      async (payload) => {
-        console.log('Received real-time update:', payload);
-        // Re-fetch all team members when any change occurs
+/**
+ * Set up real-time subscription to team members
+ */
+export const subscribeToTeamMembers = (callback: (members: TeamMember[]) => void) => {
+  const subscription = supabase
+    .channel("public:team_members")
+    .on(
+      "postgres_changes",
+      { event: "*", schema: "public", table: "team_members" },
+      async () => {
         try {
-          // For insert/update operations, we can optimize by just updating the specific member
-          if (payload.eventType === 'INSERT' || payload.eventType === 'UPDATE') {
-            const updatedMember = payload.new as any;
-            // Convert to TeamMember type
-            const mappedMember = mapDbToTeamMember(updatedMember);
-            // Fetch all members and update optimistically
-            const allMembers = await fetchTeamMembers();
-            callback(allMembers);
-          } 
-          // For delete operations, we need to refetch all
-          else if (payload.eventType === 'DELETE') {
-            const allMembers = await fetchTeamMembers();
-            callback(allMembers);
-          }
+          const updatedMembers = await fetchTeamMembers();
+          callback(updatedMembers);
         } catch (error) {
-          console.error('Error refreshing team members:', error);
-          // In case of error, refresh the entire list
-          try {
-            const allMembers = await fetchTeamMembers();
-            callback(allMembers);
-          } catch (secondError) {
-            console.error('Failed to refresh team members after error:', secondError);
-          }
+          console.error("Error refreshing team members after change:", error);
         }
       }
     )
-    .subscribe((status, err) => {
-      if (status === 'SUBSCRIBED') {
-        console.log('Successfully subscribed to team members changes');
-      } else if (status === 'CHANNEL_ERROR') {
-        console.error('Error subscribing to team members changes:', err);
-      } else if (status === 'TIMED_OUT') {
-        console.error('Subscription timed out');
-      } else {
-        console.log('Subscription status:', status);
-      }
-    });
-  
-  // Return unsubscribe function with error handling
+    .subscribe();
+
   return () => {
-    try {
-      supabase.removeChannel(channel);
-      console.log('Unsubscribed from team members changes');
-    } catch (error) {
-      console.error('Error unsubscribing from team members changes:', error);
-    }
+    supabase.removeChannel(subscription);
   };
+};
+
+/**
+ * Update a team member
+ */
+export const updateTeamMember = async (id: string, updates: Partial<TeamMember>) => {
+  const updateData: any = {};
+  
+  // Map our TeamMember fields to database columns
+  if (updates.name !== undefined) updateData.name = updates.name;
+  if (updates.position !== undefined) updateData.position = updates.position;
+  if (updates.status !== undefined) updateData.status = updates.status;
+  if (updates.projects !== undefined) updateData.projects = updates.projects;
+  if (updates.role !== undefined) updateData.role = updates.role;
+  if (updates.customization !== undefined) updateData.customization = updates.customization;
+  if (updates.vacationStart !== undefined) updateData.vacation_start = updates.vacationStart;
+  if (updates.vacationEnd !== undefined) updateData.vacation_end = updates.vacationEnd;
+  if (updates.isOnVacation !== undefined) updateData.is_on_vacation = updates.isOnVacation;
+
+  const { error } = await supabase
+    .from("team_members")
+    .update(updateData)
+    .eq("id", id);
+
+  if (error) {
+    console.error("Error updating team member:", error);
+    throw new Error(`Failed to update team member: ${error.message}`);
+  }
+};
+
+/**
+ * Delete a team member
+ */
+export const deleteTeamMember = async (id: string) => {
+  const { error } = await supabase.from("team_members").delete().eq("id", id);
+
+  if (error) {
+    console.error("Error deleting team member:", error);
+    throw new Error(`Failed to delete team member: ${error.message}`);
+  }
+};
+
+/**
+ * Add a team member
+ */
+export const addTeamMember = async (member: Omit<TeamMember, "id" | "lastUpdated">) => {
+  // Transform to database format
+  const newMember = {
+    name: member.name,
+    position: member.position,
+    status: member.status,
+    projects: member.projects || [],
+    user_id: member.user_id,
+    role: member.role,
+    customization: member.customization,
+    vacation_start: member.vacationStart?.toISOString(),
+    vacation_end: member.vacationEnd?.toISOString(),
+    is_on_vacation: member.isOnVacation || false
+  };
+
+  const { data, error } = await supabase
+    .from("team_members")
+    .insert(newMember)
+    .select();
+
+  if (error) {
+    console.error("Error adding team member:", error);
+    throw new Error(`Failed to add team member: ${error.message}`);
+  }
+
+  return data[0];
+};
+
+/**
+ * Check if the current user can edit a team member
+ */
+export const canEditTeamMember = async (
+  memberId: string,
+  currentUserId?: string
+): Promise<boolean> => {
+  if (!currentUserId) return false;
+
+  // First check if user is admin
+  const { data: profileData } = await supabase
+    .from("profiles")
+    .select("role")
+    .eq("id", currentUserId)
+    .single();
+
+  if (profileData?.role === "admin") {
+    return true;
+  }
+
+  // Otherwise, check if the team member belongs to the user
+  const { data } = await supabase
+    .from("team_members")
+    .select("user_id")
+    .eq("id", memberId)
+    .single();
+
+  return data?.user_id === currentUserId;
+};
+
+/**
+ * Ensure a team member exists for the current user
+ */
+export const getOrCreateTeamMemberForUser = async (
+  userId: string,
+  email: string,
+  role: string = 'user'
+): Promise<TeamMember> => {
+  try {
+    // First, check if a team member already exists for this user
+    const { data: existingMembers, error: fetchError } = await supabase
+      .from("team_members")
+      .select("*")
+      .eq("user_id", userId);
+
+    if (fetchError) {
+      console.error("Error checking for existing member:", fetchError);
+      throw new Error(`Failed to check for existing member: ${fetchError.message}`);
+    }
+
+    if (existingMembers && existingMembers.length > 0) {
+      // Return the existing member data
+      const member = existingMembers[0];
+      return {
+        id: member.id,
+        name: member.name,
+        position: member.position,
+        status: member.status as TeamMemberStatus,
+        projects: member.projects || [],
+        lastUpdated: new Date(member.last_updated),
+        user_id: member.user_id,
+        role: member.role,
+        customization: member.customization,
+        vacationStart: member.vacation_start ? new Date(member.vacation_start) : undefined,
+        vacationEnd: member.vacation_end ? new Date(member.vacation_end) : undefined,
+        isOnVacation: member.is_on_vacation || false
+      };
+    }
+
+    // Get the profile for this user to get their name
+    const { data: profileData, error: profileError } = await supabase
+      .from("profiles")
+      .select("name")
+      .eq("id", userId)
+      .single();
+
+    if (profileError && profileError.code !== 'PGRST116') {
+      console.error("Error fetching profile:", profileError);
+      // Continue anyway with email as name
+    }
+
+    // Create a new team member
+    const username = profileData?.name || email.split('@')[0];
+    const defaultPosition = role === 'admin' ? 'Team Lead' : 'Team Member';
+
+    const newMember = {
+      name: username,
+      position: defaultPosition,
+      status: 'available' as TeamMemberStatus,
+      projects: [],
+      user_id: userId,
+      role: role,
+      is_on_vacation: false
+    };
+
+    const { data: createdMember, error: createError } = await supabase
+      .from("team_members")
+      .insert(newMember)
+      .select()
+      .single();
+
+    if (createError) {
+      console.error("Error creating team member:", createError);
+      throw new Error(`Failed to create team member: ${createError.message}`);
+    }
+
+    if (!createdMember) {
+      throw new Error("Failed to create team member: No data returned");
+    }
+
+    return {
+      id: createdMember.id,
+      name: createdMember.name,
+      position: createdMember.position,
+      status: createdMember.status as TeamMemberStatus,
+      projects: createdMember.projects || [],
+      lastUpdated: new Date(createdMember.last_updated),
+      user_id: createdMember.user_id,
+      role: createdMember.role,
+      customization: createdMember.customization,
+      vacationStart: createdMember.vacation_start ? new Date(createdMember.vacation_start) : undefined,
+      vacationEnd: createdMember.vacation_end ? new Date(createdMember.vacation_end) : undefined,
+      isOnVacation: createdMember.is_on_vacation || false
+    };
+  } catch (error) {
+    console.error("Error in getOrCreateTeamMemberForUser:", error);
+    throw error;
+  }
 };

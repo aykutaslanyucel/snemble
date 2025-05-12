@@ -98,7 +98,7 @@ export function RichTextEditor({
         .ql-toolbar {
           position: sticky;
           top: 0;
-          z-index: 50;
+          z-index: 10;
           background-color: var(--background);
           border: 1px solid var(--border);
           border-top-left-radius: 0.375rem;
@@ -128,7 +128,7 @@ export function RichTextEditor({
       />
 
       <Dialog open={showLinkDialog} onOpenChange={setShowLinkDialog}>
-        <DialogContent className="sm:max-w-md" style={{ zIndex: 100 }}>
+        <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle>Insert Link</DialogTitle>
           </DialogHeader>
