@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
-import { useToast } from "@/components/ui/use-toast";
+import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
@@ -33,6 +33,7 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsList, TabsContent, TabsTrigger } from "@/components/ui/tabs";
 import { BadgeManager } from "@/components/AdminPanelComponents/BadgeManager";
 import { Switch } from "@/components/ui/switch";
+import { useAdminSettings } from "@/hooks/useAdminSettings";
 
 interface User {
   id: string;
@@ -74,6 +75,8 @@ export default function Admin() {
   const { toast: uiToast } = useToast();
   const { theme, setTheme } = useTheme();
   const navigate = useNavigate();
+  const { settings, updateSetting } = useAdminSettings();
+  const badgesEnabled = settings?.badges_enabled === undefined ? true : settings.badges_enabled === true;
 
   // Fetch users from Supabase profiles table
   useEffect(() => {
@@ -116,7 +119,7 @@ export default function Admin() {
             id: 'b82c63f6-1aa9-4150-a857-eeac0b9c921b',
             email: 'aykut.yucel@snellman.com',
             role: 'admin',
-            seniority: 'Partner' as const, // FIXED: Changed from 'Partners' to 'Partner'
+            seniority: 'Partner' as const,
             lastUpdated: new Date(2023, 1, 15)
           },
           {
@@ -227,7 +230,7 @@ export default function Admin() {
         } : u
       ));
       
-      toast("Success", {
+      toast.success("User updated", {
         description: "User role and seniority updated successfully",
       });
     } catch (error) {
@@ -309,12 +312,30 @@ export default function Admin() {
 
     setLoading(true);
     try {
-      // Create a new user with a valid UUID
-      const userId = uuidv4();
+      console.log("Creating new user:", newUserEmail);
+      
+      // First, sign up the user using Supabase Auth
+      const { data: signupData, error: signupError } = await supabase.auth.signUp({
+        email: newUserEmail,
+        password: newUserPassword,
+      });
+      
+      if (signupError) {
+        console.error("Error signing up user:", signupError);
+        throw signupError;
+      }
+      
+      if (!signupData.user) {
+        throw new Error("Failed to create user");
+      }
+      
+      const userId = signupData.user.id;
       const formattedName = formatNameFromEmail(newUserEmail);
       
-      // Insert into profiles table
-      const { error } = await supabase
+      console.log("User created with ID:", userId);
+      
+      // Now, insert into profiles table
+      const { error: profileError } = await supabase
         .from('profiles')
         .insert({
           id: userId,
@@ -325,13 +346,16 @@ export default function Admin() {
           updated_at: new Date().toISOString()
         });
         
-      if (error) throw error;
+      if (profileError) {
+        console.error("Error inserting profile:", profileError);
+        throw profileError;
+      }
       
-      // Call the signup function to create team member as well
-      await signup(newUserEmail, newUserPassword, 'user');
+      console.log("Profile created for user:", userId);
       
-      // Ensure team member is created
+      // Finally, create team member
       await getOrCreateTeamMemberForUser(userId, newUserEmail, 'user');
+      console.log("Team member created for user:", userId);
       
       // Add to local state
       const newUser = {
@@ -346,18 +370,19 @@ export default function Admin() {
       setNewUserEmail("");
       setNewUserPassword("");
       
-      toast("Success", {
-        description: "User added successfully",
+      toast.success("User added", {
+        description: "New user added successfully",
       });
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error adding user:", error);
       uiToast({
         title: "Error",
-        description: "Failed to add user",
+        description: `Failed to add user: ${error.message || "Unknown error"}`,
         variant: "destructive",
       });
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   };
 
   // Excel export functionality
@@ -611,36 +636,7 @@ export default function Admin() {
 
   const handleToggleBadges = async (enabled: boolean) => {
     try {
-      // Update the badges to be active/inactive in Supabase
-      const { error } = await supabase
-        .from('badges')
-        .update({ is_active: enabled })
-        .eq('id', '*'); // This would update all badges, but doesn't actually work
-      
-      if (error) {
-        console.error("Error updating badge state:", error);
-        throw error;
-      }
-      
-      // Instead we need to update all badges individually
-      const { data: badges, error: fetchError } = await supabase
-        .from('badges')
-        .select('id');
-        
-      if (fetchError) {
-        console.error("Error fetching badges:", fetchError);
-        throw fetchError;
-      }
-      
-      // Update each badge
-      if (badges && badges.length > 0) {
-        const updatePromises = badges.map(badge => 
-          supabase.from('badges').update({ is_active: enabled }).eq('id', badge.id)
-        );
-        await Promise.all(updatePromises);
-      }
-      
-      // Update local state
+      await updateSetting('badges_enabled', enabled);
       setBadgesEnabled(enabled);
       
       toast.success(enabled ? "Badges enabled" : "Badges disabled", {
@@ -758,7 +754,7 @@ export default function Admin() {
           />
           <Button type="submit" disabled={loading}>
             <UserPlus className="h-4 w-4 mr-2" />
-            Add User
+            {loading ? "Adding..." : "Add User"}
           </Button>
         </form>
       </Card>

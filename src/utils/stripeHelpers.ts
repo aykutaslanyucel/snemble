@@ -44,7 +44,7 @@ export const startCheckoutProcess = async (): Promise<string> => {
     return data.url;
   } catch (error) {
     console.error("Failed to start checkout process:", error);
-    throw error;
+    throw new Error(error instanceof Error ? error.message : "Unknown error creating checkout session");
   }
 };
 
@@ -66,7 +66,7 @@ export const openCustomerPortal = async (): Promise<string> => {
     return data.url;
   } catch (error) {
     console.error("Failed to open customer portal:", error);
-    throw error;
+    throw new Error(error instanceof Error ? error.message : "Unknown error opening customer portal");
   }
 };
 

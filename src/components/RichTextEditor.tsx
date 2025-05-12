@@ -42,7 +42,7 @@ export function RichTextEditor({ value, onChange }: RichTextEditorProps) {
           editor.formatText(range.index, text.length, 'link', url);
           editor.setSelection(range.index + text.length, 0);
         } else {
-          // If no text is provided, just format the selected text as link
+          // If no selection, just format the selected text as link
           editor.formatText(range.index, range.length, 'link', url);
         }
       } else {
@@ -73,7 +73,7 @@ export function RichTextEditor({ value, onChange }: RichTextEditorProps) {
   };
 
   return (
-    <div className="rich-text-editor z-10">
+    <div className="rich-text-editor" style={{ zIndex: 50, position: "relative" }}>
       <ReactQuill
         ref={quillRef}
         theme="snow"
@@ -88,16 +88,7 @@ export function RichTextEditor({ value, onChange }: RichTextEditorProps) {
         onSubmit={handleSubmitLink}
       />
       
-      <style>{`
-        .ql-toolbar, .ql-container {
-          z-index: 10 !important;
-          position: relative;
-        }
-        
-        .ql-tooltip {
-          z-index: 100 !important;
-        }
-        
+      <style jsx global>{`
         .rich-text-editor .ql-editor {
           min-height: 150px;
         }
@@ -105,11 +96,19 @@ export function RichTextEditor({ value, onChange }: RichTextEditorProps) {
         .rich-text-editor .ql-container {
           border-bottom-left-radius: 0.375rem;
           border-bottom-right-radius: 0.375rem;
+          z-index: 40 !important;
+          position: relative;
         }
         
         .rich-text-editor .ql-toolbar {
           border-top-left-radius: 0.375rem;
           border-top-right-radius: 0.375rem;
+          z-index: 40 !important;
+          position: relative;
+        }
+        
+        .ql-tooltip {
+          z-index: 100 !important;
         }
       `}</style>
     </div>

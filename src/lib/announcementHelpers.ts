@@ -14,25 +14,33 @@ export const saveAnnouncement = async (announcement: Announcement): Promise<bool
       theme = { ...announcement.theme };
     }
     
-    const { error } = await supabase
+    // Ensure required fields are present
+    if (!announcement.message && !announcement.htmlContent) {
+      console.error("Error saving announcement: message or htmlContent is required");
+      throw new Error("Message or HTML content is required");
+    }
+
+    const announcementData = {
+      id: announcement.id,
+      message: announcement.message || "",
+      html_content: announcement.htmlContent || "",
+      timestamp: announcement.timestamp.toISOString(),
+      expires_at: announcement.expiresAt?.toISOString(),
+      priority: announcement.priority || 0,
+      theme: theme as Json,
+      is_active: announcement.isActive === undefined ? true : announcement.isActive
+    };
+    
+    const { error, data } = await supabase
       .from('announcements')
-      .insert({
-        id: announcement.id,
-        message: announcement.message,
-        html_content: announcement.htmlContent,
-        timestamp: announcement.timestamp.toISOString(),
-        expires_at: announcement.expiresAt?.toISOString(),
-        priority: announcement.priority,
-        theme: theme as Json,
-        is_active: announcement.isActive
-      });
+      .insert(announcementData);
 
     if (error) {
       console.error("Error saving announcement:", error);
       throw error;
     }
     
-    console.log("Announcement saved successfully");
+    console.log("Announcement saved successfully", data);
     return true;
   } catch (error) {
     console.error("Exception in saveAnnouncement:", error);
