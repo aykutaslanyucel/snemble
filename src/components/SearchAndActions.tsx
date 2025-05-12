@@ -3,10 +3,12 @@ import React, { useState, useCallback } from "react";
 import { Card } from "@/components/ui/card";
 import { SearchBar } from "@/components/SearchBar";
 import { ActionButtons } from "@/components/ActionButtons";
+import { AnnouncementManager } from "@/components/AnnouncementManager";
 import { TeamMember, Announcement } from "@/types/TeamMemberTypes";
 import { useToast } from "@/hooks/use-toast";
 import { v4 as uuidv4 } from 'uuid';
 import { saveAnnouncement } from "@/lib/announcementHelpers";
+import { useAuth } from "@/contexts/AuthContext";
 
 interface SearchAndActionsProps {
   searchQuery: string;
@@ -35,6 +37,7 @@ export function SearchAndActions({
 }: SearchAndActionsProps) {
   const [htmlContent, setHtmlContent] = useState<string>("");
   const { toast } = useToast();
+  const { isAdmin } = useAuth();
 
   const handleAddAnnouncement = useCallback(async () => {
     if (!newAnnouncement && !htmlContent) {
@@ -93,18 +96,29 @@ export function SearchAndActions({
           searchQuery={searchQuery}
           onSearchChange={onSearchChange}
         />
-        <ActionButtons
-          onAddMember={onAddMember}
-          announcements={announcements}
-          newAnnouncement={newAnnouncement}
-          onAnnouncementChange={onAnnouncementChange}
-          onAddAnnouncement={handleAddAnnouncement}
-          onUpdateAnnouncement={onUpdateAnnouncement}
-          onDeleteAnnouncement={onDeleteAnnouncement}
-          members={members}
-          htmlContent={htmlContent}
-          onHtmlContentChange={setHtmlContent}
-        />
+        <div className="flex space-x-2">
+          <ActionButtons
+            onAddMember={onAddMember}
+            announcements={announcements}
+            newAnnouncement={newAnnouncement}
+            onAnnouncementChange={onAnnouncementChange}
+            onAddAnnouncement={handleAddAnnouncement}
+            onUpdateAnnouncement={onUpdateAnnouncement}
+            onDeleteAnnouncement={onDeleteAnnouncement}
+            members={members}
+            htmlContent={htmlContent}
+            onHtmlContentChange={setHtmlContent}
+          />
+          
+          {isAdmin && (
+            <AnnouncementManager
+              announcements={announcements}
+              onAddAnnouncement={onAddAnnouncement}
+              onUpdateAnnouncement={onUpdateAnnouncement || (() => {})}
+              onDeleteAnnouncement={onDeleteAnnouncement || (() => {})}
+            />
+          )}
+        </div>
       </div>
     </Card>
   );

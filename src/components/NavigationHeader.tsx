@@ -11,11 +11,10 @@ import { AlertCircle } from "lucide-react";
 
 export function NavigationHeader({
   isAdmin,
-  members,
   handleLogout,
 }: {
   isAdmin: boolean;
-  members: any[];
+  members?: any[];
   handleLogout: () => Promise<void>;
 }) {
   const { isImpersonating, stopImpersonation } = useAuth();
@@ -64,7 +63,6 @@ export function NavigationHeader({
           <ThemeToggle />
         </div>
       </div>
-      {/* Removed members prop from TeamHeader since it doesn't accept it */}
       <TeamHeader />
     </div>
   );
