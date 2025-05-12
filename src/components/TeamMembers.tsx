@@ -2,7 +2,6 @@
 import React from "react";
 import { MemberCard } from "@/components/MemberCard";
 import { TeamMember } from "@/types/TeamMemberTypes";
-import { canEditTeamMember } from "@/lib/teamMemberUtils";
 import { useAdminSettings } from "@/hooks/useAdminSettings";
 
 interface TeamMembersProps {
@@ -31,7 +30,7 @@ export function TeamMembers({ members, onUpdate, onDelete, currentUserId, isAdmi
           }}
           onUpdate={onUpdate}
           onDelete={onDelete}
-          canEdit={canEditTeamMember(member, currentUserId, isAdmin)}
+          canEdit={member.user_id === currentUserId || isAdmin}
         />
       ))}
     </div>

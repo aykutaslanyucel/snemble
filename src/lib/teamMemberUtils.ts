@@ -1,6 +1,7 @@
+
 import { supabase } from "@/integrations/supabase/client";
-import { TeamMember, TeamMemberStatus } from "@/types/TeamMemberTypes";
-import { User } from "@supabase/supabase-js";
+import { TeamMember, TeamMemberStatus, TeamMemberRole, TeamMemberCustomization } from "@/types/TeamMemberTypes";
+import { Json } from "@/integrations/supabase/types";
 
 /**
  * Fetch all team members from Supabase
@@ -22,8 +23,8 @@ export const fetchTeamMembers = async (): Promise<TeamMember[]> => {
     projects: item.projects || [],
     lastUpdated: new Date(item.last_updated),
     user_id: item.user_id,
-    role: item.role,
-    customization: item.customization,
+    role: (item.role || 'user') as TeamMemberRole, // Cast as TeamMemberRole
+    customization: item.customization as unknown as TeamMemberCustomization, // Cast to correct type
     vacationStart: item.vacation_start ? new Date(item.vacation_start) : undefined,
     vacationEnd: item.vacation_end ? new Date(item.vacation_end) : undefined,
     isOnVacation: item.is_on_vacation || false
@@ -100,7 +101,7 @@ export const deleteTeamMember = async (id: string) => {
  */
 export const addTeamMember = async (member: Omit<TeamMember, "id" | "lastUpdated">) => {
   // Transform to database format
-  const newMember = {
+  const newMember: any = {
     name: member.name,
     position: member.position,
     status: member.status,
@@ -129,31 +130,14 @@ export const addTeamMember = async (member: Omit<TeamMember, "id" | "lastUpdated
 /**
  * Check if the current user can edit a team member
  */
-export const canEditTeamMember = async (
-  memberId: string,
-  currentUserId?: string
-): Promise<boolean> => {
+export const canEditTeamMember = (
+  member: TeamMember,
+  currentUserId?: string,
+  isAdmin?: boolean
+): boolean => {
+  if (isAdmin) return true;
   if (!currentUserId) return false;
-
-  // First check if user is admin
-  const { data: profileData } = await supabase
-    .from("profiles")
-    .select("role")
-    .eq("id", currentUserId)
-    .single();
-
-  if (profileData?.role === "admin") {
-    return true;
-  }
-
-  // Otherwise, check if the team member belongs to the user
-  const { data } = await supabase
-    .from("team_members")
-    .select("user_id")
-    .eq("id", memberId)
-    .single();
-
-  return data?.user_id === currentUserId;
+  return member.user_id === currentUserId;
 };
 
 /**
@@ -187,8 +171,8 @@ export const getOrCreateTeamMemberForUser = async (
         projects: member.projects || [],
         lastUpdated: new Date(member.last_updated),
         user_id: member.user_id,
-        role: member.role,
-        customization: member.customization,
+        role: member.role as TeamMemberRole, // Cast as TeamMemberRole
+        customization: member.customization as unknown as TeamMemberCustomization, // Cast to correct type
         vacationStart: member.vacation_start ? new Date(member.vacation_start) : undefined,
         vacationEnd: member.vacation_end ? new Date(member.vacation_end) : undefined,
         isOnVacation: member.is_on_vacation || false
@@ -211,7 +195,7 @@ export const getOrCreateTeamMemberForUser = async (
     const username = profileData?.name || email.split('@')[0];
     const defaultPosition = role === 'admin' ? 'Team Lead' : 'Team Member';
 
-    const newMember = {
+    const newMember: any = {
       name: username,
       position: defaultPosition,
       status: 'available' as TeamMemberStatus,
@@ -244,8 +228,8 @@ export const getOrCreateTeamMemberForUser = async (
       projects: createdMember.projects || [],
       lastUpdated: new Date(createdMember.last_updated),
       user_id: createdMember.user_id,
-      role: createdMember.role,
-      customization: createdMember.customization,
+      role: createdMember.role as TeamMemberRole, // Cast as TeamMemberRole
+      customization: createdMember.customization as unknown as TeamMemberCustomization, // Cast to correct type
       vacationStart: createdMember.vacation_start ? new Date(createdMember.vacation_start) : undefined,
       vacationEnd: createdMember.vacation_end ? new Date(createdMember.vacation_end) : undefined,
       isOnVacation: createdMember.is_on_vacation || false
@@ -255,3 +239,4 @@ export const getOrCreateTeamMemberForUser = async (
     throw error;
   }
 };
+
