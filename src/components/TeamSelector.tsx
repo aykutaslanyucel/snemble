@@ -1,14 +1,6 @@
-
 import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { ChevronDown, Users, Plus } from "lucide-react";
-import { 
-  DropdownMenu, 
-  DropdownMenuContent, 
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger 
-} from "@/components/ui/dropdown-menu";
+import { Users, Plus } from "lucide-react";
 import { 
   Dialog, 
   DialogContent, 
@@ -32,9 +24,10 @@ export type Team = {
 interface TeamSelectorProps {
   userId?: string;
   isAdmin: boolean;
+  inDropdown?: boolean;
 }
 
-export function TeamSelector({ userId, isAdmin }: TeamSelectorProps) {
+export function TeamSelector({ userId, isAdmin, inDropdown = false }: TeamSelectorProps) {
   const [teams, setTeams] = useState<Team[]>([]);
   const [selectedTeam, setSelectedTeam] = useState<Team | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -122,12 +115,87 @@ export function TeamSelector({ userId, isAdmin }: TeamSelectorProps) {
 
   if (isLoading) {
     return (
-      <Button variant="outline" size="sm" disabled className="animate-pulse">
-        <Users className="mr-2 h-4 w-4" /> Loading teams...
-      </Button>
+      <div className="animate-pulse text-sm text-muted-foreground py-2 px-3">
+        Loading teams...
+      </div>
     );
   }
 
+  // If the component is rendered inside a dropdown, use a simplified version
+  if (inDropdown) {
+    return (
+      <>
+        {teams.map((team) => (
+          <div
+            key={team.id}
+            className={`px-3 py-2 cursor-pointer hover:bg-muted ${selectedTeam?.id === team.id ? "bg-muted" : ""}`}
+            onClick={() => handleSelectTeam(team)}
+          >
+            {team.name}
+            {team.description && (
+              <p className="text-xs text-muted-foreground">{team.description}</p>
+            )}
+          </div>
+        ))}
+        
+        {isAdmin && (
+          <div
+            onClick={() => setIsCreateDialogOpen(true)}
+            className="px-3 py-2 cursor-pointer hover:bg-muted text-primary flex items-center border-t"
+          >
+            <Plus className="mr-2 h-4 w-4" /> Create New Team
+          </div>
+        )}
+
+        <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Create New Team</DialogTitle>
+              <DialogDescription>
+                Add a new team to your organization.
+              </DialogDescription>
+            </DialogHeader>
+            
+            <div className="grid gap-4 py-4">
+              <div className="grid gap-2">
+                <Label htmlFor="team-name">Team Name</Label>
+                <Input 
+                  id="team-name" 
+                  value={newTeamName} 
+                  onChange={(e) => setNewTeamName(e.target.value)}
+                  placeholder="e.g. Marketing Team" 
+                />
+              </div>
+              
+              <div className="grid gap-2">
+                <Label htmlFor="team-description">Description (optional)</Label>
+                <Input 
+                  id="team-description" 
+                  value={newTeamDescription} 
+                  onChange={(e) => setNewTeamDescription(e.target.value)}
+                  placeholder="Brief description of the team" 
+                />
+              </div>
+            </div>
+
+            <DialogFooter>
+              <Button 
+                variant="outline" 
+                onClick={() => setIsCreateDialogOpen(false)}
+              >
+                Cancel
+              </Button>
+              <Button onClick={handleCreateTeam}>
+                Create Team
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      </>
+    );
+  }
+
+  // Original component rendering for standalone usage
   return (
     <div className="flex items-center">
       <DropdownMenu>

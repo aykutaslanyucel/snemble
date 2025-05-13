@@ -15,6 +15,9 @@ import {
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { useAuth } from "@/contexts/AuthContext";
 import { TeamManagement } from "@/components/AdminPanelComponents/TeamManagement";
+import { Link } from "react-router-dom";
+import { Button } from "@/components/ui/button";
+import { ArrowLeft } from "lucide-react";
 
 export default function Admin() {
   const { user, logout } = useAuth();
@@ -22,11 +25,20 @@ export default function Admin() {
   return (
     <div className="min-h-screen bg-gradient-to-b from-background to-secondary/20">
       <div className="container py-8 space-y-6">
-        <NavigationHeader 
-          isAdmin={true} 
-          members={[]}
-          handleLogout={async () => logout()}
-        />
+        <div className="flex items-center justify-between">
+          <NavigationHeader 
+            isAdmin={true} 
+            members={[]}
+            handleLogout={async () => logout()}
+            showTeamSelector={false}
+          />
+          
+          <Button asChild variant="outline" size="sm" className="flex items-center">
+            <Link to="/">
+              <ArrowLeft className="mr-1 h-4 w-4" /> Back to Dashboard
+            </Link>
+          </Button>
+        </div>
         
         <Card>
           <CardHeader>
@@ -37,7 +49,7 @@ export default function Admin() {
           </CardHeader>
           <CardContent>
             <Tabs defaultValue="settings" className="space-y-4">
-              <TabsList>
+              <TabsList className="w-full flex justify-start overflow-x-auto">
                 <TabsTrigger value="settings">General Settings</TabsTrigger>
                 <TabsTrigger value="badges">Badge Management</TabsTrigger>
                 <TabsTrigger value="teams">Team Management</TabsTrigger>

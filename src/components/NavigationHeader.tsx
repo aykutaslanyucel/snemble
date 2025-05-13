@@ -3,34 +3,56 @@ import React from "react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
-import { LogOut, Settings, AlertCircle } from "lucide-react";
+import { LogOut, Settings, AlertCircle, ChevronDown } from "lucide-react";
 import { ThemeToggle } from "@/components/ThemeToggle";
-import { TeamHeader } from "@/components/TeamHeader";
 import { useAuth } from "@/contexts/AuthContext";
 import { CapacityTrackerWidget } from "@/components/CapacityTrackerWidget";
 import { TeamMember } from "@/types/TeamMemberTypes";
+import { 
+  DropdownMenu, 
+  DropdownMenuContent, 
+  DropdownMenuItem,
+  DropdownMenuTrigger 
+} from "@/components/ui/dropdown-menu";
+import { TeamSelector } from "@/components/TeamSelector";
 
 export function NavigationHeader({
   isAdmin,
   handleLogout,
   members,
+  showTeamSelector = true,
 }: {
   isAdmin: boolean;
   members?: TeamMember[];
   handleLogout: () => Promise<void>;
+  showTeamSelector?: boolean;
 }) {
   const { isImpersonating, stopImpersonation } = useAuth();
 
   return (
-    <div className="flex flex-col gap-4">
-      <div className="flex items-center justify-between">
+    <div className="flex flex-col gap-6">
+      <div className="flex items-center justify-between py-2">
         <div className="flex items-center space-x-4">
           <Avatar className="h-8 w-8">
             <AvatarImage src="" alt="Team logo" />
             <AvatarFallback>T</AvatarFallback>
           </Avatar>
-          <div>
-            <h1 className="text-xl font-semibold">Team Dashboard</h1>
+          <div className="flex items-center">
+            {showTeamSelector ? (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild className="cursor-pointer">
+                  <div className="flex items-center space-x-1">
+                    <h1 className="text-xl font-semibold">Team Dashboard</h1>
+                    <ChevronDown className="h-4 w-4 text-muted-foreground" />
+                  </div>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="start" className="w-[220px]">
+                  <TeamSelector userId={undefined} isAdmin={isAdmin} inDropdown={true} />
+                </DropdownMenuContent>
+              </DropdownMenu>
+            ) : (
+              <h1 className="text-xl font-semibold">Team Dashboard</h1>
+            )}
           </div>
         </div>
 
@@ -67,7 +89,6 @@ export function NavigationHeader({
           <ThemeToggle />
         </div>
       </div>
-      <TeamHeader />
     </div>
   );
 }
