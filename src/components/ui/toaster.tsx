@@ -1,4 +1,5 @@
 
+
 import { useToast } from "@/hooks/use-toast"
 import {
   Toast,
@@ -14,9 +15,13 @@ export function Toaster() {
 
   return (
     <ToastProvider>
-      {toasts.map(function ({ id, title, description, action, ...props }) {
+      {toasts.map(function ({ id, title, description, action, variant, ...props }) {
+        // Map our extended variants to the basic ones supported by the UI component
+        // 'success' and 'warning' will fallback to 'default'
+        const mappedVariant = variant === 'destructive' ? 'destructive' : 'default';
+        
         return (
-          <Toast key={id} {...props}>
+          <Toast key={id} {...props} variant={mappedVariant}>
             <div className="grid gap-1">
               {title && <ToastTitle>{title}</ToastTitle>}
               {description && (
@@ -32,3 +37,4 @@ export function Toaster() {
     </ToastProvider>
   )
 }
+
