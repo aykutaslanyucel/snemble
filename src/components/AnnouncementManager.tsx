@@ -1,4 +1,3 @@
-
 import { useState, useCallback } from "react";
 import { Announcement } from "@/types/TeamMemberTypes";
 import { RichTextEditor } from "./RichTextEditor";
@@ -95,8 +94,8 @@ export function AnnouncementManager({
       
       console.log("Adding announcement:", announcement);
       
-      // Save to Supabase directly - remove user_id to avoid permission issues
-      const { error } = await supabase
+      // Save to Supabase directly - created_by is now optional with updated RLS policies
+      const { data, error } = await supabase
         .from('announcements')
         .insert({
           id: id,
@@ -107,11 +106,15 @@ export function AnnouncementManager({
           priority: newAnnouncement.priority,
           theme: newAnnouncement.theme,
           is_active: true
-        });
+        })
+        .select();
         
       if (error) {
+        console.error("Supabase insertion error:", error);
         throw error;
       }
+      
+      console.log("Successfully inserted announcement:", data);
       
       // If successful, update UI
       onAddAnnouncement(announcement);
@@ -301,12 +304,13 @@ export function AnnouncementManager({
                 value={newAnnouncement.message} 
                 onChange={(e) => setNewAnnouncement({...newAnnouncement, message: e.target.value})}
                 placeholder="Short summary (optional)" 
+                className="text-foreground"
               />
             </div>
             
             <div className="space-y-2">
               <Label>Message Content</Label>
-              <div className="bg-white rounded-md">
+              <div className="rounded-md">
                 <RichTextEditor 
                   value={newAnnouncement.htmlContent} 
                   onChange={(html) => setNewAnnouncement({...newAnnouncement, htmlContent: html})}
@@ -322,6 +326,7 @@ export function AnnouncementManager({
                   type="date" 
                   onChange={(e) => handleExpiryDateChange(e.target.value)}
                   min={new Date().toISOString().split('T')[0]} // Today as min date
+                  className="text-foreground"
                 />
               </div>
               {newAnnouncement.expiresAt && (
@@ -341,6 +346,7 @@ export function AnnouncementManager({
                   ...newAnnouncement, 
                   priority: parseInt(e.target.value) || 0
                 })}
+                className="text-foreground"
               />
               <p className="text-xs text-muted-foreground">
                 Higher numbers appear first

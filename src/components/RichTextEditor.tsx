@@ -110,10 +110,16 @@ export function RichTextEditor({
           border-bottom-right-radius: 0.375rem;
           border-top: none;
           min-height: 150px;
+          background-color: var(--background);
+          color: var(--foreground);
         }
         .ql-editor {
           min-height: 150px;
           font-size: 1rem;
+          color: var(--foreground);
+        }
+        .ql-editor.ql-blank::before {
+          color: var(--muted-foreground);
         }
       `}</style>
 
@@ -125,6 +131,7 @@ export function RichTextEditor({
         modules={modules}
         formats={formats}
         placeholder={placeholder}
+        className="text-foreground"
       />
 
       <Dialog open={showLinkDialog} onOpenChange={setShowLinkDialog}>
@@ -140,6 +147,7 @@ export function RichTextEditor({
                 value={linkText}
                 onChange={(e) => setLinkText(e.target.value)}
                 placeholder="Display text"
+                className="text-foreground"
               />
             </div>
             <div className="grid gap-2">
@@ -149,6 +157,7 @@ export function RichTextEditor({
                 value={linkUrl}
                 onChange={(e) => setLinkUrl(e.target.value)}
                 placeholder="https://example.com"
+                className="text-foreground"
               />
             </div>
           </div>

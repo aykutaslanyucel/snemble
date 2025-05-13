@@ -1,5 +1,5 @@
 
-import React, { useState } from "react";
+import React from "react";
 import { AdminSettings } from "@/components/AdminPanelComponents/AdminSettings";
 import { BadgeManager } from "@/components/AdminPanelComponents/BadgeManager";
 import { StripeSettings } from "@/components/AdminPanelComponents/StripeSettings";
@@ -14,6 +14,7 @@ import {
 } from "@/components/ui/card";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { useAuth } from "@/contexts/AuthContext";
+import { TeamManagement } from "@/components/AdminPanelComponents/TeamManagement";
 
 export default function Admin() {
   const { user, logout } = useAuth();
@@ -39,6 +40,7 @@ export default function Admin() {
               <TabsList>
                 <TabsTrigger value="settings">General Settings</TabsTrigger>
                 <TabsTrigger value="badges">Badge Management</TabsTrigger>
+                <TabsTrigger value="teams">Team Management</TabsTrigger>
                 <TabsTrigger value="stripe">Stripe Settings</TabsTrigger>
                 <TabsTrigger value="users">User Preview</TabsTrigger>
               </TabsList>
@@ -49,6 +51,20 @@ export default function Admin() {
               
               <TabsContent value="badges" className="space-y-4">
                 <BadgeManager />
+              </TabsContent>
+
+              <TabsContent value="teams" className="space-y-4">
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Team Management</CardTitle>
+                    <CardDescription>
+                      Create and manage teams and control visibility settings
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <TeamManagement />
+                  </CardContent>
+                </Card>
               </TabsContent>
               
               <TabsContent value="stripe" className="space-y-4">

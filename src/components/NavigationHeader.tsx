@@ -3,11 +3,12 @@ import React from "react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
-import { Settings, LogOut, BarChart2 } from "lucide-react";
+import { LogOut, Settings, AlertCircle } from "lucide-react";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { TeamHeader } from "@/components/TeamHeader";
 import { useAuth } from "@/contexts/AuthContext";
-import { AlertCircle } from "lucide-react";
+import { CapacityTrackerWidget } from "@/components/CapacityTrackerWidget";
+import { TeamMember } from "@/types/TeamMemberTypes";
 
 export function NavigationHeader({
   isAdmin,
@@ -15,7 +16,7 @@ export function NavigationHeader({
   members,
 }: {
   isAdmin: boolean;
-  members?: any[];
+  members?: TeamMember[];
   handleLogout: () => Promise<void>;
 }) {
   const { isImpersonating, stopImpersonation } = useAuth();
@@ -49,10 +50,7 @@ export function NavigationHeader({
         )}
 
         <div className="flex items-center space-x-2">
-          <Button variant="outline" size="sm" className="flex items-center gap-1">
-            <BarChart2 className="h-4 w-4" />
-            <span className="hidden md:inline">Capacity Tracker</span>
-          </Button>
+          <CapacityTrackerWidget members={members} />
           
           {isAdmin && (
             <Button asChild variant="secondary" size="sm">
