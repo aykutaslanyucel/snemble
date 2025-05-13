@@ -3,7 +3,7 @@ import React from "react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
-import { LogOut, Settings, AlertCircle, ChevronDown } from "lucide-react";
+import { LogOut, Settings, AlertCircle, ChevronDown, ArrowLeft } from "lucide-react";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { useAuth } from "@/contexts/AuthContext";
 import { CapacityTrackerWidget } from "@/components/CapacityTrackerWidget";
@@ -31,9 +31,9 @@ export function NavigationHeader({
 
   return (
     <div className="flex flex-col gap-6">
-      <div className="flex items-center justify-between py-2">
+      <div className="flex items-center justify-between py-6 border-b pb-6">
         <div className="flex items-center space-x-4">
-          <Avatar className="h-8 w-8">
+          <Avatar className="h-10 w-10">
             <AvatarImage src="" alt="Team logo" />
             <AvatarFallback>T</AvatarFallback>
           </Avatar>
@@ -42,8 +42,8 @@ export function NavigationHeader({
               <DropdownMenu>
                 <DropdownMenuTrigger asChild className="cursor-pointer">
                   <div className="flex items-center space-x-1">
-                    <h1 className="text-xl font-semibold">Team Dashboard</h1>
-                    <ChevronDown className="h-4 w-4 text-muted-foreground" />
+                    <h1 className="text-2xl font-semibold">Team Dashboard</h1>
+                    <ChevronDown className="h-4 w-4 text-muted-foreground mt-1" />
                   </div>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="start" className="w-[220px]">
@@ -51,7 +51,7 @@ export function NavigationHeader({
                 </DropdownMenuContent>
               </DropdownMenu>
             ) : (
-              <h1 className="text-xl font-semibold">Team Dashboard</h1>
+              <h1 className="text-2xl font-semibold">Team Dashboard</h1>
             )}
           </div>
         </div>
@@ -71,7 +71,7 @@ export function NavigationHeader({
           </div>
         )}
 
-        <div className="flex items-center space-x-2">
+        <div className="flex items-center space-x-3">
           <CapacityTrackerWidget members={members} />
           
           {isAdmin && (

@@ -1,5 +1,5 @@
 
-import React from "react";
+import React, { useState } from "react";
 import { AdminSettings } from "@/components/AdminPanelComponents/AdminSettings";
 import { BadgeManager } from "@/components/AdminPanelComponents/BadgeManager";
 import { StripeSettings } from "@/components/AdminPanelComponents/StripeSettings";
@@ -18,13 +18,15 @@ import { TeamManagement } from "@/components/AdminPanelComponents/TeamManagement
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft } from "lucide-react";
+import { UserManagement } from "@/components/AdminPanelComponents/UserManagement";
 
 export default function Admin() {
   const { user, logout } = useAuth();
+  const [activeTab, setActiveTab] = useState("settings");
   
   return (
     <div className="min-h-screen bg-gradient-to-b from-background to-secondary/20">
-      <div className="container py-8 space-y-6">
+      <div className="container max-w-7xl mx-auto py-8 px-4 space-y-6">
         <div className="flex items-center justify-between">
           <NavigationHeader 
             isAdmin={true} 
@@ -48,17 +50,22 @@ export default function Admin() {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <Tabs defaultValue="settings" className="space-y-4">
+            <Tabs defaultValue="settings" value={activeTab} onValueChange={setActiveTab} className="space-y-4">
               <TabsList className="w-full flex justify-start overflow-x-auto">
                 <TabsTrigger value="settings">General Settings</TabsTrigger>
+                <TabsTrigger value="users">User Management</TabsTrigger>
                 <TabsTrigger value="badges">Badge Management</TabsTrigger>
                 <TabsTrigger value="teams">Team Management</TabsTrigger>
                 <TabsTrigger value="stripe">Stripe Settings</TabsTrigger>
-                <TabsTrigger value="users">User Preview</TabsTrigger>
+                <TabsTrigger value="preview">User Preview</TabsTrigger>
               </TabsList>
               
               <TabsContent value="settings" className="space-y-4">
                 <AdminSettings />
+              </TabsContent>
+              
+              <TabsContent value="users" className="space-y-4">
+                <UserManagement />
               </TabsContent>
               
               <TabsContent value="badges" className="space-y-4">
@@ -83,7 +90,7 @@ export default function Admin() {
                 <StripeSettings />
               </TabsContent>
               
-              <TabsContent value="users" className="space-y-4">
+              <TabsContent value="preview" className="space-y-4">
                 <Card>
                   <CardHeader>
                     <CardTitle>User Preview</CardTitle>
