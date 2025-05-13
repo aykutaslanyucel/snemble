@@ -21,7 +21,7 @@ import {
   DialogTitle 
 } from "@/components/ui/dialog";
 import { Switch } from "@/components/ui/switch";
-import { Cross2Icon, PlusIcon, Pencil1Icon, TrashIcon } from "@radix-ui/react-icons";
+import { X, Plus, Pencil, Trash } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Skeleton } from "@/components/ui/skeleton";
 
@@ -178,7 +178,7 @@ export function TeamManagement() {
       <div className="flex justify-between items-center">
         <h3 className="text-lg font-medium">Teams</h3>
         <Button onClick={handleOpenAddDialog}>
-          <PlusIcon className="mr-1 h-4 w-4" /> Add Team
+          <Plus className="mr-1 h-4 w-4" /> Add Team
         </Button>
       </div>
 
@@ -230,7 +230,7 @@ export function TeamManagement() {
                       size="icon" 
                       onClick={() => handleOpenEditDialog(team)}
                     >
-                      <Pencil1Icon className="h-4 w-4" />
+                      <Pencil className="h-4 w-4" />
                     </Button>
                     <Button 
                       variant="ghost" 
@@ -239,7 +239,7 @@ export function TeamManagement() {
                       disabled={team.isDefault}
                       className={team.isDefault ? "opacity-50 cursor-not-allowed" : "text-red-500 hover:text-red-600"}
                     >
-                      <TrashIcon className="h-4 w-4" />
+                      <Trash className="h-4 w-4" />
                     </Button>
                   </div>
                 </TableCell>

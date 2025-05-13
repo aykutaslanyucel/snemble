@@ -1,5 +1,5 @@
 
-import { toast } from "sonner";
+import { toast as sonnerToast } from "sonner";
 import { useCallback, type ReactNode } from "react";
 
 // Define the toast variant types
@@ -13,29 +13,37 @@ export interface ToastProps {
   action?: ReactNode;
 }
 
+// Define toast object interface for compatibility with Radix UI toast
+export interface Toast extends ToastProps {
+  id: string;
+}
+
 // Custom hook to provide typed toast functionality
 export function useToast() {
+  // Mock toasts array for compatibility with Radix UI toaster
+  const toasts: Toast[] = [];
+  
   const showToast = useCallback(
     ({ title, description, variant = "default", action }: ToastProps) => {
       switch (variant) {
         case "destructive":
-          toast.error(title, { description, action });
+          sonnerToast.error(title, { description, action });
           break;
         case "success":
-          toast.success(title, { description, action });
+          sonnerToast.success(title, { description, action });
           break;
         case "warning":
-          toast.warning(title, { description, action });
+          sonnerToast.warning(title, { description, action });
           break;
         default:
-          toast(title, { description, action });
+          sonnerToast(title, { description, action });
       }
     },
     []
   );
 
-  return { toast: showToast };
+  return { toast: showToast, toasts };
 }
 
 // Re-export toast from sonner for direct use
-export { toast };
+export { sonnerToast as toast };
