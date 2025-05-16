@@ -6,6 +6,7 @@ import { TeamMember } from "@/types/TeamMemberTypes";
 import { exportCapacityReport } from "@/utils/pptxExport";
 import { Button } from "@/components/ui/button";
 import { FileSpreadsheet } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
 import "@/styles/animations.css";
 
 interface WorkloadDashboardProps {
@@ -13,6 +14,8 @@ interface WorkloadDashboardProps {
 }
 
 export function WorkloadDashboard({ members }: WorkloadDashboardProps) {
+  const { toast } = useToast();
+  
   useEffect(() => {
     const handleExportEvent = () => {
       exportCapacityReport(members);
@@ -26,7 +29,20 @@ export function WorkloadDashboard({ members }: WorkloadDashboardProps) {
   }, [members]);
   
   const handleExportToPowerPoint = () => {
-    exportCapacityReport(members);
+    try {
+      exportCapacityReport(members);
+      toast({
+        title: "Export Started",
+        description: "Your PowerPoint export is being generated",
+      });
+    } catch (error) {
+      console.error("Export error:", error);
+      toast({
+        title: "Export Failed",
+        description: "There was an error exporting to PowerPoint",
+        variant: "destructive",
+      });
+    }
   };
   
   return (

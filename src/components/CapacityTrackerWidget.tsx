@@ -63,42 +63,62 @@ export function CapacityTrackerWidget({ members = [] }: CapacityTrackerWidgetPro
         </div>
       </div>
       
-      <div className="ml-2 self-center">
+      <div className="ml-2 self-center relative">
+        {/* Improved thermometer with gradient */}
         <svg 
           width="24" 
           height="40" 
           viewBox="0 0 24 40" 
           fill="none" 
           xmlns="http://www.w3.org/2000/svg"
-          className="text-purple-400"
+          className="text-muted-foreground/30"
         >
           {/* Thermometer body */}
           <rect x="9" y="5" width="6" height="26" rx="3" stroke="currentColor" strokeWidth="2" />
           
           {/* Thermometer bulb */}
           <circle cx="12" cy="31" r="5" stroke="currentColor" strokeWidth="2" />
-          
-          {/* Mercury level with gradient */}
+        </svg>
+        
+        {/* Mercury level with proper gradient */}
+        <svg
+          width="24"
+          height="40"
+          viewBox="0 0 24 40"
+          fill="none"
+          xmlns="http://www.w3.org/2000/svg"
+          className="absolute top-0 left-0"
+        >
           <defs>
-            <linearGradient id="thermGradient" x1="0%" y1="0%" x2="0%" y2="100%">
-              <stop offset="0%" stopColor="#F87171" />
-              <stop offset="50%" stopColor="#FBBF24" />
-              <stop offset="100%" stopColor="#60A5FA" />
+            <linearGradient id="mercuryGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+              <stop offset="0%" stopColor="rgb(239, 68, 68)" />
+              <stop offset="50%" stopColor="rgb(234, 179, 8)" />
+              <stop offset="100%" stopColor="rgb(59, 130, 246)" />
             </linearGradient>
           </defs>
-          <motion.rect 
-            x="10" 
-            y={31 - (capacityStats.percentUtilized * 0.2)} 
-            width="4" 
-            height={capacityStats.percentUtilized * 0.2 + 4}
-            initial={{ height: 4 }}
+          
+          <motion.circle
+            cx="12"
+            cy="31"
+            r="3"
+            fill="url(#mercuryGradient)"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.5 }}
+          />
+          
+          <motion.rect
+            x="10.5"
+            y={31 - (capacityStats.percentUtilized * 0.20)}
+            width="3"
+            height={capacityStats.percentUtilized * 0.20}
+            fill="url(#mercuryGradient)"
+            initial={{ height: 0 }}
             animate={{ 
-              height: capacityStats.percentUtilized * 0.2 + 4,
-              y: 31 - (capacityStats.percentUtilized * 0.2)
+              height: capacityStats.percentUtilized * 0.20,
+              y: 31 - (capacityStats.percentUtilized * 0.20)
             }}
             transition={{ duration: 0.8 }}
-            rx="2"
-            fill="url(#thermGradient)"
           />
         </svg>
       </div>

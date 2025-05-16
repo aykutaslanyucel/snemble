@@ -50,28 +50,39 @@ export function TeamSelector({ userId, isAdmin, inDropdown = false }: TeamSelect
       try {
         setIsLoading(true);
         
-        // Try to fetch teams from the database if the table exists
-        const { data, error } = await supabase.from('teams').select('*');
+        // Fetch real teams from the database
+        const { data, error } = await supabase
+          .from('teams')
+          .select('*')
+          .order('name');
         
-        // If there's an error (likely table doesn't exist) or no data, use mock data
-        if (error || !data || data.length === 0) {
-          console.log("Using mock team data:", error?.message);
-          const mockTeams: Team[] = [
-            { id: '1', name: 'M&A Team', description: 'Mergers and Acquisitions', is_default: true },
-            { id: '2', name: 'IP Tech Team', description: 'Intellectual Property Technology' }
-          ];
-          setTeams(mockTeams);
+        if (error) {
+          throw error;
+        }
+        
+        if (data && data.length > 0) {
+          // Map the data to our Team type
+          const mappedTeams: Team[] = data.map(team => ({
+            id: team.id,
+            name: team.name,
+            description: team.description,
+            is_default: team.is_default
+          }));
+          
+          setTeams(mappedTeams);
           
           // Select default team
-          const defaultTeam = mockTeams.find(team => team.is_default) || mockTeams[0];
+          const defaultTeam = mappedTeams.find(team => team.is_default) || mappedTeams[0];
           setSelectedTeam(defaultTeam);
-        } else {
-          console.log("Using real team data");
-          setTeams(data);
           
-          // Select default team from real data
-          const defaultTeam = data.find(team => team.is_default) || data[0];
-          setSelectedTeam(defaultTeam);
+          // Store selected team in localStorage
+          localStorage.setItem('currentTeam', JSON.stringify(defaultTeam));
+        } else {
+          // Handle case where no teams exist yet
+          toast({
+            title: "No teams found",
+            description: "Please create a team to get started",
+          });
         }
       } catch (error) {
         console.error("Error fetching teams:", error);
@@ -99,13 +110,7 @@ export function TeamSelector({ userId, isAdmin, inDropdown = false }: TeamSelect
     }
 
     try {
-      const newTeam: Team = {
-        id: `team-${Date.now()}`,
-        name: newTeamName.trim(),
-        description: newTeamDescription.trim() || undefined
-      };
-
-      // Try to insert into the database if the table exists
+      // Create the new team in Supabase
       const { data, error } = await supabase
         .from('teams')
         .insert([{
@@ -116,29 +121,38 @@ export function TeamSelector({ userId, isAdmin, inDropdown = false }: TeamSelect
         .select();
       
       if (error) {
-        console.log("Error inserting team, using client-side data:", error.message);
-        // Update local state only if database insertion fails
+        throw error;
+      }
+
+      if (data && data.length > 0) {
+        // Map to our Team type and update state
+        const newTeam: Team = {
+          id: data[0].id,
+          name: data[0].name,
+          description: data[0].description,
+          is_default: data[0].is_default
+        };
+        
         setTeams(prev => [...prev, newTeam]);
         setSelectedTeam(newTeam);
-      } else if (data && data.length > 0) {
-        // Use the returned data from Supabase
-        setTeams(prev => [...prev, data[0]]);
-        setSelectedTeam(data[0]);
+        
+        // Update localStorage
+        localStorage.setItem('currentTeam', JSON.stringify(newTeam));
+        
+        toast({
+          title: "Success",
+          description: "Team created successfully",
+        });
       }
-      
-      toast({
-        title: "Success",
-        description: "Team created successfully",
-      });
 
       setIsCreateDialogOpen(false);
       setNewTeamName("");
       setNewTeamDescription("");
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error creating team:", error);
       toast({
         title: "Error",
-        description: "Failed to create team",
+        description: error.message || "Failed to create team",
         variant: "destructive",
       });
     }

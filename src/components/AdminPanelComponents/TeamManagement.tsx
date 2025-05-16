@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -26,12 +25,11 @@ import { useToast } from "@/hooks/use-toast";
 import { Skeleton } from "@/components/ui/skeleton";
 import { supabase } from "@/integrations/supabase/client";
 
-// For now we'll use mock data since we haven't created the teams table yet
 interface Team {
   id: string;
   name: string;
   description?: string;
-  isDefault?: boolean;
+  is_default: boolean;
   memberCount?: number;
   visibility?: 'all' | 'admin' | 'members';
 }
@@ -58,12 +56,26 @@ export function TeamManagement() {
     async function fetchData() {
       setLoading(true);
       try {
-        // For teams, we're using mock data since teams table doesn't exist yet
-        const mockTeams: Team[] = [
-          { id: '1', name: 'M&A Team', description: 'Mergers and Acquisitions', isDefault: true, memberCount: 12, visibility: 'all' },
-          { id: '2', name: 'IP Tech Team', description: 'Intellectual Property Technology', memberCount: 8, visibility: 'all' }
-        ];
-        setTeams(mockTeams);
+        // Fetch teams from the database
+        const { data: teamsData, error: teamsError } = await supabase
+          .from('teams')
+          .select('*');
+          
+        if (teamsError) {
+          throw teamsError;
+        }
+        
+        // Map the data to our Team type
+        const mappedTeams: Team[] = teamsData.map(team => ({
+          id: team.id,
+          name: team.name,
+          description: team.description || '',
+          is_default: team.is_default || false,
+          memberCount: 0, // We'll have to implement teams_members table to populate this
+          visibility: 'all' as 'all' | 'admin' | 'members' // Default to 'all'
+        }));
+        
+        setTeams(mappedTeams);
         
         // For users, we fetch from the database
         const { data: profiles, error } = await supabase
@@ -105,7 +117,7 @@ export function TeamManagement() {
     setFormData({
       name: team.name,
       description: team.description || '',
-      isDefault: team.isDefault || false,
+      isDefault: team.is_default,
       visibility: team.visibility || 'all'
     });
     setIsEditDialogOpen(true);
@@ -116,7 +128,7 @@ export function TeamManagement() {
     setIsDeleteDialogOpen(true);
   };
 
-  const handleAddTeam = () => {
+  const handleAddTeam = async () => {
     if (!formData.name.trim()) {
       toast({
         title: "Error",
@@ -126,25 +138,49 @@ export function TeamManagement() {
       return;
     }
 
-    const newTeam: Team = {
-      id: `team-${Date.now()}`,
-      name: formData.name.trim(),
-      description: formData.description.trim(),
-      isDefault: formData.isDefault,
-      memberCount: 0,
-      visibility: formData.visibility
-    };
+    try {
+      const { data, error } = await supabase
+        .from('teams')
+        .insert([{
+          name: formData.name.trim(),
+          description: formData.description.trim() || null,
+          is_default: formData.isDefault
+        }])
+        .select();
 
-    setTeams(prev => [...prev, newTeam]);
-    setIsAddDialogOpen(false);
-    
-    toast({
-      title: "Success",
-      description: "Team created successfully",
-    });
+      if (error) {
+        throw error;
+      }
+
+      if (data && data.length > 0) {
+        const newTeam: Team = {
+          id: data[0].id,
+          name: data[0].name,
+          description: data[0].description,
+          is_default: data[0].is_default,
+          memberCount: 0,
+          visibility: formData.visibility
+        };
+
+        setTeams(prev => [...prev, newTeam]);
+        setIsAddDialogOpen(false);
+        
+        toast({
+          title: "Success",
+          description: "Team created successfully",
+        });
+      }
+    } catch (error: any) {
+      console.error("Error creating team:", error);
+      toast({
+        title: "Error",
+        description: error.message || "Failed to create team",
+        variant: "destructive",
+      });
+    }
   };
 
-  const handleEditTeam = () => {
+  const handleEditTeam = async () => {
     if (!currentTeam || !formData.name.trim()) {
       toast({
         title: "Error",
@@ -154,29 +190,51 @@ export function TeamManagement() {
       return;
     }
 
-    setTeams(prev => 
-      prev.map(team => team.id === currentTeam.id ? {
-        ...team,
-        name: formData.name.trim(),
-        description: formData.description.trim(),
-        isDefault: formData.isDefault,
-        visibility: formData.visibility
-      } : team)
-    );
-    
-    setIsEditDialogOpen(false);
-    
-    toast({
-      title: "Success",
-      description: "Team updated successfully",
-    });
+    try {
+      const { error } = await supabase
+        .from('teams')
+        .update({
+          name: formData.name.trim(),
+          description: formData.description.trim() || null,
+          is_default: formData.isDefault
+        })
+        .eq('id', currentTeam.id);
+
+      if (error) {
+        throw error;
+      }
+
+      setTeams(prev => 
+        prev.map(team => team.id === currentTeam.id ? {
+          ...team,
+          name: formData.name.trim(),
+          description: formData.description.trim(),
+          is_default: formData.isDefault,
+          visibility: formData.visibility
+        } : team)
+      );
+      
+      setIsEditDialogOpen(false);
+      
+      toast({
+        title: "Success",
+        description: "Team updated successfully",
+      });
+    } catch (error: any) {
+      console.error("Error updating team:", error);
+      toast({
+        title: "Error",
+        description: error.message || "Failed to update team",
+        variant: "destructive",
+      });
+    }
   };
 
-  const handleDeleteTeam = () => {
+  const handleDeleteTeam = async () => {
     if (!currentTeam) return;
     
     // Don't allow deleting the default team
-    if (currentTeam.isDefault) {
+    if (currentTeam.is_default) {
       toast({
         title: "Error",
         description: "Cannot delete the default team",
@@ -186,27 +244,71 @@ export function TeamManagement() {
       return;
     }
     
-    setTeams(prev => prev.filter(team => team.id !== currentTeam.id));
-    setIsDeleteDialogOpen(false);
-    
-    toast({
-      title: "Team Deleted",
-      description: "The team has been removed",
-    });
+    try {
+      const { error } = await supabase
+        .from('teams')
+        .delete()
+        .eq('id', currentTeam.id);
+
+      if (error) {
+        throw error;
+      }
+
+      setTeams(prev => prev.filter(team => team.id !== currentTeam.id));
+      setIsDeleteDialogOpen(false);
+      
+      toast({
+        title: "Team Deleted",
+        description: "The team has been removed",
+      });
+    } catch (error: any) {
+      console.error("Error deleting team:", error);
+      toast({
+        title: "Error",
+        description: error.message || "Failed to delete team",
+        variant: "destructive",
+      });
+    }
   };
 
-  const setTeamAsDefault = (teamId: string) => {
-    setTeams(prev => 
-      prev.map(team => ({
-        ...team,
-        isDefault: team.id === teamId
-      }))
-    );
-    
-    toast({
-      title: "Default Team Updated",
-      description: "The default team has been changed",
-    });
+  const setTeamAsDefault = async (teamId: string) => {
+    try {
+      // First, set all teams to is_default = false
+      await supabase
+        .from('teams')
+        .update({ is_default: false })
+        .neq('id', 'none'); // This updates all rows
+        
+      // Then, set selected team to is_default = true
+      const { error } = await supabase
+        .from('teams')
+        .update({ is_default: true })
+        .eq('id', teamId);
+        
+      if (error) {
+        throw error;
+      }
+      
+      // Update local state
+      setTeams(prev => 
+        prev.map(team => ({
+          ...team,
+          is_default: team.id === teamId
+        }))
+      );
+      
+      toast({
+        title: "Default Team Updated",
+        description: "The default team has been changed",
+      });
+    } catch (error: any) {
+      console.error("Error setting default team:", error);
+      toast({
+        title: "Error",
+        description: error.message || "Failed to update default team",
+        variant: "destructive",
+      });
+    }
   };
 
   return (
@@ -254,9 +356,9 @@ export function TeamManagement() {
                 </TableCell>
                 <TableCell>
                   <Switch 
-                    checked={!!team.isDefault} 
-                    onCheckedChange={() => team.isDefault ? null : setTeamAsDefault(team.id)}
-                    disabled={team.isDefault}
+                    checked={!!team.is_default} 
+                    onCheckedChange={() => team.is_default ? null : setTeamAsDefault(team.id)}
+                    disabled={team.is_default}
                   />
                 </TableCell>
                 <TableCell className="text-right">
@@ -272,8 +374,8 @@ export function TeamManagement() {
                       variant="ghost" 
                       size="icon" 
                       onClick={() => handleOpenDeleteDialog(team)}
-                      disabled={team.isDefault}
-                      className={team.isDefault ? "opacity-50 cursor-not-allowed" : "text-red-500 hover:text-red-600"}
+                      disabled={team.is_default}
+                      className={team.is_default ? "opacity-50 cursor-not-allowed" : "text-red-500 hover:text-red-600"}
                     >
                       <Trash className="h-4 w-4" />
                     </Button>
@@ -421,10 +523,10 @@ export function TeamManagement() {
                 id="edit-is-default"
                 checked={formData.isDefault}
                 onCheckedChange={checked => setFormData({...formData, isDefault: checked})}
-                disabled={currentTeam?.isDefault}
+                disabled={currentTeam?.is_default}
               />
-              <Label htmlFor="edit-is-default" className={currentTeam?.isDefault ? "text-muted-foreground" : ""}>
-                {currentTeam?.isDefault ? "This is the default team" : "Make this the default team"}
+              <Label htmlFor="edit-is-default" className={currentTeam?.is_default ? "text-muted-foreground" : ""}>
+                {currentTeam?.is_default ? "This is the default team" : "Make this the default team"}
               </Label>
             </div>
           </div>
@@ -452,7 +554,7 @@ export function TeamManagement() {
             <p className="text-sm text-muted-foreground">
               Team: <span className="font-medium">{currentTeam?.name}</span>
             </p>
-            {currentTeam?.isDefault && (
+            {currentTeam?.is_default && (
               <p className="text-sm text-destructive mt-2">
                 Cannot delete the default team. Make another team the default first.
               </p>
@@ -465,7 +567,7 @@ export function TeamManagement() {
             <Button 
               variant="destructive" 
               onClick={handleDeleteTeam}
-              disabled={currentTeam?.isDefault}
+              disabled={currentTeam?.is_default}
             >
               Delete Team
             </Button>
@@ -493,7 +595,7 @@ export function TeamManagement() {
                 {teams.filter(t => t.visibility === 'all').map(team => (
                   <div key={team.id} className="flex items-center justify-between p-2 border rounded-md">
                     <span>{team.name}</span>
-                    {team.isDefault && <span className="text-xs bg-primary/10 text-primary p-1 rounded">Default</span>}
+                    {team.is_default && <span className="text-xs bg-primary/10 text-primary p-1 rounded">Default</span>}
                   </div>
                 ))}
               </div>
@@ -510,7 +612,7 @@ export function TeamManagement() {
                 {teams.filter(t => t.visibility === 'admin').map(team => (
                   <div key={team.id} className="flex items-center justify-between p-2 border rounded-md">
                     <span>{team.name}</span>
-                    {team.isDefault && <span className="text-xs bg-primary/10 text-primary p-1 rounded">Default</span>}
+                    {team.is_default && <span className="text-xs bg-primary/10 text-primary p-1 rounded">Default</span>}
                   </div>
                 ))}
                 {teams.filter(t => t.visibility === 'admin').length === 0 && (
@@ -530,7 +632,7 @@ export function TeamManagement() {
                 {teams.filter(t => t.visibility === 'members').map(team => (
                   <div key={team.id} className="flex items-center justify-between p-2 border rounded-md">
                     <span>{team.name}</span>
-                    {team.isDefault && <span className="text-xs bg-primary/10 text-primary p-1 rounded">Default</span>}
+                    {team.is_default && <span className="text-xs bg-primary/10 text-primary p-1 rounded">Default</span>}
                   </div>
                 ))}
                 {teams.filter(t => t.visibility === 'members').length === 0 && (
