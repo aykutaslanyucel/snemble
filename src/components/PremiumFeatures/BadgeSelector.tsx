@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
@@ -7,6 +7,9 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useAuth } from "@/contexts/AuthContext";
 import { Badge } from "@/components/ui/badge";
 import { BadgePosition } from "@/types/TeamMemberTypes";
+import { Input } from "@/components/ui/input";
+import { UploadCloud } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
 
 interface BadgeSelectorProps {
   badges: Array<{
@@ -35,6 +38,83 @@ export function BadgeSelector({
 }: BadgeSelectorProps) {
   const { isPremium } = useAuth();
   const [tab, setTab] = useState<string>("select");
+  const [customImageUrl, setCustomImageUrl] = useState('');
+  const { toast } = useToast();
+  
+  // For drag and drop functionality
+  const [isDragging, setIsDragging] = useState(false);
+  
+  const handleDragEnter = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(true);
+  };
+  
+  const handleDragLeave = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+  };
+  
+  const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+  };
+  
+  const handleDrop = useCallback((e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+    
+    const files = e.dataTransfer.files;
+    if (files && files.length > 0) {
+      const file = files[0];
+      if (!file.type.match('image.*')) {
+        toast({
+          title: "Error",
+          description: "Please drop an image file",
+          variant: "destructive"
+        });
+        return;
+      }
+      
+      // Create URL from file
+      const url = URL.createObjectURL(file);
+      onSelectBadge(url);
+      toast({
+        title: "Badge Added",
+        description: "Your custom badge image has been set"
+      });
+    }
+  }, [onSelectBadge, toast]);
+  
+  const handleCustomUrlAdd = () => {
+    if (!customImageUrl) {
+      toast({
+        title: "Error",
+        description: "Please enter an image URL",
+        variant: "destructive"
+      });
+      return;
+    }
+    
+    // Simple URL validation
+    try {
+      new URL(customImageUrl);
+      onSelectBadge(customImageUrl);
+      toast({
+        title: "Badge Added",
+        description: "Your custom badge image has been set"
+      });
+      setCustomImageUrl('');
+    } catch (e) {
+      toast({
+        title: "Error",
+        description: "Please enter a valid URL",
+        variant: "destructive"
+      });
+    }
+  };
   
   // When no badges are available or still loading
   const renderPlaceholder = () => {
@@ -77,8 +157,9 @@ export function BadgeSelector({
   return (
     <div className="space-y-4">
       <Tabs value={tab} onValueChange={setTab} className="w-full">
-        <TabsList className="grid grid-cols-2 mb-4">
+        <TabsList className="grid grid-cols-3 mb-4">
           <TabsTrigger value="select">Select Badge</TabsTrigger>
+          <TabsTrigger value="custom">Custom Badge</TabsTrigger>
           <TabsTrigger value="settings" disabled={!selectedBadge}>Position & Size</TabsTrigger>
         </TabsList>
         
@@ -118,6 +199,64 @@ export function BadgeSelector({
               </Button>
             </>
           ) : renderPlaceholder()}
+        </TabsContent>
+        
+        <TabsContent value="custom">
+          <div className="space-y-4">
+            <div 
+              className={`
+                border-2 border-dashed rounded-md p-8 text-center
+                ${isDragging ? 'border-primary bg-primary/5' : 'border-gray-300 hover:border-gray-400 dark:border-gray-600 dark:hover:border-gray-500'}
+              `}
+              onDragEnter={handleDragEnter}
+              onDragLeave={handleDragLeave}
+              onDragOver={handleDragOver}
+              onDrop={handleDrop}
+            >
+              <UploadCloud className="mx-auto h-12 w-12 text-gray-400" />
+              <p className="mt-2 text-sm text-gray-600 dark:text-gray-400">
+                Drag and drop your image here
+              </p>
+              <p className="text-xs text-gray-500 dark:text-gray-500">
+                PNG, JPG, GIF up to 5MB
+              </p>
+            </div>
+            
+            <div className="flex flex-col space-y-2">
+              <Label htmlFor="badge-url">Or enter an image URL</Label>
+              <div className="flex space-x-2">
+                <Input
+                  id="badge-url"
+                  value={customImageUrl}
+                  onChange={(e) => setCustomImageUrl(e.target.value)}
+                  placeholder="https://example.com/image.png"
+                  className="flex-1"
+                />
+                <Button onClick={handleCustomUrlAdd}>Add</Button>
+              </div>
+            </div>
+            
+            {selectedBadge && (
+              <div className="mt-4 p-4 border rounded-md">
+                <h4 className="text-sm font-medium mb-2">Current Badge</h4>
+                <div className="flex items-center justify-center">
+                  <img 
+                    src={selectedBadge} 
+                    alt="Selected badge" 
+                    className="h-16 w-16 object-contain"
+                  />
+                </div>
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  className="w-full mt-2"
+                  onClick={() => onSelectBadge(null)}
+                >
+                  Remove Badge
+                </Button>
+              </div>
+            )}
+          </div>
         </TabsContent>
         
         <TabsContent value="settings">

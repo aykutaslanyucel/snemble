@@ -46,7 +46,7 @@ export function NavigationHeader({
               <DropdownMenu>
                 <DropdownMenuTrigger asChild className="cursor-pointer">
                   <div className="flex items-center">
-                    <h1 className="text-base font-medium">Team Dashboard</h1>
+                    <h1 className="text-sm font-medium">Team Dashboard</h1>
                     <ChevronDown className="h-3 w-3 text-muted-foreground ml-1 mt-0.5 opacity-60" />
                   </div>
                 </DropdownMenuTrigger>
@@ -55,7 +55,7 @@ export function NavigationHeader({
                 </DropdownMenuContent>
               </DropdownMenu>
             ) : (
-              <h1 className="text-base font-medium">Team Dashboard</h1>
+              <h1 className="text-sm font-medium">Team Dashboard</h1>
             )}
           </div>
         </div>

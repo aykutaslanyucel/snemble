@@ -32,11 +32,11 @@ export function CapacityTrackerWidget({ members = [] }: CapacityTrackerWidgetPro
 
   // Choose color for progress based on utilization
   const getProgressColor = (percentUtilized: number) => {
-    if (percentUtilized <= 20) return "bg-blue-400";
-    if (percentUtilized <= 50) return "bg-green-400";
-    if (percentUtilized <= 70) return "bg-yellow-400";
-    if (percentUtilized <= 90) return "bg-orange-400";
-    return "bg-red-400";
+    if (percentUtilized <= 20) return "from-blue-400 to-blue-500";
+    if (percentUtilized <= 50) return "from-green-400 to-green-500";
+    if (percentUtilized <= 70) return "from-yellow-400 to-yellow-500";
+    if (percentUtilized <= 90) return "from-orange-400 to-orange-500";
+    return "from-red-400 to-red-500";
   };
 
   return (
@@ -48,13 +48,13 @@ export function CapacityTrackerWidget({ members = [] }: CapacityTrackerWidgetPro
         </p>
         
         <div className="mt-2 max-w-[200px]">
-          {/* Progress bar */}
+          {/* Progress bar with gradient */}
           <div className="h-2 w-full bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden">
             <motion.div 
               initial={{ width: "0%" }}
               animate={{ width: `${capacityStats.percentUtilized}%` }}
               transition={{ duration: 0.5 }}
-              className={cn("h-full", getProgressColor(capacityStats.percentUtilized))}
+              className={cn("h-full bg-gradient-to-r", getProgressColor(capacityStats.percentUtilized))}
             />
           </div>
           <p className="text-sm mt-1 text-muted-foreground">
@@ -73,31 +73,32 @@ export function CapacityTrackerWidget({ members = [] }: CapacityTrackerWidgetPro
           className="text-purple-400"
         >
           {/* Thermometer body */}
-          <rect x="9" y="8" width="6" height="26" rx="3" stroke="currentColor" strokeWidth="2" />
+          <rect x="9" y="5" width="6" height="26" rx="3" stroke="currentColor" strokeWidth="2" />
           
           {/* Thermometer bulb */}
-          <circle cx="12" cy="34" r="5" stroke="currentColor" strokeWidth="2" />
+          <circle cx="12" cy="31" r="5" stroke="currentColor" strokeWidth="2" />
           
-          {/* Mercury level - adjust the height based on utilization */}
+          {/* Mercury level with gradient */}
+          <defs>
+            <linearGradient id="thermGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+              <stop offset="0%" stopColor="#F87171" />
+              <stop offset="50%" stopColor="#FBBF24" />
+              <stop offset="100%" stopColor="#60A5FA" />
+            </linearGradient>
+          </defs>
           <motion.rect 
             x="10" 
-            y={34 - (capacityStats.percentUtilized * 0.2)} 
+            y={31 - (capacityStats.percentUtilized * 0.2)} 
             width="4" 
             height={capacityStats.percentUtilized * 0.2 + 4}
             initial={{ height: 4 }}
             animate={{ 
               height: capacityStats.percentUtilized * 0.2 + 4,
-              y: 34 - (capacityStats.percentUtilized * 0.2)
+              y: 31 - (capacityStats.percentUtilized * 0.2)
             }}
             transition={{ duration: 0.8 }}
             rx="2"
-            fill={
-              capacityStats.percentUtilized <= 20 ? "#60A5FA" : 
-              capacityStats.percentUtilized <= 50 ? "#4ADE80" : 
-              capacityStats.percentUtilized <= 70 ? "#FBBF24" : 
-              capacityStats.percentUtilized <= 90 ? "#FB923C" : 
-              "#F87171"
-            }
+            fill="url(#thermGradient)"
           />
         </svg>
       </div>

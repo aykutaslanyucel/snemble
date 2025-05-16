@@ -50,18 +50,29 @@ export function TeamSelector({ userId, isAdmin, inDropdown = false }: TeamSelect
       try {
         setIsLoading(true);
         
-        // For now, let's use mock data since we didn't create the teams table yet
-        // In a real implementation, we would query the teams table
-        const mockTeams: Team[] = [
-          { id: '1', name: 'M&A Team', description: 'Mergers and Acquisitions', is_default: true },
-          { id: '2', name: 'IP Tech Team', description: 'Intellectual Property Technology' }
-        ];
+        // Try to fetch teams from the database if the table exists
+        const { data, error } = await supabase.from('teams').select('*');
         
-        setTeams(mockTeams);
-        
-        // Select default team
-        const defaultTeam = mockTeams.find(team => team.is_default) || mockTeams[0];
-        setSelectedTeam(defaultTeam);
+        // If there's an error (likely table doesn't exist) or no data, use mock data
+        if (error || !data || data.length === 0) {
+          console.log("Using mock team data:", error?.message);
+          const mockTeams: Team[] = [
+            { id: '1', name: 'M&A Team', description: 'Mergers and Acquisitions', is_default: true },
+            { id: '2', name: 'IP Tech Team', description: 'Intellectual Property Technology' }
+          ];
+          setTeams(mockTeams);
+          
+          // Select default team
+          const defaultTeam = mockTeams.find(team => team.is_default) || mockTeams[0];
+          setSelectedTeam(defaultTeam);
+        } else {
+          console.log("Using real team data");
+          setTeams(data);
+          
+          // Select default team from real data
+          const defaultTeam = data.find(team => team.is_default) || data[0];
+          setSelectedTeam(defaultTeam);
+        }
       } catch (error) {
         console.error("Error fetching teams:", error);
         toast({
@@ -88,16 +99,32 @@ export function TeamSelector({ userId, isAdmin, inDropdown = false }: TeamSelect
     }
 
     try {
-      // In a real implementation, we would insert into the teams table
       const newTeam: Team = {
         id: `team-${Date.now()}`,
         name: newTeamName.trim(),
         description: newTeamDescription.trim() || undefined
       };
 
-      // Update local state
-      setTeams(prev => [...prev, newTeam]);
-      setSelectedTeam(newTeam);
+      // Try to insert into the database if the table exists
+      const { data, error } = await supabase
+        .from('teams')
+        .insert([{
+          name: newTeamName.trim(),
+          description: newTeamDescription.trim() || null,
+          is_default: false
+        }])
+        .select();
+      
+      if (error) {
+        console.log("Error inserting team, using client-side data:", error.message);
+        // Update local state only if database insertion fails
+        setTeams(prev => [...prev, newTeam]);
+        setSelectedTeam(newTeam);
+      } else if (data && data.length > 0) {
+        // Use the returned data from Supabase
+        setTeams(prev => [...prev, data[0]]);
+        setSelectedTeam(data[0]);
+      }
       
       toast({
         title: "Success",
@@ -119,7 +146,6 @@ export function TeamSelector({ userId, isAdmin, inDropdown = false }: TeamSelect
   
   const handleSelectTeam = (team: Team) => {
     setSelectedTeam(team);
-    // In a real implementation, we might update user preferences or fetch team-specific data
     
     // Add state update for current team to update the UI
     localStorage.setItem('currentTeam', JSON.stringify(team));
