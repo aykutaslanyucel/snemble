@@ -1,8 +1,6 @@
 
 import React, { useMemo } from "react";
 import { TeamMember } from "@/types/TeamMemberTypes";
-import { Card } from "@/components/ui/card";
-import { Thermometer } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { motion } from "framer-motion";
 
@@ -22,72 +20,96 @@ export function CapacityTrackerWidget({ members = [] }: CapacityTrackerWidgetPro
       ? Math.round((availableCount / totalMembers) * 100) 
       : 0;
       
+    const percentUtilized = 100 - percentAvailable;
+    
     return {
       availableCount,
       totalMembers,
-      percentAvailable
+      percentAvailable,
+      percentUtilized
     };
   }, [members]);
 
-  // Return the appropriate color class based on capacity percentage
-  const getLiquidColor = (percent: number) => {
-    if (percent <= 20) return "from-blue-300 to-blue-500";
-    if (percent <= 50) return "from-green-300 to-green-500";
-    if (percent <= 70) return "from-yellow-300 to-yellow-500";
-    if (percent <= 90) return "from-orange-300 to-orange-500";
-    return "from-red-300 to-red-500";
+  // Choose color for progress based on utilization
+  const getProgressColor = (percentUtilized: number) => {
+    if (percentUtilized <= 20) return "bg-blue-400";
+    if (percentUtilized <= 50) return "bg-green-400";
+    if (percentUtilized <= 70) return "bg-yellow-400";
+    if (percentUtilized <= 90) return "bg-orange-400";
+    return "bg-red-400";
   };
 
-  // Determine the maximum fill based on percent
-  const fillHeight = `${Math.min(100, Math.max(10, capacityStats.percentAvailable))}%`;
-
   return (
-    <Card className="flex items-center gap-3 bg-white/10 dark:bg-black/20 px-4 py-3 backdrop-blur-sm border border-white/10 hover:bg-white/20 dark:hover:bg-black/30 transition-colors">
-      <div className="flex flex-col items-center">
-        <div className="relative h-14 w-4 bg-gray-200 dark:bg-gray-800 rounded-full overflow-hidden">
-          {/* Glass container */}
-          <div className="absolute inset-0 rounded-full border border-white/20" />
-          
-          {/* Liquid fill with glass effect */}
-          <motion.div 
-            initial={{ height: "0%" }}
-            animate={{ height: fillHeight }}
-            transition={{ duration: 0.5, ease: "easeOut" }}
-            className={cn(
-              "absolute bottom-0 w-full rounded-b-full",
-              `bg-gradient-to-t ${getLiquidColor(capacityStats.percentAvailable)}`,
-              "relative"
-            )}
-            style={{ 
-              boxShadow: "0 0 5px rgba(255, 255, 255, 0.5) inset"
-            }}
-          >
-            {/* Add glass reflections */}
-            <div className="absolute inset-0 bg-gradient-to-b from-white/40 to-transparent" />
-          </motion.div>
-          
-          {/* Thermometer level marker lines */}
-          <div className="absolute top-1/4 inset-x-0 h-0.5 bg-white/20" />
-          <div className="absolute top-2/4 inset-x-0 h-0.5 bg-white/20" />
-          <div className="absolute top-3/4 inset-x-0 h-0.5 bg-white/20" />
+    <div className="flex flex-col items-end">
+      <div className="flex items-center justify-between gap-2">
+        <div className="text-right">
+          <h3 className="text-lg font-medium">Team Capacity</h3>
+          <p className="text-sm text-muted-foreground">
+            {capacityStats.availableCount} members available
+          </p>
         </div>
-        <Thermometer className="h-4 w-4 text-primary mt-1" />
+        <div className="ml-2">
+          <svg 
+            width="24" 
+            height="24" 
+            viewBox="0 0 24 24" 
+            fill="none" 
+            xmlns="http://www.w3.org/2000/svg"
+            className="text-purple-400"
+          >
+            <path 
+              d="M12 6C11.0718 6 10.1814 6.36875 9.52527 7.02513C8.86888 7.68152 8.5 8.57174 8.5 9.5V16C8.5 16.2652 8.60536 16.5196 8.79289 16.7071C8.98043 16.8946 9.23478 17 9.5 17H14.5C14.7652 17 15.0196 16.8946 15.2071 16.7071C15.3946 16.5196 15.5 16.2652 15.5 16V9.5C15.5 8.57174 15.1312 7.68152 14.4749 7.02513C13.8186 6.36875 12.9283 6 12 6Z" 
+              stroke="currentColor" 
+              strokeWidth="2" 
+              strokeLinecap="round" 
+              strokeLinejoin="round"
+            />
+            <path 
+              d="M10 4V6" 
+              stroke="currentColor" 
+              strokeWidth="2" 
+              strokeLinecap="round" 
+              strokeLinejoin="round"
+            />
+            <path 
+              d="M14 4V6" 
+              stroke="currentColor" 
+              strokeWidth="2" 
+              strokeLinecap="round" 
+              strokeLinejoin="round"
+            />
+            <path 
+              d="M10 17V20" 
+              stroke="currentColor" 
+              strokeWidth="2" 
+              strokeLinecap="round" 
+              strokeLinejoin="round"
+            />
+            <path 
+              d="M14 17V20" 
+              stroke="currentColor" 
+              strokeWidth="2" 
+              strokeLinecap="round" 
+              strokeLinejoin="round"
+            />
+          </svg>
+        </div>
       </div>
       
-      <div className="flex flex-col">
-        <div className="flex items-baseline gap-1">
-          <span className="text-sm font-medium">Team Capacity</span>
-          <span className="text-xs text-muted-foreground">
-            {capacityStats.availableCount}/{capacityStats.totalMembers}
-          </span>
+      <div className="mt-1 w-full max-w-[200px]">
+        {/* Progress bar */}
+        <div className="h-2 w-full bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden">
+          <motion.div 
+            initial={{ width: "0%" }}
+            animate={{ width: `${capacityStats.percentUtilized}%` }}
+            transition={{ duration: 0.5 }}
+            className={cn("h-full", getProgressColor(capacityStats.percentUtilized))}
+          />
         </div>
-        <div className="flex items-center gap-1">
-          <span className="text-lg font-semibold">
-            {capacityStats.percentAvailable}%
-          </span>
-          <span className="text-xs text-muted-foreground">available</span>
-        </div>
+        <p className="text-sm mt-1 text-muted-foreground">
+          {capacityStats.percentUtilized}% capacity utilized
+        </p>
       </div>
-    </Card>
+    </div>
   );
 }

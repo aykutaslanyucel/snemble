@@ -1,4 +1,3 @@
-
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
 
 @tailwind base;
@@ -58,6 +57,16 @@
   body {
     @apply bg-background text-foreground antialiased font-inter;
     font-feature-settings: "ss01", "ss02", "cv01", "cv02", "cv03";
+  }
+  
+  /* Main content spacing */
+  .main-content {
+    @apply mt-12;
+  }
+  
+  /* Header spacing */
+  .app-header {
+    @apply mb-16;
   }
   
   /* Ensure proper badge visibility without breaking UI interaction */

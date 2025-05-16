@@ -26,7 +26,7 @@ export default function Admin() {
   
   return (
     <div className="min-h-screen bg-gradient-to-b from-background to-secondary/20">
-      <div className="container max-w-7xl mx-auto py-8 px-4 space-y-6">
+      <div className="container max-w-7xl mx-auto px-6 sm:px-12 md:px-20 lg:px-28 xl:px-36 py-8 space-y-8">
         <div className="flex items-center justify-between">
           <NavigationHeader 
             isAdmin={true} 
@@ -34,17 +34,20 @@ export default function Admin() {
             handleLogout={async () => logout()}
             showTeamSelector={false}
           />
-          
-          <Button asChild variant="outline" size="sm" className="flex items-center">
+        </div>
+        
+        <div className="flex items-center justify-between mb-4">
+          <h1 className="text-2xl font-semibold">Admin Dashboard</h1>
+          <Button asChild variant="outline" size="sm" className="flex items-center gap-2">
             <Link to="/">
-              <ArrowLeft className="mr-1 h-4 w-4" /> Back to Dashboard
+              <ArrowLeft className="h-4 w-4" /> Back to Dashboard
             </Link>
           </Button>
         </div>
         
         <Card>
           <CardHeader>
-            <CardTitle>Admin Dashboard</CardTitle>
+            <CardTitle>Admin Controls</CardTitle>
             <CardDescription>
               Manage your team workspace settings
             </CardDescription>
