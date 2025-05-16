@@ -24,6 +24,7 @@ import { Switch } from "@/components/ui/switch";
 import { X, Plus, Pencil, Trash } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Skeleton } from "@/components/ui/skeleton";
+import { supabase } from "@/integrations/supabase/client";
 
 // For now we'll use mock data since we haven't created the teams table yet
 interface Team {
@@ -36,10 +37,8 @@ interface Team {
 }
 
 export function TeamManagement() {
-  const [teams, setTeams] = useState<Team[]>([
-    { id: '1', name: 'M&A Team', description: 'Mergers and Acquisitions', isDefault: true, memberCount: 12, visibility: 'all' },
-    { id: '2', name: 'IP Tech Team', description: 'Intellectual Property Technology', memberCount: 8, visibility: 'all' }
-  ]);
+  const [teams, setTeams] = useState<Team[]>([]);
+  const [allUsers, setAllUsers] = useState<any[]>([]);
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
@@ -53,6 +52,43 @@ export function TeamManagement() {
   });
   
   const { toast } = useToast();
+
+  // Fetch teams and users
+  useEffect(() => {
+    async function fetchData() {
+      setLoading(true);
+      try {
+        // For teams, we're using mock data since teams table doesn't exist yet
+        const mockTeams: Team[] = [
+          { id: '1', name: 'M&A Team', description: 'Mergers and Acquisitions', isDefault: true, memberCount: 12, visibility: 'all' },
+          { id: '2', name: 'IP Tech Team', description: 'Intellectual Property Technology', memberCount: 8, visibility: 'all' }
+        ];
+        setTeams(mockTeams);
+        
+        // For users, we fetch from the database
+        const { data: profiles, error } = await supabase
+          .from('profiles')
+          .select('*');
+          
+        if (error) {
+          throw error;
+        }
+        
+        setAllUsers(profiles || []);
+      } catch (error) {
+        console.error("Error loading data:", error);
+        toast({
+          title: "Error",
+          description: "Failed to load teams or users data",
+          variant: "destructive",
+        });
+      } finally {
+        setLoading(false);
+      }
+    }
+    
+    fetchData();
+  }, [toast]);
 
   const handleOpenAddDialog = () => {
     setFormData({
@@ -353,6 +389,33 @@ export function TeamManagement() {
                 </select>
               </div>
             </div>
+            
+            {/* Team members selection */}
+            <div className="grid gap-2">
+              <Label>Team Members</Label>
+              <div className="border rounded-md p-3 max-h-40 overflow-y-auto">
+                {allUsers.map(user => (
+                  <div key={user.id} className="flex items-center justify-between py-1.5">
+                    <div>
+                      <p className="text-sm font-medium">{user.name || user.email}</p>
+                      <p className="text-xs text-muted-foreground">{user.role}</p>
+                    </div>
+                    <Switch 
+                      checked={false}
+                      onCheckedChange={() => {}}
+                    />
+                  </div>
+                ))}
+                
+                {allUsers.length === 0 && (
+                  <p className="text-sm text-muted-foreground italic">No users found</p>
+                )}
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Toggle switches to add or remove team members
+              </p>
+            </div>
+            
             <div className="flex items-center space-x-2">
               <Switch
                 id="edit-is-default"

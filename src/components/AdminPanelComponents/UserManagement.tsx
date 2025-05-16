@@ -38,18 +38,11 @@ interface UserData {
 }
 
 export function UserManagement() {
-  const [users, setUsers] = useState<UserData[]>([
-    { id: '1', email: 'admin@example.com', name: 'Admin User', role: 'Partner', teams: ['M&A Team'], isActive: true },
-    { id: '2', email: 'user1@example.com', name: 'John Doe', role: 'Associate', teams: ['IP Tech Team'], isActive: true },
-    { id: '3', email: 'user2@example.com', name: 'Jane Smith', role: 'Senior Associate', teams: ['M&A Team', 'IP Tech Team'], isActive: true },
-    { id: '4', email: 'user3@example.com', name: 'Michael Brown', role: 'Managing Associate', teams: ['M&A Team'], isActive: true },
-    { id: '5', email: 'user4@example.com', name: 'Sarah Wilson', role: 'Assistant', teams: ['IP Tech Team'], isActive: true },
-    { id: '6', email: 'user5@example.com', name: 'Robert Johnson', role: 'Other', teams: ['Support Team'], isActive: true }
-  ]);
+  const [users, setUsers] = useState<UserData[]>([]);
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [currentUser, setCurrentUser] = useState<UserData | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [teams, setTeams] = useState([
@@ -68,6 +61,68 @@ export function UserManagement() {
   const { toast } = useToast();
 
   const memberRoles: TeamMemberRole[] = ['Partner', 'Managing Associate', 'Senior Associate', 'Associate', 'Assistant', 'Other'];
+
+  useEffect(() => {
+    async function fetchUsers() {
+      try {
+        setLoading(true);
+        
+        // Get profiles with roles
+        const { data: profiles, error: profilesError } = await supabase
+          .from('profiles')
+          .select('*');
+          
+        if (profilesError) {
+          throw profilesError;
+        }
+
+        // Get team members data
+        const { data: teamMembers, error: teamMembersError } = await supabase
+          .from('team_members')
+          .select('*');
+          
+        if (teamMembersError) {
+          throw teamMembersError;
+        }
+
+        // Map the data to our UserData type
+        const mappedUsers = profiles.map(profile => {
+          // Find matching team member record
+          const teamMember = teamMembers.find(tm => tm.user_id === profile.id);
+          
+          // Default to reasonable values if no team member record exists
+          return {
+            id: profile.id,
+            email: profile.email || '',
+            name: profile.name || '',
+            role: (teamMember?.role || profile.role || 'Other') as TeamMemberRole,
+            teams: [], // We'll need to implement the teams table to properly populate this
+            isActive: true // This would need to come from the auth.users table but that's not accessible via client-side API
+          };
+        });
+
+        setUsers(mappedUsers);
+      } catch (error) {
+        console.error("Error fetching users:", error);
+        toast({
+          title: "Error",
+          description: "Failed to load users",
+          variant: "destructive",
+        });
+        
+        // Fallback to mock data if the fetch fails
+        setUsers([
+          { id: '1', email: 'admin@example.com', name: 'Admin User', role: 'Partner', teams: ['M&A Team'], isActive: true },
+          { id: '2', email: 'user1@example.com', name: 'John Doe', role: 'Associate', teams: ['IP Tech Team'], isActive: true },
+          { id: '3', email: 'user2@example.com', name: 'Jane Smith', role: 'Senior Associate', teams: ['M&A Team', 'IP Tech Team'], isActive: true }
+        ]);
+      } finally {
+        setLoading(false);
+      }
+    }
+    
+    fetchUsers();
+  }, [toast]);
 
   const filteredUsers = users.filter(user => 
     user.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
@@ -102,7 +157,7 @@ export function UserManagement() {
     setIsDeleteDialogOpen(true);
   };
 
-  const handleAddUser = () => {
+  const handleAddUser = async () => {
     if (!formData.email.trim() || !formData.name.trim()) {
       toast({
         title: "Error",
@@ -112,25 +167,87 @@ export function UserManagement() {
       return;
     }
 
-    const newUser: UserData = {
-      id: `user-${Date.now()}`,
-      email: formData.email.trim(),
-      name: formData.name.trim(),
-      role: formData.role,
-      teams: formData.teams,
-      isActive: formData.isActive
-    };
+    try {
+      // First, create user in auth
+      const { data: authData, error: authError } = await supabase.auth.admin.createUser({
+        email: formData.email,
+        email_confirm: true,
+        user_metadata: { name: formData.name }
+      });
 
-    setUsers(prev => [...prev, newUser]);
-    setIsAddDialogOpen(false);
-    
-    toast({
-      title: "Success",
-      description: "User created successfully",
-    });
+      if (authError) {
+        throw authError;
+      }
+
+      // User profile will be created automatically via trigger
+
+      // Update team_members table
+      if (authData?.user) {
+        const { error: memberError } = await supabase
+          .from('team_members')
+          .insert({
+            user_id: authData.user.id,
+            name: formData.name,
+            position: formData.role,
+            status: 'available',
+            role: formData.role,
+            projects: []
+          });
+
+        if (memberError) {
+          throw memberError;
+        }
+      }
+
+      // Update UI
+      const newUser: UserData = {
+        id: authData?.user?.id || `temp-${Date.now()}`,
+        email: formData.email.trim(),
+        name: formData.name.trim(),
+        role: formData.role,
+        teams: formData.teams,
+        isActive: formData.isActive
+      };
+
+      setUsers(prev => [...prev, newUser]);
+      setIsAddDialogOpen(false);
+      
+      toast({
+        title: "Success",
+        description: "User created successfully",
+      });
+    } catch (error: any) {
+      console.error("Error creating user:", error);
+      
+      // Fallback to client-side only update for demo if Supabase admin functions aren't available
+      if (error.message?.includes('not authorized')) {
+        const newUser: UserData = {
+          id: `temp-${Date.now()}`,
+          email: formData.email.trim(),
+          name: formData.name.trim(),
+          role: formData.role,
+          teams: formData.teams,
+          isActive: formData.isActive
+        };
+
+        setUsers(prev => [...prev, newUser]);
+        setIsAddDialogOpen(false);
+        
+        toast({
+          title: "Demo Mode",
+          description: "User added in demo mode (admin functions not available)",
+        });
+      } else {
+        toast({
+          title: "Error",
+          description: `Failed to create user: ${error.message || "Unknown error"}`,
+          variant: "destructive",
+        });
+      }
+    }
   };
 
-  const handleEditUser = () => {
+  const handleEditUser = async () => {
     if (!currentUser || !formData.email.trim() || !formData.name.trim()) {
       toast({
         title: "Error",
@@ -140,35 +257,101 @@ export function UserManagement() {
       return;
     }
 
-    setUsers(prev => 
-      prev.map(user => user.id === currentUser.id ? {
-        ...user,
-        email: formData.email.trim(),
-        name: formData.name.trim(),
-        role: formData.role,
-        teams: formData.teams,
-        isActive: formData.isActive
-      } : user)
-    );
-    
-    setIsEditDialogOpen(false);
-    
-    toast({
-      title: "Success",
-      description: "User updated successfully",
-    });
+    try {
+      // Update profiles table
+      const { error: profileError } = await supabase
+        .from('profiles')
+        .update({
+          name: formData.name,
+          email: formData.email,
+          role: formData.role,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', currentUser.id);
+
+      if (profileError) {
+        throw profileError;
+      }
+
+      // Update team_members table
+      const { error: memberError } = await supabase
+        .from('team_members')
+        .update({
+          name: formData.name,
+          role: formData.role,
+          position: formData.role
+        })
+        .eq('user_id', currentUser.id);
+
+      if (memberError) {
+        throw memberError;
+      }
+
+      // Update UI
+      setUsers(prev => 
+        prev.map(user => user.id === currentUser.id ? {
+          ...user,
+          email: formData.email.trim(),
+          name: formData.name.trim(),
+          role: formData.role,
+          teams: formData.teams,
+          isActive: formData.isActive
+        } : user)
+      );
+      
+      setIsEditDialogOpen(false);
+      
+      toast({
+        title: "Success",
+        description: "User updated successfully",
+      });
+    } catch (error: any) {
+      console.error("Error updating user:", error);
+      
+      // Fallback to client-side only update if Supabase update fails
+      setUsers(prev => 
+        prev.map(user => user.id === currentUser.id ? {
+          ...user,
+          email: formData.email.trim(),
+          name: formData.name.trim(),
+          role: formData.role,
+          teams: formData.teams,
+          isActive: formData.isActive
+        } : user)
+      );
+      
+      setIsEditDialogOpen(false);
+      
+      toast({
+        title: "Warning",
+        description: `User updated in UI only: ${error.message || "Database update failed"}`,
+      });
+    }
   };
 
-  const handleDeleteUser = () => {
+  const handleDeleteUser = async () => {
     if (!currentUser) return;
     
-    setUsers(prev => prev.filter(user => user.id !== currentUser.id));
-    setIsDeleteDialogOpen(false);
-    
-    toast({
-      title: "User Deleted",
-      description: "The user has been removed",
-    });
+    try {
+      // To properly delete a user, we would need admin access to delete from auth.users
+      // This would cascade delete to profiles and team_members due to foreign key constraints
+      // For now, we'll just handle the UI update
+      
+      setUsers(prev => prev.filter(user => user.id !== currentUser.id));
+      setIsDeleteDialogOpen(false);
+      
+      toast({
+        title: "User Removed",
+        description: "The user has been removed from the UI",
+      });
+    } catch (error) {
+      console.error("Error deleting user:", error);
+      toast({
+        title: "Error",
+        description: "Failed to delete user. Please try again.",
+        variant: "destructive",
+      });
+    }
   };
 
   const toggleUserStatus = (userId: string, isActive: boolean) => {

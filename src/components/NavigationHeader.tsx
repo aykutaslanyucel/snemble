@@ -46,8 +46,8 @@ export function NavigationHeader({
               <DropdownMenu>
                 <DropdownMenuTrigger asChild className="cursor-pointer">
                   <div className="flex items-center">
-                    <h1 className="text-2xl font-semibold">Team Dashboard</h1>
-                    <ChevronDown className="h-3 w-3 text-muted-foreground ml-1 mt-1 opacity-60" />
+                    <h1 className="text-base font-medium">Team Dashboard</h1>
+                    <ChevronDown className="h-3 w-3 text-muted-foreground ml-1 mt-0.5 opacity-60" />
                   </div>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="start" className="w-[220px]">
@@ -55,7 +55,7 @@ export function NavigationHeader({
                 </DropdownMenuContent>
               </DropdownMenu>
             ) : (
-              <h1 className="text-2xl font-semibold">Team Dashboard</h1>
+              <h1 className="text-base font-medium">Team Dashboard</h1>
             )}
           </div>
         </div>

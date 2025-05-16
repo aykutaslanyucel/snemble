@@ -17,7 +17,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { TeamManagement } from "@/components/AdminPanelComponents/TeamManagement";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, Settings, Users, Building, CreditCard, UserCheck, BadgePlus } from "lucide-react";
 import { UserManagement } from "@/components/AdminPanelComponents/UserManagement";
 
 export default function Admin() {
@@ -60,12 +60,24 @@ export default function Admin() {
           </CardHeader>
           <Tabs defaultValue="settings" value={activeTab} onValueChange={setActiveTab} className="p-6">
             <TabsList className="w-full flex justify-start overflow-x-auto mb-6 bg-muted/50">
-              <TabsTrigger value="settings" className="data-[state=active]:bg-primary/10">General Settings</TabsTrigger>
-              <TabsTrigger value="users" className="data-[state=active]:bg-primary/10">User Management</TabsTrigger>
-              <TabsTrigger value="badges" className="data-[state=active]:bg-primary/10">Badge Management</TabsTrigger>
-              <TabsTrigger value="teams" className="data-[state=active]:bg-primary/10">Team Management</TabsTrigger>
-              <TabsTrigger value="stripe" className="data-[state=active]:bg-primary/10">Stripe Settings</TabsTrigger>
-              <TabsTrigger value="preview" className="data-[state=active]:bg-primary/10">User Preview</TabsTrigger>
+              <TabsTrigger value="settings" className="data-[state=active]:bg-primary/10 flex items-center gap-2">
+                <Settings className="h-4 w-4" /> General Settings
+              </TabsTrigger>
+              <TabsTrigger value="users" className="data-[state=active]:bg-primary/10 flex items-center gap-2">
+                <Users className="h-4 w-4" /> User Management
+              </TabsTrigger>
+              <TabsTrigger value="badges" className="data-[state=active]:bg-primary/10 flex items-center gap-2">
+                <BadgePlus className="h-4 w-4" /> Badge Management
+              </TabsTrigger>
+              <TabsTrigger value="teams" className="data-[state=active]:bg-primary/10 flex items-center gap-2">
+                <Building className="h-4 w-4" /> Team Management
+              </TabsTrigger>
+              <TabsTrigger value="stripe" className="data-[state=active]:bg-primary/10 flex items-center gap-2">
+                <CreditCard className="h-4 w-4" /> Stripe Settings
+              </TabsTrigger>
+              <TabsTrigger value="preview" className="data-[state=active]:bg-primary/10 flex items-center gap-2">
+                <UserCheck className="h-4 w-4" /> User Preview
+              </TabsTrigger>
             </TabsList>
             
             <TabsContent value="settings" className="space-y-4 mt-2">

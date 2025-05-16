@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Users, Plus, ChevronDown } from "lucide-react";
@@ -96,6 +97,7 @@ export function TeamSelector({ userId, isAdmin, inDropdown = false }: TeamSelect
 
       // Update local state
       setTeams(prev => [...prev, newTeam]);
+      setSelectedTeam(newTeam);
       
       toast({
         title: "Success",
@@ -118,6 +120,10 @@ export function TeamSelector({ userId, isAdmin, inDropdown = false }: TeamSelect
   const handleSelectTeam = (team: Team) => {
     setSelectedTeam(team);
     // In a real implementation, we might update user preferences or fetch team-specific data
+    
+    // Add state update for current team to update the UI
+    localStorage.setItem('currentTeam', JSON.stringify(team));
+    window.dispatchEvent(new Event('storage'));
   };
 
   if (isLoading) {
