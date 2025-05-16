@@ -3,6 +3,7 @@ import React, { useMemo } from "react";
 import { TeamMember } from "@/types/TeamMemberTypes";
 import { cn } from "@/lib/utils";
 import { motion } from "framer-motion";
+import { Progress } from "@/components/ui/progress";
 
 interface CapacityTrackerWidgetProps {
   members?: TeamMember[];
@@ -32,15 +33,15 @@ export function CapacityTrackerWidget({ members = [] }: CapacityTrackerWidgetPro
 
   // Choose color for progress based on utilization
   const getProgressColor = (percentUtilized: number) => {
-    if (percentUtilized <= 20) return "from-blue-400 to-blue-500";
-    if (percentUtilized <= 50) return "from-green-400 to-green-500";
-    if (percentUtilized <= 70) return "from-yellow-400 to-yellow-500";
-    if (percentUtilized <= 90) return "from-orange-400 to-orange-500";
-    return "from-red-400 to-red-500";
+    if (percentUtilized <= 20) return "bg-blue-500";
+    if (percentUtilized <= 50) return "bg-green-500";
+    if (percentUtilized <= 70) return "bg-yellow-500";
+    if (percentUtilized <= 90) return "bg-orange-500";
+    return "bg-red-500";
   };
 
   return (
-    <div className="flex items-end gap-4">
+    <div className="flex items-center gap-4">
       <div className="flex flex-col">
         <h3 className="text-lg font-medium">Team Capacity</h3>
         <p className="text-sm text-muted-foreground">
@@ -48,13 +49,20 @@ export function CapacityTrackerWidget({ members = [] }: CapacityTrackerWidgetPro
         </p>
         
         <div className="mt-2 max-w-[200px]">
-          {/* Progress bar with gradient */}
+          {/* Custom progress bar with gradient */}
           <div className="h-2 w-full bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden">
             <motion.div 
               initial={{ width: "0%" }}
               animate={{ width: `${capacityStats.percentUtilized}%` }}
               transition={{ duration: 0.5 }}
-              className={cn("h-full bg-gradient-to-r", getProgressColor(capacityStats.percentUtilized))}
+              className={cn(
+                "h-full",
+                capacityStats.percentUtilized <= 20 ? "bg-gradient-to-r from-blue-300 to-blue-500" :
+                capacityStats.percentUtilized <= 50 ? "bg-gradient-to-r from-green-300 to-green-500" :
+                capacityStats.percentUtilized <= 70 ? "bg-gradient-to-r from-yellow-300 to-yellow-500" :
+                capacityStats.percentUtilized <= 90 ? "bg-gradient-to-r from-orange-300 to-orange-500" :
+                "bg-gradient-to-r from-red-300 to-red-500"
+              )}
             />
           </div>
           <p className="text-sm mt-1 text-muted-foreground">
@@ -64,63 +72,44 @@ export function CapacityTrackerWidget({ members = [] }: CapacityTrackerWidgetPro
       </div>
       
       <div className="ml-2 self-center relative">
-        {/* Improved thermometer with gradient */}
-        <svg 
-          width="24" 
-          height="40" 
-          viewBox="0 0 24 40" 
-          fill="none" 
-          xmlns="http://www.w3.org/2000/svg"
-          className="text-muted-foreground/30"
-        >
-          {/* Thermometer body */}
-          <rect x="9" y="5" width="6" height="26" rx="3" stroke="currentColor" strokeWidth="2" />
+        {/* Improved thermometer with better visuals */}
+        <div className="relative h-[40px] w-[14px]">
+          {/* Thermometer body - glass tube */}
+          <div className="absolute inset-0 rounded-full bg-gray-200 dark:bg-gray-700 border border-gray-300 dark:border-gray-600"></div>
           
           {/* Thermometer bulb */}
-          <circle cx="12" cy="31" r="5" stroke="currentColor" strokeWidth="2" />
-        </svg>
-        
-        {/* Mercury level with proper gradient */}
-        <svg
-          width="24"
-          height="40"
-          viewBox="0 0 24 40"
-          fill="none"
-          xmlns="http://www.w3.org/2000/svg"
-          className="absolute top-0 left-0"
-        >
-          <defs>
-            <linearGradient id="mercuryGradient" x1="0%" y1="0%" x2="0%" y2="100%">
-              <stop offset="0%" stopColor="rgb(239, 68, 68)" />
-              <stop offset="50%" stopColor="rgb(234, 179, 8)" />
-              <stop offset="100%" stopColor="rgb(59, 130, 246)" />
-            </linearGradient>
-          </defs>
+          <div className="absolute bottom-[-8px] left-1/2 transform -translate-x-1/2 w-[18px] h-[18px] rounded-full bg-gray-200 dark:bg-gray-700 border border-gray-300 dark:border-gray-600"></div>
           
-          <motion.circle
-            cx="12"
-            cy="31"
-            r="3"
-            fill="url(#mercuryGradient)"
+          {/* Mercury level with gradient */}
+          <motion.div 
+            className={cn(
+              "absolute bottom-0 left-[3px] w-[8px] rounded-t-full transition-all duration-500",
+              capacityStats.percentUtilized <= 20 ? "bg-gradient-to-t from-blue-500 to-blue-300" :
+              capacityStats.percentUtilized <= 50 ? "bg-gradient-to-t from-green-500 to-green-300" :
+              capacityStats.percentUtilized <= 70 ? "bg-gradient-to-t from-yellow-500 to-yellow-300" :
+              capacityStats.percentUtilized <= 90 ? "bg-gradient-to-t from-orange-500 to-orange-300" :
+              "bg-gradient-to-t from-red-500 to-red-300"
+            )}
+            initial={{ height: 0 }}
+            animate={{ height: `${Math.max(5, capacityStats.percentUtilized * 0.3)}px` }}
+            transition={{ duration: 0.8 }}
+          />
+          
+          {/* Mercury in bulb */}
+          <motion.div 
+            className={cn(
+              "absolute bottom-[-8px] left-1/2 transform -translate-x-1/2 w-[12px] h-[12px] rounded-full",
+              capacityStats.percentUtilized <= 20 ? "bg-blue-500" :
+              capacityStats.percentUtilized <= 50 ? "bg-green-500" :
+              capacityStats.percentUtilized <= 70 ? "bg-yellow-500" :
+              capacityStats.percentUtilized <= 90 ? "bg-orange-500" :
+              "bg-red-500"
+            )}
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ duration: 0.5 }}
           />
-          
-          <motion.rect
-            x="10.5"
-            y={31 - (capacityStats.percentUtilized * 0.20)}
-            width="3"
-            height={capacityStats.percentUtilized * 0.20}
-            fill="url(#mercuryGradient)"
-            initial={{ height: 0 }}
-            animate={{ 
-              height: capacityStats.percentUtilized * 0.20,
-              y: 31 - (capacityStats.percentUtilized * 0.20)
-            }}
-            transition={{ duration: 0.8 }}
-          />
-        </svg>
+        </div>
       </div>
     </div>
   );

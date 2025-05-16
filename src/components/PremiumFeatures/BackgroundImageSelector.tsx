@@ -53,6 +53,17 @@ export function BackgroundImageSelector({
         return;
       }
       
+      // Check file size - 5MB limit
+      const maxSize = 5 * 1024 * 1024; // 5MB
+      if (file.size > maxSize) {
+        toast({
+          title: "Error",
+          description: "Image is too large (max 5MB)",
+          variant: "destructive"
+        });
+        return;
+      }
+      
       // Create URL from file
       const url = URL.createObjectURL(file);
       onSelectImage(url);
@@ -105,6 +116,7 @@ export function BackgroundImageSelector({
         className={`
           border-2 border-dashed rounded-md p-8 text-center
           ${isDragging ? 'border-primary bg-primary/5' : 'border-gray-300 hover:border-gray-400 dark:border-gray-600 dark:hover:border-gray-500'}
+          transition-colors duration-200 ease-in-out
         `}
         onDragEnter={handleDragEnter}
         onDragLeave={handleDragLeave}
@@ -142,7 +154,10 @@ export function BackgroundImageSelector({
       
       {currentImage && (
         <div className="pt-2 flex justify-between items-center">
-          <Label>Current background image:</Label>
+          <div className="flex-1">
+            <Label>Current background:</Label>
+            <div className="mt-1 h-16 bg-cover bg-center rounded border" style={{ backgroundImage: `url(${currentImage})` }}></div>
+          </div>
           <Button 
             variant="outline" 
             size="sm"

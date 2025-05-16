@@ -71,12 +71,32 @@ export function TeamSelector({ userId, isAdmin, inDropdown = false }: TeamSelect
           
           setTeams(mappedTeams);
           
-          // Select default team
-          const defaultTeam = mappedTeams.find(team => team.is_default) || mappedTeams[0];
-          setSelectedTeam(defaultTeam);
-          
-          // Store selected team in localStorage
-          localStorage.setItem('currentTeam', JSON.stringify(defaultTeam));
+          // Try to get the selected team from localStorage first
+          const savedTeam = localStorage.getItem('currentTeam');
+          if (savedTeam) {
+            try {
+              const parsedTeam = JSON.parse(savedTeam);
+              // Make sure this team still exists in our list
+              if (mappedTeams.some(team => team.id === parsedTeam.id)) {
+                setSelectedTeam(parsedTeam);
+              } else {
+                // Fall back to default if saved team no longer exists
+                const defaultTeam = mappedTeams.find(team => team.is_default) || mappedTeams[0];
+                setSelectedTeam(defaultTeam);
+                localStorage.setItem('currentTeam', JSON.stringify(defaultTeam));
+              }
+            } catch (e) {
+              console.error("Error parsing saved team:", e);
+              const defaultTeam = mappedTeams.find(team => team.is_default) || mappedTeams[0];
+              setSelectedTeam(defaultTeam);
+              localStorage.setItem('currentTeam', JSON.stringify(defaultTeam));
+            }
+          } else {
+            // No saved team, use default
+            const defaultTeam = mappedTeams.find(team => team.is_default) || mappedTeams[0];
+            setSelectedTeam(defaultTeam);
+            localStorage.setItem('currentTeam', JSON.stringify(defaultTeam));
+          }
         } else {
           // Handle case where no teams exist yet
           toast({
@@ -143,6 +163,9 @@ export function TeamSelector({ userId, isAdmin, inDropdown = false }: TeamSelect
           title: "Success",
           description: "Team created successfully",
         });
+        
+        // Trigger a custom event to notify other components
+        window.dispatchEvent(new CustomEvent('team-changed', { detail: newTeam }));
       }
 
       setIsCreateDialogOpen(false);
@@ -163,7 +186,18 @@ export function TeamSelector({ userId, isAdmin, inDropdown = false }: TeamSelect
     
     // Add state update for current team to update the UI
     localStorage.setItem('currentTeam', JSON.stringify(team));
+    
+    // Also dispatch a custom event so other components can react
+    window.dispatchEvent(new CustomEvent('team-changed', { detail: team }));
+    
+    // Force a window event to ensure all components update
     window.dispatchEvent(new Event('storage'));
+    
+    toast({
+      title: "Team Changed",
+      description: `Switched to ${team.name}`,
+      duration: 3000,
+    });
   };
 
   if (isLoading) {
@@ -201,7 +235,7 @@ export function TeamSelector({ userId, isAdmin, inDropdown = false }: TeamSelect
         )}
 
         <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
-          <DialogContent>
+          <DialogContent className="bg-background">
             <DialogHeader>
               <DialogTitle>Create New Team</DialogTitle>
               <DialogDescription>
@@ -259,7 +293,7 @@ export function TeamSelector({ userId, isAdmin, inDropdown = false }: TeamSelect
             <ChevronDown className="ml-2 h-4 w-4" />
           </Button>
         </DropdownMenuTrigger>
-        <DropdownMenuContent align="start" className="w-[200px]">
+        <DropdownMenuContent align="start" className="w-[200px] bg-background border shadow-lg">
           {teams.map((team) => (
             <DropdownMenuItem 
               key={team.id}
@@ -285,7 +319,7 @@ export function TeamSelector({ userId, isAdmin, inDropdown = false }: TeamSelect
       </DropdownMenu>
 
       <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
-        <DialogContent>
+        <DialogContent className="bg-background">
           <DialogHeader>
             <DialogTitle>Create New Team</DialogTitle>
             <DialogDescription>

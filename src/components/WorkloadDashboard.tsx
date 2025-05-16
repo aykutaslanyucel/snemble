@@ -5,7 +5,7 @@ import WorkloadSummary from "@/components/WorkloadSummary";
 import { TeamMember } from "@/types/TeamMemberTypes";
 import { exportCapacityReport } from "@/utils/pptxExport";
 import { Button } from "@/components/ui/button";
-import { FileSpreadsheet } from "lucide-react";
+import { FileSpreadsheet, Download } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import "@/styles/animations.css";
 
@@ -18,7 +18,7 @@ export function WorkloadDashboard({ members }: WorkloadDashboardProps) {
   
   useEffect(() => {
     const handleExportEvent = () => {
-      exportCapacityReport(members);
+      handleExportToPowerPoint();
     };
     
     window.addEventListener("export-capacity-report", handleExportEvent);
@@ -29,6 +29,15 @@ export function WorkloadDashboard({ members }: WorkloadDashboardProps) {
   }, [members]);
   
   const handleExportToPowerPoint = () => {
+    if (!members || members.length === 0) {
+      toast({
+        title: "Export Failed",
+        description: "No team members to export",
+        variant: "destructive",
+      });
+      return;
+    }
+    
     try {
       exportCapacityReport(members);
       toast({

@@ -1,3 +1,4 @@
+
 import React from "react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -49,7 +50,7 @@ export function NavigationHeader({
                     <ChevronDown className="h-3 w-3 text-muted-foreground ml-1 mt-0.5 opacity-60" />
                   </div>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="start" className="w-[220px]">
+                <DropdownMenuContent align="start" className="w-[220px] bg-background border shadow-lg">
                   <TeamSelector userId={undefined} isAdmin={isAdmin} inDropdown={true} />
                 </DropdownMenuContent>
               </DropdownMenu>
