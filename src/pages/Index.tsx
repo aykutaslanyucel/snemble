@@ -528,11 +528,12 @@ export default function Index() {
         />
       )}
       
-      <div className="container py-8 space-y-6">
+      <div className="container py-8 space-y-8">
         <NavigationHeader 
           isAdmin={isAdmin} 
           members={members} 
           handleLogout={handleLogout}
+          showWelcomeHeader={true}
         />
         
         <SearchAndActions

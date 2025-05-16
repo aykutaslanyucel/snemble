@@ -26,21 +26,25 @@ import { User, UserPlus, UserMinus, Search, Pencil, Trash } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Skeleton } from "@/components/ui/skeleton";
 import { supabase } from "@/integrations/supabase/client";
+import { TeamMemberRole } from "@/types/TeamMemberTypes";
 
 interface UserData {
   id: string;
   email: string;
   name: string;
-  role: string;
+  role: TeamMemberRole;
   teams: string[];
   isActive: boolean;
 }
 
 export function UserManagement() {
   const [users, setUsers] = useState<UserData[]>([
-    { id: '1', email: 'admin@example.com', name: 'Admin User', role: 'admin', teams: ['M&A Team'], isActive: true },
-    { id: '2', email: 'user1@example.com', name: 'John Doe', role: 'member', teams: ['IP Tech Team'], isActive: true },
-    { id: '3', email: 'user2@example.com', name: 'Jane Smith', role: 'member', teams: ['M&A Team', 'IP Tech Team'], isActive: true }
+    { id: '1', email: 'admin@example.com', name: 'Admin User', role: 'Partner', teams: ['M&A Team'], isActive: true },
+    { id: '2', email: 'user1@example.com', name: 'John Doe', role: 'Associate', teams: ['IP Tech Team'], isActive: true },
+    { id: '3', email: 'user2@example.com', name: 'Jane Smith', role: 'Senior Associate', teams: ['M&A Team', 'IP Tech Team'], isActive: true },
+    { id: '4', email: 'user3@example.com', name: 'Michael Brown', role: 'Managing Associate', teams: ['M&A Team'], isActive: true },
+    { id: '5', email: 'user4@example.com', name: 'Sarah Wilson', role: 'Assistant', teams: ['IP Tech Team'], isActive: true },
+    { id: '6', email: 'user5@example.com', name: 'Robert Johnson', role: 'Other', teams: ['Support Team'], isActive: true }
   ]);
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
@@ -50,17 +54,20 @@ export function UserManagement() {
   const [searchQuery, setSearchQuery] = useState('');
   const [teams, setTeams] = useState([
     { id: '1', name: 'M&A Team' },
-    { id: '2', name: 'IP Tech Team' }
+    { id: '2', name: 'IP Tech Team' },
+    { id: '3', name: 'Support Team' }
   ]);
   const [formData, setFormData] = useState({
     email: '',
     name: '',
-    role: 'member',
+    role: 'Associate' as TeamMemberRole,
     teams: [] as string[],
     isActive: true
   });
   
   const { toast } = useToast();
+
+  const memberRoles: TeamMemberRole[] = ['Partner', 'Managing Associate', 'Senior Associate', 'Associate', 'Assistant', 'Other'];
 
   const filteredUsers = users.filter(user => 
     user.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
@@ -71,7 +78,7 @@ export function UserManagement() {
     setFormData({
       email: '',
       name: '',
-      role: 'member',
+      role: 'Associate',
       teams: [],
       isActive: true
     });
@@ -239,7 +246,7 @@ export function UserManagement() {
                   <TableRow key={user.id}>
                     <TableCell className="font-medium">{user.name}</TableCell>
                     <TableCell>{user.email}</TableCell>
-                    <TableCell className="capitalize">{user.role}</TableCell>
+                    <TableCell>{user.role}</TableCell>
                     <TableCell>{user.teams.join(', ')}</TableCell>
                     <TableCell>
                       <Switch 
@@ -314,14 +321,15 @@ export function UserManagement() {
               <Label htmlFor="role">Role</Label>
               <Select
                 value={formData.role}
-                onValueChange={(value) => setFormData({...formData, role: value})}
+                onValueChange={(value) => setFormData({...formData, role: value as TeamMemberRole})}
               >
                 <SelectTrigger>
                   <SelectValue placeholder="Select role" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="admin">Admin</SelectItem>
-                  <SelectItem value="member">Member</SelectItem>
+                  {memberRoles.map(role => (
+                    <SelectItem key={role} value={role}>{role}</SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>
@@ -393,14 +401,15 @@ export function UserManagement() {
               <Label htmlFor="edit-role">Role</Label>
               <Select
                 value={formData.role}
-                onValueChange={(value) => setFormData({...formData, role: value})}
+                onValueChange={(value) => setFormData({...formData, role: value as TeamMemberRole})}
               >
                 <SelectTrigger id="edit-role">
                   <SelectValue placeholder="Select role" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="admin">Admin</SelectItem>
-                  <SelectItem value="member">Member</SelectItem>
+                  {memberRoles.map(role => (
+                    <SelectItem key={role} value={role}>{role}</SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>

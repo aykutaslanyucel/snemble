@@ -21,17 +21,21 @@ export function NavigationHeader({
   handleLogout,
   members,
   showTeamSelector = true,
+  showWelcomeHeader = false,
+  hideCapacityWidget = false,
 }: {
   isAdmin: boolean;
   members?: TeamMember[];
   handleLogout: () => Promise<void>;
   showTeamSelector?: boolean;
+  showWelcomeHeader?: boolean;
+  hideCapacityWidget?: boolean;
 }) {
   const { isImpersonating, stopImpersonation } = useAuth();
 
   return (
-    <div className="flex flex-col gap-8 px-6 sm:px-12 md:px-20 lg:px-28 xl:px-36 mx-auto w-full">
-      <div className="flex items-center justify-between py-8 border-b pb-8">
+    <div className="flex flex-col gap-12 px-6 sm:px-12 md:px-20 lg:px-28 xl:px-36 mx-auto w-full">
+      <div className="flex items-center justify-between py-12 border-b pb-10">
         <div className="flex items-center gap-4">
           <Avatar className="h-10 w-10">
             <AvatarImage src="" alt="Team logo" />
@@ -43,7 +47,7 @@ export function NavigationHeader({
                 <DropdownMenuTrigger asChild className="cursor-pointer">
                   <div className="flex items-center">
                     <h1 className="text-2xl font-semibold">Team Dashboard</h1>
-                    <ChevronDown className="h-4 w-4 text-muted-foreground ml-1 mt-1" />
+                    <ChevronDown className="h-3 w-3 text-muted-foreground ml-1 mt-1 opacity-60" />
                   </div>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="start" className="w-[220px]">
@@ -72,8 +76,10 @@ export function NavigationHeader({
         )}
 
         <div className="flex items-center space-x-5">
-          {/* Simple capacity status component */}
-          <CapacityTrackerWidget members={members} />
+          {/* Only show capacity tracker when not hidden */}
+          {!hideCapacityWidget && (
+            <CapacityTrackerWidget members={members} />
+          )}
           
           {isAdmin && (
             <Button asChild variant="outline" size="sm" className="flex items-center gap-1">
@@ -90,6 +96,17 @@ export function NavigationHeader({
           <ThemeToggle />
         </div>
       </div>
+      
+      {/* Welcome header section */}
+      {showWelcomeHeader && (
+        <div className="text-center mb-8">
+          <h1 className="text-4xl font-bold mb-4">Welcome to Snemble</h1>
+          <p className="text-lg text-muted-foreground max-w-3xl mx-auto">
+            Manage your team members, track their availability, and keep everyone in sync with our 
+            intuitive team management platform.
+          </p>
+        </div>
+      )}
     </div>
   );
 }
