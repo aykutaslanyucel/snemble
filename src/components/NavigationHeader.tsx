@@ -3,7 +3,7 @@ import React from "react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
-import { LogOut, Settings, AlertCircle, ChevronDown, ArrowLeft, Shield } from "lucide-react";
+import { LogOut, Settings, AlertCircle, ChevronDown, ArrowLeft, Shield, Building } from "lucide-react";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { useAuth } from "@/contexts/AuthContext";
 import { CapacityTrackerWidget } from "@/components/CapacityTrackerWidget";
@@ -12,7 +12,9 @@ import {
   DropdownMenu, 
   DropdownMenuContent, 
   DropdownMenuItem,
-  DropdownMenuTrigger 
+  DropdownMenuTrigger,
+  DropdownMenuSeparator,
+  DropdownMenuLabel
 } from "@/components/ui/dropdown-menu";
 import { TeamSelector } from "@/components/TeamSelector";
 
@@ -32,6 +34,28 @@ export function NavigationHeader({
   hideCapacityWidget?: boolean;
 }) {
   const { isImpersonating, stopImpersonation } = useAuth();
+  const [currentTeam, setCurrentTeam] = React.useState("Team Dashboard");
+
+  // Listen to team selection events
+  React.useEffect(() => {
+    const handleTeamSelected = (event: Event) => {
+      const customEvent = event as CustomEvent;
+      const { teamName } = customEvent.detail;
+      setCurrentTeam(teamName || "Team Dashboard");
+    };
+    
+    window.addEventListener('team-selected', handleTeamSelected as EventListener);
+    
+    // Try to get stored team name
+    const storedTeamName = localStorage.getItem('selectedTeamName');
+    if (storedTeamName) {
+      setCurrentTeam(storedTeamName);
+    }
+    
+    return () => {
+      window.removeEventListener('team-selected', handleTeamSelected as EventListener);
+    };
+  }, []);
 
   return (
     <div className="flex flex-col gap-12 px-6 sm:px-12 md:px-20 lg:px-28 xl:px-36 mx-auto w-full">
@@ -45,12 +69,17 @@ export function NavigationHeader({
             {showTeamSelector ? (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild className="cursor-pointer">
-                  <div className="flex items-center">
-                    <h1 className="text-sm font-medium">Team Dashboard</h1>
-                    <ChevronDown className="h-3 w-3 text-muted-foreground ml-1 mt-0.5 opacity-60" />
+                  <div className="flex items-center bg-muted/30 hover:bg-muted rounded-full px-3 py-1.5 transition-colors duration-200">
+                    <Building className="h-3.5 w-3.5 text-muted-foreground mr-2 opacity-70" />
+                    <h1 className="text-sm font-medium">{currentTeam}</h1>
+                    <ChevronDown className="h-3 w-3 text-muted-foreground ml-1.5 mt-0.5 opacity-60" />
                   </div>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="start" className="w-[220px] bg-background border shadow-lg">
+                <DropdownMenuContent align="start" className="w-[240px] bg-background border shadow-lg">
+                  <DropdownMenuLabel className="text-xs font-normal text-muted-foreground">
+                    Select Team
+                  </DropdownMenuLabel>
+                  <DropdownMenuSeparator />
                   <TeamSelector userId={undefined} isAdmin={isAdmin} inDropdown={true} />
                 </DropdownMenuContent>
               </DropdownMenu>

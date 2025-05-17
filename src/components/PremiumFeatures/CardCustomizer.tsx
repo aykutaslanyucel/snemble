@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { TeamMember, TeamMemberCustomization, GradientAnimationType } from "@/types/TeamMemberTypes";
@@ -15,7 +16,7 @@ import { Badge } from "@/types/TeamMemberTypes";
 import "@/styles/animations.css";
 import { BackgroundImageSelector } from './BackgroundImageSelector';
 import { Label } from "@/components/ui/label";
-import { Input } from "@/components/ui/input";
+import { DragDropImage } from '@/components/ui/drag-drop-image';
 import { useAdminSettings } from "@/hooks/useAdminSettings";
 
 interface CardCustomizerProps {
@@ -32,7 +33,6 @@ export function CardCustomizer({ teamMember, onUpdate }: CardCustomizerProps) {
   // State for badges
   const [badges, setBadges] = useState<{ id: string; name: string; imageUrl: string }[]>([]);
   const [loadingBadges, setLoadingBadges] = useState(false);
-  const [imageUrlInput, setImageUrlInput] = useState(customization.backgroundImage || '');
   
   const { toast } = useToast();
   const { settings } = useAdminSettings();
@@ -164,16 +164,19 @@ export function CardCustomizer({ teamMember, onUpdate }: CardCustomizerProps) {
     setCustomization({ ...customization, badgeSize: size });
   };
 
-  const handleSetBackgroundImage = () => {
-    if (!imageUrlInput) {
-      const { backgroundImage, ...restCustomization } = customization;
-      setCustomization(restCustomization);
-      return;
+  const handleSetBackgroundImage = (imageSource: string | File) => {
+    let imageUrl: string;
+    
+    if (typeof imageSource === 'string') {
+      imageUrl = imageSource;
+    } else {
+      // For File objects, create a temporary URL
+      imageUrl = URL.createObjectURL(imageSource);
     }
     
     setCustomization({ 
       ...customization, 
-      backgroundImage: imageUrlInput,
+      backgroundImage: imageUrl,
       color: undefined,
       gradient: undefined 
     });
@@ -182,6 +185,11 @@ export function CardCustomizer({ teamMember, onUpdate }: CardCustomizerProps) {
       title: "Background image set",
       description: "Your card background has been updated",
     });
+  };
+
+  const handleRemoveBackgroundImage = () => {
+    const { backgroundImage, ...restCustomization } = customization;
+    setCustomization(restCustomization);
   };
 
   const handleSave = () => {
@@ -277,36 +285,21 @@ export function CardCustomizer({ teamMember, onUpdate }: CardCustomizerProps) {
         </TabsContent>
         
         <TabsContent value="background" className="space-y-4">
-          {/* Background Image Selector */}
+          {/* Background Image Selector with drag and drop */}
           <div className="space-y-4">
-            <h3 className="text-sm font-medium">Background Image URL</h3>
-            <div className="flex gap-2">
-              <Input 
-                type="url"
-                placeholder="https://example.com/image.jpg"
-                value={imageUrlInput}
-                onChange={(e) => setImageUrlInput(e.target.value)}
-              />
-              <Button onClick={handleSetBackgroundImage} type="button">
-                Set
-              </Button>
-            </div>
-            <p className="text-xs text-muted-foreground">
-              Enter the URL of the image you want to use as background
-            </p>
+            <h3 className="text-sm font-medium">Background Image</h3>
+            <DragDropImage 
+              initialUrl={customization.backgroundImage} 
+              onImageSelect={handleSetBackgroundImage}
+            />
           </div>
           
           {customization.backgroundImage && (
-            <div className="pt-2 flex justify-between items-center">
-              <Label>Current background image:</Label>
+            <div className="pt-2 flex justify-end">
               <Button 
                 variant="outline" 
                 size="sm"
-                onClick={() => {
-                  const { backgroundImage, ...rest } = customization;
-                  setCustomization(rest);
-                  setImageUrlInput('');
-                }}
+                onClick={handleRemoveBackgroundImage}
               >
                 Remove Image
               </Button>

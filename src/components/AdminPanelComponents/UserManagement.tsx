@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -22,26 +21,41 @@ import {
 } from "@/components/ui/dialog";
 import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { User, UserPlus, UserMinus, Search, Pencil, Trash } from "lucide-react";
+import { User, UserPlus, UserMinus, Search, Pencil, Trash, FileText, Upload, Download } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Skeleton } from "@/components/ui/skeleton";
 import { supabase } from "@/integrations/supabase/client";
 import { TeamMemberRole } from "@/types/TeamMemberTypes";
+import * as XLSX from 'xlsx';
 
 interface UserData {
   id: string;
   email: string;
   name: string;
-  role: TeamMemberRole;
+  role: TeamMemberRole; // For position/seniority
+  userType: 'user' | 'premium' | 'admin'; // For access level
   teams: string[];
   isActive: boolean;
 }
+
+// Function to format name from email
+const formatNameFromEmail = (email: string): string => {
+  const namePart = email.split('@')[0];
+  // Replace periods and underscores with spaces
+  const nameWithSpaces = namePart.replace(/[._]/g, ' ');
+  // Title case each word
+  return nameWithSpaces
+    .split(' ')
+    .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+    .join(' ');
+};
 
 export function UserManagement() {
   const [users, setUsers] = useState<UserData[]>([]);
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [isImportDialogOpen, setIsImportDialogOpen] = useState(false);
   const [loading, setLoading] = useState(true);
   const [currentUser, setCurrentUser] = useState<UserData | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
@@ -54,11 +68,24 @@ export function UserManagement() {
     email: '',
     name: '',
     role: 'Associate' as TeamMemberRole,
+    userType: 'user' as 'user' | 'premium' | 'admin',
     teams: [] as string[],
     isActive: true
   });
+  const [importData, setImportData] = useState<UserData[]>([]);
+  const [importFile, setImportFile] = useState<File | null>(null);
   
   const { toast } = useToast();
+
+  // Define the order of roles for sorting and display
+  const memberRolesOrder: { [key in TeamMemberRole]: number } = {
+    'Partner': 1,
+    'Managing Associate': 2,
+    'Senior Associate': 3,
+    'Associate': 4,
+    'Assistant': 5,
+    'Other': 6
+  };
 
   const memberRoles: TeamMemberRole[] = ['Partner', 'Managing Associate', 'Senior Associate', 'Associate', 'Assistant', 'Other'];
 
@@ -90,12 +117,19 @@ export function UserManagement() {
           // Find matching team member record
           const teamMember = teamMembers.find(tm => tm.user_id === profile.id);
           
+          // Format name if it looks like an email
+          let formattedName = profile.name || '';
+          if (formattedName.includes('@') || formattedName.includes('.')) {
+            formattedName = formatNameFromEmail(formattedName);
+          }
+          
           // Default to reasonable values if no team member record exists
           return {
             id: profile.id,
             email: profile.email || '',
-            name: profile.name || '',
+            name: formattedName,
             role: (teamMember?.role || profile.role || 'Other') as TeamMemberRole,
+            userType: profile.role as 'user' | 'premium' | 'admin',
             teams: [], // We'll need to implement the teams table to properly populate this
             isActive: true // This would need to come from the auth.users table but that's not accessible via client-side API
           };
@@ -112,9 +146,9 @@ export function UserManagement() {
         
         // Fallback to mock data if the fetch fails
         setUsers([
-          { id: '1', email: 'admin@example.com', name: 'Admin User', role: 'Partner', teams: ['M&A Team'], isActive: true },
-          { id: '2', email: 'user1@example.com', name: 'John Doe', role: 'Associate', teams: ['IP Tech Team'], isActive: true },
-          { id: '3', email: 'user2@example.com', name: 'Jane Smith', role: 'Senior Associate', teams: ['M&A Team', 'IP Tech Team'], isActive: true }
+          { id: '1', email: 'admin@example.com', name: 'Admin User', role: 'Partner', userType: 'admin', teams: ['M&A Team'], isActive: true },
+          { id: '2', email: 'user1@example.com', name: 'John Doe', role: 'Associate', userType: 'user', teams: ['IP Tech Team'], isActive: true },
+          { id: '3', email: 'user2@example.com', name: 'Jane Smith', role: 'Senior Associate', userType: 'premium', teams: ['M&A Team', 'IP Tech Team'], isActive: true }
         ]);
       } finally {
         setLoading(false);
@@ -134,6 +168,7 @@ export function UserManagement() {
       email: '',
       name: '',
       role: 'Associate',
+      userType: 'user',
       teams: [],
       isActive: true
     });
@@ -146,6 +181,7 @@ export function UserManagement() {
       email: user.email,
       name: user.name,
       role: user.role,
+      userType: user.userType,
       teams: user.teams,
       isActive: user.isActive
     });
@@ -197,6 +233,16 @@ export function UserManagement() {
         if (memberError) {
           throw memberError;
         }
+        
+        // Update profiles table with user type (admin, premium, user)
+        const { error: profileError } = await supabase
+          .from('profiles')
+          .update({ role: formData.userType })
+          .eq('id', authData.user.id);
+          
+        if (profileError) {
+          throw profileError;
+        }
       }
 
       // Update UI
@@ -205,6 +251,7 @@ export function UserManagement() {
         email: formData.email.trim(),
         name: formData.name.trim(),
         role: formData.role,
+        userType: formData.userType,
         teams: formData.teams,
         isActive: formData.isActive
       };
@@ -226,6 +273,7 @@ export function UserManagement() {
           email: formData.email.trim(),
           name: formData.name.trim(),
           role: formData.role,
+          userType: formData.userType,
           teams: formData.teams,
           isActive: formData.isActive
         };
@@ -264,7 +312,7 @@ export function UserManagement() {
         .update({
           name: formData.name,
           email: formData.email,
-          role: formData.role,
+          role: formData.userType,
           updated_at: new Date().toISOString()
         })
         .eq('id', currentUser.id);
@@ -294,6 +342,7 @@ export function UserManagement() {
           email: formData.email.trim(),
           name: formData.name.trim(),
           role: formData.role,
+          userType: formData.userType,
           teams: formData.teams,
           isActive: formData.isActive
         } : user)
@@ -315,6 +364,7 @@ export function UserManagement() {
           email: formData.email.trim(),
           name: formData.name.trim(),
           role: formData.role,
+          userType: formData.userType,
           teams: formData.teams,
           isActive: formData.isActive
         } : user)
@@ -333,16 +383,34 @@ export function UserManagement() {
     if (!currentUser) return;
     
     try {
+      // First delete the team_member entry
+      const { error: memberError } = await supabase
+        .from('team_members')
+        .delete()
+        .eq('user_id', currentUser.id);
+        
+      if (memberError) {
+        console.error("Error deleting team member:", memberError);
+        // Continue anyway, as the user might not have a team member entry
+      }
+      
       // To properly delete a user, we would need admin access to delete from auth.users
-      // This would cascade delete to profiles and team_members due to foreign key constraints
-      // For now, we'll just handle the UI update
+      // For now, just delete from profiles
+      const { error: profileError } = await supabase
+        .from('profiles')
+        .delete()
+        .eq('id', currentUser.id);
+        
+      if (profileError) {
+        throw profileError;
+      }
       
       setUsers(prev => prev.filter(user => user.id !== currentUser.id));
       setIsDeleteDialogOpen(false);
       
       toast({
         title: "User Removed",
-        description: "The user has been removed from the UI",
+        description: "The user has been removed from the system",
       });
     } catch (error) {
       console.error("Error deleting user:", error);
@@ -381,6 +449,116 @@ export function UserManagement() {
       });
     }
   };
+  
+  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    
+    setImportFile(file);
+    
+    const reader = new FileReader();
+    reader.onload = (evt) => {
+      try {
+        const binaryStr = evt.target?.result;
+        const workbook = XLSX.read(binaryStr, { type: 'binary' });
+        const sheetName = workbook.SheetNames[0];
+        const worksheet = workbook.Sheets[sheetName];
+        const jsonData = XLSX.utils.sheet_to_json(worksheet);
+        
+        // Transform the data to our format
+        const transformedData = jsonData.map((row: any) => {
+          // Format name if it's email-like
+          let name = row.name || row.Name || '';
+          if (name.includes('@') || name.includes('.')) {
+            name = formatNameFromEmail(name);
+          }
+          
+          return {
+            id: `temp-${Math.random().toString(36).substring(7)}`,
+            email: row.email || row.Email || '',
+            name: name,
+            role: row.role || row.Role || 'Associate',
+            userType: row.userType || row.UserType || 'user',
+            teams: row.teams ? String(row.teams).split(',') : [],
+            isActive: true
+          };
+        });
+        
+        setImportData(transformedData);
+        setIsImportDialogOpen(true);
+      } catch (error) {
+        console.error("Error parsing Excel file:", error);
+        toast({
+          title: "Error",
+          description: "Failed to parse Excel file",
+          variant: "destructive"
+        });
+      }
+    };
+    
+    reader.readAsBinaryString(file);
+  };
+  
+  const handleExportToExcel = () => {
+    // Convert users to exportable format
+    const exportData = users.map(user => ({
+      Email: user.email,
+      Name: user.name,
+      Role: user.role,
+      UserType: user.userType,
+      Teams: user.teams.join(','),
+      Active: user.isActive ? 'Yes' : 'No'
+    }));
+    
+    // Create worksheet and workbook
+    const ws = XLSX.utils.json_to_sheet(exportData);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Users");
+    
+    // Generate file and trigger download
+    XLSX.writeFile(wb, "Users.xlsx");
+    
+    toast({
+      title: "Export Complete",
+      description: "Users have been exported to Excel"
+    });
+  };
+  
+  const handleImportUsers = async () => {
+    try {
+      // Process each user for import
+      let successCount = 0;
+      
+      for (const user of importData) {
+        // First, create user in auth (this would typically be an admin function)
+        // For demo, just add to state
+        
+        // In a production app, you would use supabase.auth.admin.createUser
+        // and then create the profile and team_member entries
+        
+        successCount++;
+      }
+      
+      // Add all to state for demo
+      setUsers(prev => [...prev, ...importData]);
+      
+      setIsImportDialogOpen(false);
+      setImportData([]);
+      setImportFile(null);
+      
+      toast({
+        title: "Import Complete",
+        description: `${successCount} users have been imported`
+      });
+    } catch (error) {
+      console.error("Error importing users:", error);
+      toast({
+        title: "Error",
+        description: "Failed to import users",
+        variant: "destructive"
+      });
+    }
+  };
 
   return (
     <div className="space-y-6">
@@ -394,9 +572,29 @@ export function UserManagement() {
             onChange={(e) => setSearchQuery(e.target.value)}
           />
         </div>
-        <Button onClick={handleOpenAddDialog}>
-          <UserPlus className="mr-1 h-4 w-4" /> Add User
-        </Button>
+        <div className="flex gap-2">
+          <div className="relative">
+            <input
+              type="file"
+              id="excel-upload"
+              className="hidden"
+              accept=".xlsx,.xls"
+              onChange={handleFileUpload}
+            />
+            <Button 
+              variant="outline" 
+              onClick={() => document.getElementById('excel-upload')?.click()}
+            >
+              <Upload className="mr-1 h-4 w-4" /> Import
+            </Button>
+          </div>
+          <Button variant="outline" onClick={handleExportToExcel}>
+            <Download className="mr-1 h-4 w-4" /> Export
+          </Button>
+          <Button onClick={handleOpenAddDialog}>
+            <UserPlus className="mr-1 h-4 w-4" /> Add User
+          </Button>
+        </div>
       </div>
 
       <Card>
@@ -407,6 +605,7 @@ export function UserManagement() {
                 <TableHead>Name</TableHead>
                 <TableHead>Email</TableHead>
                 <TableHead>Role</TableHead>
+                <TableHead>Access Level</TableHead>
                 <TableHead>Teams</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead className="text-right">Actions</TableHead>
@@ -419,6 +618,7 @@ export function UserManagement() {
                     <TableCell><Skeleton className="h-6 w-24" /></TableCell>
                     <TableCell><Skeleton className="h-6 w-32" /></TableCell>
                     <TableCell><Skeleton className="h-6 w-16" /></TableCell>
+                    <TableCell><Skeleton className="h-6 w-16" /></TableCell>
                     <TableCell><Skeleton className="h-6 w-24" /></TableCell>
                     <TableCell><Skeleton className="h-6 w-16" /></TableCell>
                     <TableCell><Skeleton className="h-6 w-24" /></TableCell>
@@ -430,6 +630,15 @@ export function UserManagement() {
                     <TableCell className="font-medium">{user.name}</TableCell>
                     <TableCell>{user.email}</TableCell>
                     <TableCell>{user.role}</TableCell>
+                    <TableCell>
+                      {user.userType === 'admin' ? (
+                        <span className="bg-blue-100 text-blue-800 px-2 py-1 rounded-full text-xs">Admin</span>
+                      ) : user.userType === 'premium' ? (
+                        <span className="bg-purple-100 text-purple-800 px-2 py-1 rounded-full text-xs">Premium</span>
+                      ) : (
+                        <span className="bg-gray-100 text-gray-800 px-2 py-1 rounded-full text-xs">User</span>
+                      )}
+                    </TableCell>
                     <TableCell>{user.teams.join(', ')}</TableCell>
                     <TableCell>
                       <Switch 
@@ -460,7 +669,7 @@ export function UserManagement() {
                   </TableRow>
                 )) : (
                   <TableRow>
-                    <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
+                    <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
                       No users found
                     </TableCell>
                   </TableRow>
@@ -496,7 +705,15 @@ export function UserManagement() {
                 id="email"
                 type="email"
                 value={formData.email}
-                onChange={e => setFormData({...formData, email: e.target.value})}
+                onChange={e => {
+                  const email = e.target.value;
+                  setFormData({
+                    ...formData, 
+                    email,
+                    // Auto-format name from email if name field is empty
+                    name: formData.name || formatNameFromEmail(email)
+                  })
+                }}
                 placeholder="john.doe@example.com"
               />
             </div>
@@ -513,6 +730,22 @@ export function UserManagement() {
                   {memberRoles.map(role => (
                     <SelectItem key={role} value={role}>{role}</SelectItem>
                   ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="userType">Access Level</Label>
+              <Select
+                value={formData.userType}
+                onValueChange={(value) => setFormData({...formData, userType: value as 'user' | 'premium' | 'admin'})}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select access level" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="user">User</SelectItem>
+                  <SelectItem value="premium">Premium</SelectItem>
+                  <SelectItem value="admin">Admin</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -597,6 +830,22 @@ export function UserManagement() {
               </Select>
             </div>
             <div className="grid gap-2">
+              <Label htmlFor="edit-userType">Access Level</Label>
+              <Select
+                value={formData.userType}
+                onValueChange={(value) => setFormData({...formData, userType: value as 'user' | 'premium' | 'admin'})}
+              >
+                <SelectTrigger id="edit-userType">
+                  <SelectValue placeholder="Select access level" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="user">User</SelectItem>
+                  <SelectItem value="premium">Premium</SelectItem>
+                  <SelectItem value="admin">Admin</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="grid gap-2">
               <Label>Teams</Label>
               <div className="flex flex-wrap gap-2 mt-1">
                 {teams.map(team => (
@@ -659,6 +908,67 @@ export function UserManagement() {
               onClick={handleDeleteUser}
             >
               Delete User
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Import Users Dialog */}
+      <Dialog open={isImportDialogOpen} onOpenChange={setIsImportDialogOpen}>
+        <DialogContent className="sm:max-w-3xl">
+          <DialogHeader>
+            <DialogTitle>Import Users from Excel</DialogTitle>
+            <DialogDescription>
+              Review the data before importing users.
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="py-4">
+            <p className="text-sm mb-2">
+              File: <span className="font-medium">{importFile?.name}</span>
+            </p>
+            
+            <div className="border rounded-md overflow-hidden">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Name</TableHead>
+                    <TableHead>Email</TableHead>
+                    <TableHead>Role</TableHead>
+                    <TableHead>Access Level</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody className="max-h-64 overflow-auto">
+                  {importData.slice(0, 10).map((user, index) => (
+                    <TableRow key={index}>
+                      <TableCell>{user.name}</TableCell>
+                      <TableCell>{user.email}</TableCell>
+                      <TableCell>{user.role}</TableCell>
+                      <TableCell>{user.userType}</TableCell>
+                    </TableRow>
+                  ))}
+                  {importData.length > 10 && (
+                    <TableRow>
+                      <TableCell colSpan={4} className="text-center py-2 text-sm text-muted-foreground">
+                        ...and {importData.length - 10} more rows
+                      </TableCell>
+                    </TableRow>
+                  )}
+                </TableBody>
+              </Table>
+            </div>
+            
+            <p className="text-sm mt-4">
+              Total users to import: <span className="font-medium">{importData.length}</span>
+            </p>
+          </div>
+          
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsImportDialogOpen(false)}>
+              Cancel
+            </Button>
+            <Button onClick={handleImportUsers}>
+              Import Users
             </Button>
           </DialogFooter>
         </DialogContent>

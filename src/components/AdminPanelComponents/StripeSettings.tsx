@@ -1,5 +1,5 @@
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   Card,
   CardContent,
@@ -22,6 +22,7 @@ export function StripeSettings() {
   const { toast } = useToast();
   const [testingStripe, setTestingStripe] = useState(false);
   const [saveLoading, setSaveLoading] = useState(false);
+  const [isEnabled, setIsEnabled] = useState(false);
 
   // Get values from settings or use defaults
   const stripeEnabled = getSetting('stripe_enabled', false);
@@ -44,8 +45,11 @@ export function StripeSettings() {
   // Update form when settings change
   React.useEffect(() => {
     if (!settingsLoading) {
+      const enabled = getSetting('stripe_enabled', false);
+      setIsEnabled(enabled);
+      
       setFormValues({
-        stripeEnabled: getSetting('stripe_enabled', false),
+        stripeEnabled: enabled,
         stripeApiKey: getSetting('stripe_api_key', ''),
         stripePriceId: getSetting('stripe_price_id', ''),
         stripeProductName: getSetting('stripe_product_name', 'Premium Subscription'),
@@ -64,6 +68,10 @@ export function StripeSettings() {
   };
 
   const handleSwitchChange = (name: string) => (checked: boolean) => {
+    if (name === 'stripeEnabled') {
+      setIsEnabled(checked);
+    }
+    
     setFormValues(prev => ({
       ...prev,
       [name]: checked
@@ -83,10 +91,6 @@ export function StripeSettings() {
       await updateSetting('stripe_product_name', formValues.stripeProductName);
       await updateSetting('stripe_price_amount', priceInCents);
       await updateSetting('stripe_test_mode', formValues.stripeTestMode);
-      
-      // Store the API key in Supabase Edge Function secrets
-      // Note: This wouldn't actually work in a real app, just a placeholder for demo
-      // In a real app, you'd use a secure API to set this
       
       toast({
         title: "Settings saved",
@@ -113,13 +117,13 @@ export function StripeSettings() {
       
       if (error) throw new Error(error.message);
       
-      if (data.success) {
+      if (data && data.success) {
         toast({
           title: "Connection successful",
           description: "Your Stripe API key works correctly",
         });
       } else {
-        throw new Error(data.error || "Unknown error");
+        throw new Error((data && data.error) || "Unknown error");
       }
     } catch (error: any) {
       console.error("Error testing Stripe:", error);
@@ -161,8 +165,11 @@ export function StripeSettings() {
             </div>
             <Switch
               name="stripeEnabled"
-              checked={formValues.stripeEnabled}
-              onCheckedChange={handleSwitchChange('stripeEnabled')}
+              checked={isEnabled}
+              onCheckedChange={(checked) => {
+                setIsEnabled(checked);
+                handleSwitchChange('stripeEnabled')(checked);
+              }}
             />
           </div>
           
@@ -175,7 +182,7 @@ export function StripeSettings() {
               onChange={handleInputChange}
               placeholder="sk_test_..."
               type="password"
-              disabled={!formValues.stripeEnabled}
+              disabled={!isEnabled}
             />
             <p className="text-xs text-muted-foreground">
               {formValues.stripeTestMode ? 
@@ -195,7 +202,7 @@ export function StripeSettings() {
               name="stripeTestMode"
               checked={formValues.stripeTestMode}
               onCheckedChange={handleSwitchChange('stripeTestMode')}
-              disabled={!formValues.stripeEnabled}
+              disabled={!isEnabled}
             />
           </div>
 
@@ -210,7 +217,7 @@ export function StripeSettings() {
                   value={formValues.stripeProductName}
                   onChange={handleInputChange}
                   placeholder="Premium Subscription"
-                  disabled={!formValues.stripeEnabled}
+                  disabled={!isEnabled}
                 />
               </div>
               
@@ -228,7 +235,7 @@ export function StripeSettings() {
                     onChange={handleInputChange}
                     className="pl-7"
                     placeholder="49.99"
-                    disabled={!formValues.stripeEnabled}
+                    disabled={!isEnabled}
                   />
                 </div>
               </div>
@@ -241,7 +248,7 @@ export function StripeSettings() {
                   value={formValues.stripePriceId}
                   onChange={handleInputChange}
                   placeholder="price_1234567890"
-                  disabled={!formValues.stripeEnabled}
+                  disabled={!isEnabled}
                 />
                 <p className="text-xs text-muted-foreground">
                   Optional: The Stripe Price ID for your subscription product
@@ -255,7 +262,7 @@ export function StripeSettings() {
             type="button"
             variant="outline"
             onClick={testStripeConnection}
-            disabled={!formValues.stripeEnabled || !formValues.stripeApiKey || testingStripe || saveLoading}
+            disabled={!isEnabled || !formValues.stripeApiKey || testingStripe || saveLoading}
             className="w-full sm:w-auto"
           >
             {testingStripe ? (
@@ -299,7 +306,7 @@ export function StripeSettings() {
           <ul className="space-y-3">
             <li className="flex items-start">
               <div className="h-5 w-5 mr-2 flex-shrink-0 mt-0.5">
-                {formValues.stripeEnabled ? (
+                {isEnabled ? (
                   <CheckCircle2 className="h-5 w-5 text-green-500" />
                 ) : (
                   <AlertTriangle className="h-5 w-5 text-amber-500" />
@@ -315,7 +322,7 @@ export function StripeSettings() {
             
             <li className="flex items-start">
               <div className="h-5 w-5 mr-2 flex-shrink-0 mt-0.5">
-                {formValues.stripeEnabled && formValues.stripePriceId ? (
+                {isEnabled && formValues.stripePriceId ? (
                   <CheckCircle2 className="h-5 w-5 text-green-500" />
                 ) : (
                   <AlertTriangle className="h-5 w-5 text-amber-500" />

@@ -17,12 +17,12 @@ import { useAuth } from "@/contexts/AuthContext";
 import { TeamManagement } from "@/components/AdminPanelComponents/TeamManagement";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Settings, Users, Building, CreditCard, UserCheck, BadgePlus } from "lucide-react";
+import { ArrowLeft, Users, Building, CreditCard, UserCheck, BadgePlus } from "lucide-react";
 import { UserManagement } from "@/components/AdminPanelComponents/UserManagement";
 
 export default function Admin() {
   const { user, logout } = useAuth();
-  const [activeTab, setActiveTab] = useState("settings");
+  const [activeTab, setActiveTab] = useState("users");
   
   return (
     <div className="min-h-screen bg-gradient-to-b from-background to-secondary/20">
@@ -56,11 +56,8 @@ export default function Admin() {
               Manage your team workspace settings
             </CardDescription>
           </CardHeader>
-          <Tabs defaultValue="settings" value={activeTab} onValueChange={setActiveTab} className="p-6">
+          <Tabs defaultValue="users" value={activeTab} onValueChange={setActiveTab} className="p-6">
             <TabsList className="w-full flex justify-start overflow-x-auto mb-6 bg-muted/50">
-              <TabsTrigger value="settings" className="data-[state=active]:bg-primary/10 flex items-center gap-2">
-                <Settings className="h-4 w-4" /> General Settings
-              </TabsTrigger>
               <TabsTrigger value="users" className="data-[state=active]:bg-primary/10 flex items-center gap-2">
                 <Users className="h-4 w-4" /> User Management
               </TabsTrigger>
@@ -77,10 +74,6 @@ export default function Admin() {
                 <UserCheck className="h-4 w-4" /> User Preview
               </TabsTrigger>
             </TabsList>
-            
-            <TabsContent value="settings" className="space-y-4 mt-2">
-              <AdminSettings />
-            </TabsContent>
             
             <TabsContent value="users" className="space-y-4 mt-2">
               <UserManagement />
