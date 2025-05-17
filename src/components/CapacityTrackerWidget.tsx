@@ -8,7 +8,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { Progress as ProgressIcon } from "lucide-react";
+import { Gauge } from "lucide-react";
 
 interface CapacityTrackerWidgetProps {
   members?: TeamMember[];
@@ -57,7 +57,7 @@ export function CapacityTrackerWidget({ members = [] }: CapacityTrackerWidgetPro
       <Tooltip>
         <TooltipTrigger asChild>
           <div className="flex items-center space-x-3 bg-card dark:bg-card/80 px-3 py-1 rounded-full shadow-sm border">
-            <ProgressIcon className="h-4 w-4 text-muted-foreground" />
+            <Gauge className="h-4 w-4 text-muted-foreground" />
             <div className="flex items-center space-x-2">
               <div className="w-24 h-2">
                 <Progress 
