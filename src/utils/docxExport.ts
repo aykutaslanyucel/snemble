@@ -143,5 +143,5 @@ export function exportWordDocument(members: TeamMember[]) {
   });
 
   // Save the file (download it)
-  pptx.writeFile({ fileName: `Team-Capacity-Report-${format(new Date(), "yyyy-MM-dd")}.pptx` });
+  pptx.writeFile({ fileName: `Team-Capacity-Report-${format(new Date(), "yyyy-MM-dd")}.docx` });
 }

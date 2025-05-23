@@ -1,5 +1,5 @@
 
-import { Search, FileText, FileCheck } from "lucide-react";
+import { Search, FileText, FileCheck, ArrowUpDown } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
@@ -43,7 +43,8 @@ export function SearchBar({
       
       {onSortChange && (
         <Select value={sortValue} onValueChange={onSortChange}>
-          <SelectTrigger className="w-[180px]">
+          <SelectTrigger className="w-[140px] flex items-center gap-2">
+            <ArrowUpDown className="h-3.5 w-3.5 text-muted-foreground" />
             <SelectValue placeholder="Sort by" />
           </SelectTrigger>
           <SelectContent>
@@ -53,31 +54,6 @@ export function SearchBar({
             <SelectItem value="availability">Most Available</SelectItem>
           </SelectContent>
         </Select>
-      )}
-
-      {showExportActions && (
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="outline" size="icon">
-              <FileText className="h-4 w-4" />
-              <span className="sr-only">Export</span>
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            {onExportPowerPoint && (
-              <DropdownMenuItem onClick={onExportPowerPoint}>
-                <FileText className="h-4 w-4 mr-2" /> 
-                Export PowerPoint
-              </DropdownMenuItem>
-            )}
-            {onExportWord && (
-              <DropdownMenuItem onClick={onExportWord}>
-                <FileCheck className="h-4 w-4 mr-2" /> 
-                Export Word
-              </DropdownMenuItem>
-            )}
-          </DropdownMenuContent>
-        </DropdownMenu>
       )}
     </div>
   );

@@ -24,7 +24,9 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
+  DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
+import { exportWordDocument } from "@/utils/docxExport";
 
 export function SearchAndActions({
   searchQuery,
@@ -40,7 +42,6 @@ export function SearchAndActions({
   onSortChange,
   sortValue,
   onExportPowerPoint,
-  onExportWord,
 }: {
   searchQuery: string;
   onSearchChange: (value: string) => void;
@@ -55,7 +56,6 @@ export function SearchAndActions({
   onSortChange?: (value: string) => void;
   sortValue?: string;
   onExportPowerPoint?: () => void;
-  onExportWord?: () => void;
 }) {
   const { toast } = useToast();
   const [isAnnouncementDialogOpen, setIsAnnouncementDialogOpen] = useState(false);
@@ -102,6 +102,10 @@ export function SearchAndActions({
     await onAddAnnouncement(announcement);
     handleCloseAnnouncementDialog();
   };
+
+  const handleExportWord = () => {
+    exportWordDocument(members);
+  };
   
   return (
     <div className="flex justify-between items-center gap-4 mb-6">
@@ -110,9 +114,6 @@ export function SearchAndActions({
         onSearchChange={onSearchChange} 
         onSortChange={onSortChange}
         sortValue={sortValue}
-        onExportPowerPoint={onExportPowerPoint}
-        onExportWord={onExportWord}
-        showExportActions={true}
       />
       
       <div className="flex space-x-2">
@@ -132,6 +133,15 @@ export function SearchAndActions({
             <DropdownMenuItem onClick={onAddMember}>
               <UserPlus className="h-4 w-4 mr-2" /> 
               Add Member
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem onClick={onExportPowerPoint}>
+              <FileText className="h-4 w-4 mr-2" /> 
+              Export PowerPoint
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={handleExportWord}>
+              <FileCheck className="h-4 w-4 mr-2" /> 
+              Export Word
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
