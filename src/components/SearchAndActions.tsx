@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { SearchBar } from "@/components/SearchBar";
 import { Button } from "@/components/ui/button";
@@ -14,10 +15,18 @@ import {
 } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Megaphone, UserPlus } from "lucide-react";
+import { Megaphone, UserPlus, Menu } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Announcement, TeamMember } from "@/types/TeamMemberTypes";
 import { v4 as uuidv4 } from 'uuid';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+
+type AnnouncementTheme = "info" | "warning" | "success" | "destructive";
 
 export function SearchAndActions({
   searchQuery,
@@ -52,7 +61,7 @@ export function SearchAndActions({
 }) {
   const { toast } = useToast();
   const [isAnnouncementDialogOpen, setIsAnnouncementDialogOpen] = useState(false);
-  const [announcementTheme, setAnnouncementTheme] = useState<"info" | "warning" | "success" | "destructive">("info");
+  const [announcementTheme, setAnnouncementTheme] = useState<AnnouncementTheme>("info");
   const [announcementPriority, setAnnouncementPriority] = useState<number>(1);
   const [announcementExpiresAt, setAnnouncementExpiresAt] = useState<Date | undefined>(undefined);
   const [announcementIsActive, setAnnouncementIsActive] = useState<boolean>(true);
@@ -97,27 +106,34 @@ export function SearchAndActions({
   };
   
   return (
-    <div className="flex flex-col md:flex-row justify-between gap-4 mb-6">
+    <div className="flex justify-between items-center gap-4 mb-6">
       <SearchBar 
         searchQuery={searchQuery} 
         onSearchChange={onSearchChange} 
         onSortChange={onSortChange}
         sortValue={sortValue}
-        onExportPowerPoint={onExportPowerPoint}
-        onExportWord={onExportWord}
-        showExportActions={Boolean(onExportPowerPoint && onExportWord)}
       />
       
       <div className="flex space-x-2">
         <Button onClick={handleOpenAnnouncementDialog} variant="outline" className="flex items-center">
           <Megaphone className="h-4 w-4 mr-2" /> 
-          Add Announcement
+          Announce
         </Button>
         
-        <Button onClick={onAddMember} className="flex items-center">
-          <UserPlus className="h-4 w-4 mr-2" /> 
-          Add Member
-        </Button>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="outline" size="icon">
+              <Menu className="h-4 w-4" />
+              <span className="sr-only">Menu</span>
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <DropdownMenuItem onClick={onAddMember}>
+              <UserPlus className="h-4 w-4 mr-2" /> 
+              Add Member
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
       </div>
     
       <Dialog open={isAnnouncementDialogOpen} onOpenChange={setIsAnnouncementDialogOpen}>
@@ -131,8 +147,11 @@ export function SearchAndActions({
           <div className="grid gap-4 py-4">
             <div className="grid grid-cols-3 items-center gap-4">
               <Label htmlFor="announcement-theme" className="text-right">Theme</Label>
-              <Select value={announcementTheme} onValueChange={value => setAnnouncementTheme(value as "info" | "warning" | "success" | "destructive")} className="col-span-2">
-                <SelectTrigger id="announcement-theme">
+              <Select 
+                value={announcementTheme} 
+                onValueChange={(value: AnnouncementTheme) => setAnnouncementTheme(value)}
+              >
+                <SelectTrigger id="announcement-theme" className="col-span-2">
                   <SelectValue placeholder="Select theme" />
                 </SelectTrigger>
                 <SelectContent>

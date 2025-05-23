@@ -64,7 +64,7 @@ export function MemberCardHeader({
           ) : (
             <CardTitle
               onClick={() => canEdit && setIsEditingName(true)}
-              className={canEdit ? "cursor-pointer hover:text-primary" : ""}
+              className={`${canEdit ? "cursor-pointer hover:text-primary" : ""} dark:text-gray-100`}
             >
               {name}
             </CardTitle>
@@ -73,7 +73,7 @@ export function MemberCardHeader({
 
         <div className="flex gap-2">
           {isOnVacation && (
-            <Badge variant="outline" className="bg-orange-100 text-orange-800 border-orange-300">
+            <Badge variant="outline" className="bg-orange-100 text-orange-800 border-orange-300 dark:bg-orange-900/30 dark:text-orange-200 dark:border-orange-800/50">
               On Vacation
             </Badge>
           )}
@@ -86,7 +86,7 @@ export function MemberCardHeader({
                   <span className="sr-only">Open menu</span>
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
+              <DropdownMenuContent align="end" className="bg-white dark:bg-gray-900 border-gray-100 dark:border-gray-800">
                 <DropdownMenuLabel>Actions</DropdownMenuLabel>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem onClick={() => setIsEditingName(true)}>

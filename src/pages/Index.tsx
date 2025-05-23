@@ -1,3 +1,4 @@
+
 import { useState, useMemo, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
@@ -24,6 +25,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { Megaphone, UserPlus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { exportCapacityReport } from "@/utils/pptxExport";
+import { exportWordDocument } from "@/utils/docxExport";
 import {
   Dialog,
   DialogContent,

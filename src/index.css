@@ -1,3 +1,4 @@
+
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
 
 @tailwind base;
@@ -100,11 +101,14 @@
     @apply rounded-full px-3 py-1 text-sm flex items-center gap-1;
     @apply bg-white/70 border border-gray-200 text-gray-700;
     @apply hover:bg-white hover:shadow-sm transition-all;
+    @apply dark:bg-gray-800/70 dark:border-gray-700 dark:text-gray-200;
+    @apply dark:hover:bg-gray-800;
   }
   
   .project-badge {
     @apply rounded-full px-2 py-0.5 text-xs;
     @apply bg-white/70 border border-gray-100 text-gray-700;
+    @apply dark:bg-gray-800/70 dark:border-gray-700 dark:text-gray-200;
   }
 }
 
@@ -170,4 +174,23 @@
 .dark .spinner {
   border: 3px solid rgba(100, 100, 100, 0.3);
   border-top-color: #5b93d3;
+}
+
+/* Enhanced dark mode dropdown styling */
+.dark .dropdown-menu {
+  @apply bg-gray-900 border border-gray-800;
+}
+
+/* Fix card title visibility in dark mode */
+.dark .card-title {
+  @apply text-gray-100;
+}
+
+/* Improved alignment and spacing */
+.search-actions-row {
+  @apply flex items-center justify-between mb-6 gap-4;
+}
+
+.popover-content {
+  @apply bg-white dark:bg-gray-900 shadow-lg z-50;
 }
