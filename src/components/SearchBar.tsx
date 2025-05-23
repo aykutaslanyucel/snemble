@@ -1,33 +1,20 @@
 
-import { Search, FileText, FileCheck, ArrowUpDown } from "lucide-react";
+import { Search, ArrowUpDown } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Button } from "@/components/ui/button";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 
 interface SearchBarProps {
   searchQuery: string;
   onSearchChange: (value: string) => void;
   onSortChange?: (value: string) => void;
   sortValue?: string;
-  onExportPowerPoint?: () => void;
-  onExportWord?: () => void;
-  showExportActions?: boolean;
 }
 
 export function SearchBar({ 
   searchQuery, 
   onSearchChange, 
   onSortChange, 
-  sortValue = "lastUpdated",
-  onExportPowerPoint,
-  onExportWord,
-  showExportActions
+  sortValue = "lastUpdated"
 }: SearchBarProps) {
   return (
     <div className="flex items-center gap-3 w-full">

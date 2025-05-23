@@ -1,4 +1,3 @@
-
 import { useState, useMemo, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
@@ -756,9 +755,8 @@ export default function Index() {
           onSortChange={handleSortChange}
           sortValue={sortBy === "name" && sortOrder === "desc" ? "nameDesc" : sortBy}
           onExportPowerPoint={handleExportToPowerPoint}
-          onExportWord={handleExportToWord}
         />
-
+        
         <TeamMembers
           members={filteredMembers}
           onUpdate={handleUpdateMember}
