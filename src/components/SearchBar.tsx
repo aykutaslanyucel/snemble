@@ -1,7 +1,14 @@
 
-import { Search } from "lucide-react";
+import { Search, FileText, FileCheck } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 interface SearchBarProps {
   searchQuery: string;
@@ -18,6 +25,9 @@ export function SearchBar({
   onSearchChange, 
   onSortChange, 
   sortValue = "lastUpdated",
+  onExportPowerPoint,
+  onExportWord,
+  showExportActions
 }: SearchBarProps) {
   return (
     <div className="flex items-center gap-3 w-full">
@@ -43,6 +53,31 @@ export function SearchBar({
             <SelectItem value="availability">Most Available</SelectItem>
           </SelectContent>
         </Select>
+      )}
+
+      {showExportActions && (
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="outline" size="icon">
+              <FileText className="h-4 w-4" />
+              <span className="sr-only">Export</span>
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            {onExportPowerPoint && (
+              <DropdownMenuItem onClick={onExportPowerPoint}>
+                <FileText className="h-4 w-4 mr-2" /> 
+                Export PowerPoint
+              </DropdownMenuItem>
+            )}
+            {onExportWord && (
+              <DropdownMenuItem onClick={onExportWord}>
+                <FileCheck className="h-4 w-4 mr-2" /> 
+                Export Word
+              </DropdownMenuItem>
+            )}
+          </DropdownMenuContent>
+        </DropdownMenu>
       )}
     </div>
   );

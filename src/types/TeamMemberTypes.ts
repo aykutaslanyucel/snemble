@@ -56,6 +56,9 @@ export interface TeamMember {
   isOnVacation?: boolean;
 }
 
+// Define the theme type to accept both strings and objects
+export type AnnouncementThemeValue = 'info' | 'warning' | 'success' | 'destructive' | string;
+
 // Announcement theme with flexible properties for different styles
 export interface AnnouncementTheme {
   backgroundColor?: string; 
@@ -72,7 +75,7 @@ export interface Announcement {
   timestamp: Date;
   expiresAt?: Date;      // When the announcement should expire
   priority?: number;     // For ordering announcements
-  theme?: AnnouncementTheme;
+  theme?: AnnouncementTheme | AnnouncementThemeValue;  // Allow both object and string values
   isActive?: boolean;    // Whether the announcement is currently active
 }
 

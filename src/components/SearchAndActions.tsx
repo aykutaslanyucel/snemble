@@ -15,9 +15,9 @@ import {
 } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Megaphone, UserPlus, Menu } from "lucide-react";
+import { Megaphone, UserPlus, Menu, FileText, FileCheck } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { Announcement, TeamMember } from "@/types/TeamMemberTypes";
+import { Announcement, TeamMember, AnnouncementThemeValue } from "@/types/TeamMemberTypes";
 import { v4 as uuidv4 } from 'uuid';
 import {
   DropdownMenu,
@@ -25,8 +25,6 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-
-type AnnouncementTheme = "info" | "warning" | "success" | "destructive";
 
 export function SearchAndActions({
   searchQuery,
@@ -61,7 +59,7 @@ export function SearchAndActions({
 }) {
   const { toast } = useToast();
   const [isAnnouncementDialogOpen, setIsAnnouncementDialogOpen] = useState(false);
-  const [announcementTheme, setAnnouncementTheme] = useState<AnnouncementTheme>("info");
+  const [announcementTheme, setAnnouncementTheme] = useState<AnnouncementThemeValue>("info");
   const [announcementPriority, setAnnouncementPriority] = useState<number>(1);
   const [announcementExpiresAt, setAnnouncementExpiresAt] = useState<Date | undefined>(undefined);
   const [announcementIsActive, setAnnouncementIsActive] = useState<boolean>(true);
@@ -112,6 +110,9 @@ export function SearchAndActions({
         onSearchChange={onSearchChange} 
         onSortChange={onSortChange}
         sortValue={sortValue}
+        onExportPowerPoint={onExportPowerPoint}
+        onExportWord={onExportWord}
+        showExportActions={true}
       />
       
       <div className="flex space-x-2">
@@ -149,7 +150,7 @@ export function SearchAndActions({
               <Label htmlFor="announcement-theme" className="text-right">Theme</Label>
               <Select 
                 value={announcementTheme} 
-                onValueChange={(value: AnnouncementTheme) => setAnnouncementTheme(value)}
+                onValueChange={(value: AnnouncementThemeValue) => setAnnouncementTheme(value)}
               >
                 <SelectTrigger id="announcement-theme" className="col-span-2">
                   <SelectValue placeholder="Select theme" />
