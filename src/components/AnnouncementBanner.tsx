@@ -1,6 +1,6 @@
 
 import { motion } from "framer-motion";
-import { Announcement } from "@/types/TeamMemberTypes";
+import { Announcement, AnnouncementTheme } from "@/types/TeamMemberTypes";
 import { useEffect, useState } from "react";
 import { ChevronLeft, ChevronRight, X } from "lucide-react";
 import { Button } from "./ui/button";
@@ -42,12 +42,17 @@ export function AnnouncementBanner({ announcements, onDelete }: AnnouncementBann
   }, [currentIndex, sortedAnnouncements.length, isPaused]);
   
   // Apply default theme if not provided
-  const theme = currentAnnouncement.theme || {
+  const defaultTheme: AnnouncementTheme = {
     backgroundColor: "from-primary/5 via-primary/10 to-primary/5", 
     textColor: "text-foreground",
     borderColor: "border-white/10",
     animationStyle: "scroll" 
   };
+  
+  // Process the theme value
+  const theme = typeof currentAnnouncement.theme === 'string'
+    ? defaultTheme  // Use default theme for string values
+    : currentAnnouncement.theme || defaultTheme;
   
   const handlePrevious = () => {
     setCurrentIndex((prev) => 

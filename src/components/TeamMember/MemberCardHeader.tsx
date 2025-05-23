@@ -53,7 +53,7 @@ export function MemberCardHeader({
             <div className="flex items-center">
               <input
                 type="text"
-                className="bg-white/90 rounded-xl border border-gray-100 px-3 py-2 text-lg font-medium"
+                className="bg-white/90 dark:bg-gray-800/90 rounded-xl border border-gray-100 dark:border-gray-700 px-3 py-2 text-lg font-medium dark:text-gray-100"
                 value={nameValue}
                 onChange={(e) => setNameValue(e.target.value)}
                 onBlur={handleNameChange}
@@ -64,7 +64,7 @@ export function MemberCardHeader({
           ) : (
             <CardTitle
               onClick={() => canEdit && setIsEditingName(true)}
-              className={`${canEdit ? "cursor-pointer hover:text-primary" : ""} dark:text-gray-100`}
+              className={`${canEdit ? "cursor-pointer hover:text-primary" : ""} text-foreground dark:text-gray-100`}
             >
               {name}
             </CardTitle>
