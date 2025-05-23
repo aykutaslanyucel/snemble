@@ -22,6 +22,8 @@ import { toast as sonnerToast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { v4 as uuidv4 } from 'uuid';
 import { Megaphone, UserPlus } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { exportCapacityReport } from "@/utils/pptxExport";
 import {
   Dialog,
   DialogContent,
@@ -638,15 +640,10 @@ export default function Index() {
 
   const handleExportToWord = () => {
     try {
-      // Import is relative to make it lazy-loaded
-      import('@/utils/docxExport').then(module => {
-        module.exportWordDocument(filteredMembers.length > 0 ? filteredMembers : members);
-        toast({
-          title: "Export Started",
-          description: "Your Word document is being generated",
-        });
-      }).catch(error => {
-        throw error;
+      exportWordDocument(filteredMembers.length > 0 ? filteredMembers : members);
+      toast({
+        title: "Export Started",
+        description: "Your Word document is being generated",
       });
     } catch (error) {
       console.error("Export error:", error);
@@ -830,7 +827,7 @@ export default function Index() {
               <Label htmlFor="theme">Theme</Label>
               <Select
                 value={announcementFormData.theme}
-                onValueChange={(value) => setAnnouncementFormData({ ...announcementFormData, theme: value })}
+                onValueChange={(value) => setAnnouncementFormData({ ...announcementFormData, theme: value as "info" | "success" | "warning" | "destructive" })}
               >
                 <SelectTrigger>
                   <SelectValue placeholder="Select theme" />
@@ -858,8 +855,11 @@ export default function Index() {
             <div className="flex items-center space-x-2">
               <Checkbox
                 id="is-active"
-                checked={announcementFormData.isActive}
-                onCheckedChange={checked => setAnnouncementFormData({ ...announcementFormData, isActive: checked })}
+                checked={announcementFormData.isActive === true}
+                onCheckedChange={(checked) => setAnnouncementFormData({ 
+                  ...announcementFormData, 
+                  isActive: checked === true 
+                })}
               />
               <Label htmlFor="is-active">Active</Label>
             </div>

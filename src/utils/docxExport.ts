@@ -71,7 +71,7 @@ export function exportWordDocument(members: TeamMember[]) {
   });
 
   // Add a chart to visualize availability
-  summarySlide.addChart(pptx.ChartType.PIE, [
+  summarySlide.addChart(pptx.ChartType.pie, [
     {
       name: "Available",
       labels: ["Available", "Unavailable"],
