@@ -4,8 +4,9 @@ import { Card } from "@/components/ui/card";
 import WorkloadSummary from "@/components/WorkloadSummary";
 import { TeamMember } from "@/types/TeamMemberTypes";
 import { exportCapacityReport } from "@/utils/pptxExport";
+import { exportWordDocument } from "@/utils/docxExport";
 import { Button } from "@/components/ui/button";
-import { FileSpreadsheet, Download, Menu } from "lucide-react";
+import { FileSpreadsheet, Download, Menu, FileText } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import "@/styles/animations.css";
 import {
@@ -69,6 +70,32 @@ export function WorkloadDashboard({ members }: WorkloadDashboardProps) {
     }
   };
 
+  const handleExportToWord = () => {
+    if (!members || members.length === 0) {
+      toast({
+        title: "Export Failed",
+        description: "No team members to export",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    try {
+      exportWordDocument(members);
+      toast({
+        title: "Export Started",
+        description: "Your Word document is being generated",
+      });
+    } catch (error) {
+      console.error("Export error:", error);
+      toast({
+        title: "Export Failed",
+        description: "There was an error exporting to Word",
+        variant: "destructive",
+      });
+    }
+  };
+
   const handleSortChange = (value: string) => {
     if (value === sortBy) {
       // Toggle sort order if same field is selected again
@@ -82,6 +109,8 @@ export function WorkloadDashboard({ members }: WorkloadDashboardProps) {
         setSortOrder("desc"); // Newest first
       } else if (value === "role") {
         setSortOrder("asc");
+      } else if (value === "availability") {
+        setSortOrder("desc"); // Most available first
       }
     }
   };
@@ -96,8 +125,9 @@ export function WorkloadDashboard({ members }: WorkloadDashboardProps) {
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="lastUpdated">Last Updated</SelectItem>
-              <SelectItem value="name">Name</SelectItem>
-              <SelectItem value="role">Role</SelectItem>
+              <SelectItem value="name">Name (A-Z)</SelectItem>
+              <SelectItem value="nameDesc">Name (Z-A)</SelectItem>
+              <SelectItem value="availability">Most Available</SelectItem>
             </SelectContent>
           </Select>
         </div>
@@ -106,13 +136,17 @@ export function WorkloadDashboard({ members }: WorkloadDashboardProps) {
           <DropdownMenuTrigger asChild>
             <Button variant="outline" size="sm" className="flex items-center gap-2">
               <Menu className="h-4 w-4" />
-              Actions
+              Export
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
             <DropdownMenuItem onClick={handleExportToPowerPoint}>
               <FileSpreadsheet className="h-4 w-4 mr-2" />
               Export to PowerPoint
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={handleExportToWord}>
+              <FileText className="h-4 w-4 mr-2" />
+              Export to Word
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>

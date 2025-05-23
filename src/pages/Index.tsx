@@ -1,4 +1,3 @@
-
 import { useState, useMemo, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
@@ -22,16 +21,42 @@ import {
 import { toast as sonnerToast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { v4 as uuidv4 } from 'uuid';
+import { Megaphone, UserPlus } from "lucide-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Checkbox } from "@/components/ui/checkbox";
 
 export default function Index() {
   const [members, setMembers] = useState<TeamMember[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
+  const [sortBy, setSortBy] = useState<string>("lastUpdated");
+  const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc");
   const [announcements, setAnnouncements] = useState<Announcement[]>([]);
   const [newAnnouncement, setNewAnnouncement] = useState("");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
   const { toast } = useToast();
   const { user, isAdmin, logout } = useAuth();
+  
+  const [isAnnouncementDialogOpen, setIsAnnouncementDialogOpen] = useState(false);
+  const [announcementFormData, setAnnouncementFormData] = useState({
+    message: '',
+    htmlContent: '',
+    priority: 1,
+    theme: 'info',
+    expiresAt: undefined,
+    isActive: true
+  });
 
   // Add a loading timeout to prevent infinite loading
   useEffect(() => {
@@ -476,14 +501,196 @@ export default function Index() {
     }
   };
 
-  const filteredMembers = members.filter((member) =>
-    Object.values(member).some(
-      (value) =>
-        typeof value === "string" &&
-        value.toLowerCase().includes(searchQuery.toLowerCase())
-    )
-  );
+  // Sort members based on current sort settings
+  const sortedMembers = useMemo(() => {
+    if (!members || members.length === 0) return [];
+    
+    return [...members].sort((a, b) => {
+      // Define role order for sorting
+      const roleOrder = {
+        'Partner': 1,
+        'Managing Associate': 2,
+        'Senior Associate': 3,
+        'Associate': 4,
+        'Assistant': 5,
+        'Other': 6
+      };
+      
+      // Define availability order for sorting
+      const availabilityOrder = {
+        'available': 1,
+        'someAvailability': 2,
+        'unavailable': 3
+      };
+      
+      if (sortBy === 'name') {
+        return sortOrder === 'asc' ? 
+          a.name.localeCompare(b.name) : 
+          b.name.localeCompare(a.name);
+      } else if (sortBy === 'nameDesc') {
+        return b.name.localeCompare(a.name);
+      } else if (sortBy === 'role') {
+        const roleA = roleOrder[a.position as keyof typeof roleOrder] || 99;
+        const roleB = roleOrder[b.position as keyof typeof roleOrder] || 99;
+        return sortOrder === 'asc' ? roleA - roleB : roleB - roleA;
+      } else if (sortBy === 'availability') {
+        const availA = availabilityOrder[a.status as keyof typeof availabilityOrder] || 99;
+        const availB = availabilityOrder[b.status as keyof typeof availabilityOrder] || 99;
+        return availA - availB; // Always sort by most available first
+      } else {
+        // Default sort by lastUpdated
+        const dateA = new Date(a.lastUpdated).getTime();
+        const dateB = new Date(b.lastUpdated).getTime();
+        return sortOrder === 'asc' ? dateA - dateB : dateB - dateA;
+      }
+    });
+  }, [members, sortBy, sortOrder]);
 
+  // Sort filtered members the same way
+  const filteredMembers = useMemo(() => {
+    const filtered = members.filter((member) =>
+      Object.values(member).some(
+        (value) =>
+          typeof value === "string" &&
+          value.toLowerCase().includes(searchQuery.toLowerCase())
+      )
+    );
+    
+    return [...filtered].sort((a, b) => {
+      // Define role order for sorting
+      const roleOrder = {
+        'Partner': 1,
+        'Managing Associate': 2,
+        'Senior Associate': 3,
+        'Associate': 4,
+        'Assistant': 5,
+        'Other': 6
+      };
+      
+      // Define availability order for sorting
+      const availabilityOrder = {
+        'available': 1,
+        'someAvailability': 2,
+        'unavailable': 3
+      };
+      
+      if (sortBy === 'name') {
+        return sortOrder === 'asc' ? 
+          a.name.localeCompare(b.name) : 
+          b.name.localeCompare(a.name);
+      } else if (sortBy === 'nameDesc') {
+        return b.name.localeCompare(a.name);
+      } else if (sortBy === 'role') {
+        const roleA = roleOrder[a.position as keyof typeof roleOrder] || 99;
+        const roleB = roleOrder[b.position as keyof typeof roleOrder] || 99;
+        return sortOrder === 'asc' ? roleA - roleB : roleB - roleA;
+      } else if (sortBy === 'availability') {
+        const availA = availabilityOrder[a.status as keyof typeof availabilityOrder] || 99;
+        const availB = availabilityOrder[b.status as keyof typeof availabilityOrder] || 99;
+        return availA - availB; // Always sort by most available first
+      } else {
+        // Default sort by lastUpdated
+        const dateA = new Date(a.lastUpdated).getTime();
+        const dateB = new Date(b.lastUpdated).getTime();
+        return sortOrder === 'asc' ? dateA - dateB : dateB - dateA;
+      }
+    });
+  }, [members, searchQuery, sortBy, sortOrder]);
+  
+  const handleSortChange = (value: string) => {
+    if (value === sortBy) {
+      // Toggle sort order if same field is selected again
+      setSortOrder(sortOrder === "asc" ? "desc" : "asc");
+    } else {
+      setSortBy(value);
+      // Default sort orders for different fields
+      if (value === "name") {
+        setSortOrder("asc");
+      } else if (value === "nameDesc") {
+        setSortBy("name");
+        setSortOrder("desc");
+      } else if (value === "lastUpdated") {
+        setSortOrder("desc"); // Newest first
+      } else if (value === "role") {
+        setSortOrder("asc");
+      } else if (value === "availability") {
+        setSortOrder("desc"); // Most available first
+      }
+    }
+  };
+
+  const handleExportToPowerPoint = () => {
+    try {
+      exportCapacityReport(filteredMembers.length > 0 ? filteredMembers : members);
+      toast({
+        title: "Export Started",
+        description: "Your PowerPoint export is being generated",
+      });
+    } catch (error) {
+      console.error("Export error:", error);
+      toast({
+        title: "Export Failed",
+        description: "There was an error exporting to PowerPoint",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleExportToWord = () => {
+    try {
+      // Import is relative to make it lazy-loaded
+      import('@/utils/docxExport').then(module => {
+        module.exportWordDocument(filteredMembers.length > 0 ? filteredMembers : members);
+        toast({
+          title: "Export Started",
+          description: "Your Word document is being generated",
+        });
+      }).catch(error => {
+        throw error;
+      });
+    } catch (error) {
+      console.error("Export error:", error);
+      toast({
+        title: "Export Failed",
+        description: "There was an error exporting to Word",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleOpenAnnouncementDialog = () => {
+    setAnnouncementFormData({
+      message: '',
+      htmlContent: '',
+      priority: 1,
+      theme: 'info',
+      expiresAt: undefined,
+      isActive: true
+    });
+    setIsAnnouncementDialogOpen(true);
+  };
+
+  const handleCloseAnnouncementDialog = () => {
+    setIsAnnouncementDialogOpen(false);
+  };
+
+  const handleAnnouncementFormSubmit = async () => {
+    const announcement: Announcement = {
+      id: uuidv4(),
+      message: announcementFormData.message,
+      htmlContent: announcementFormData.htmlContent,
+      timestamp: new Date(),
+      expiresAt: announcementFormData.expiresAt,
+      priority: announcementFormData.priority,
+      theme: announcementFormData.theme as any,
+      isActive: announcementFormData.isActive
+    };
+    
+    await handleAddAnnouncement(announcement);
+    handleCloseAnnouncementDialog();
+  };
+
+  // Loading and error UI
   if (loading) {
     return (
       <div className="min-h-screen bg-gradient-to-b from-background to-secondary/20 flex items-center justify-center">
@@ -547,6 +754,10 @@ export default function Index() {
           onUpdateAnnouncement={handleUpdateAnnouncement}
           onDeleteAnnouncement={handleDeleteAnnouncement}
           members={members}
+          onSortChange={handleSortChange}
+          sortValue={sortBy === "name" && sortOrder === "desc" ? "nameDesc" : sortBy}
+          onExportPowerPoint={handleExportToPowerPoint}
+          onExportWord={handleExportToWord}
         />
 
         <TeamMembers
@@ -570,6 +781,99 @@ export default function Index() {
         
         <ProjectHeatmap members={members} />
       </div>
+
+      {/* Announcement Dialog */}
+      <Dialog open={isAnnouncementDialogOpen} onOpenChange={setIsAnnouncementDialogOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Add New Announcement</DialogTitle>
+            <DialogDescription>
+              Create a new announcement to display at the top of the dashboard.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="grid gap-2">
+              <Label htmlFor="message">Message</Label>
+              <Input
+                id="message"
+                value={announcementFormData.message}
+                onChange={e => setAnnouncementFormData({ ...announcementFormData, message: e.target.value })}
+                placeholder="Enter message"
+              />
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="htmlContent">HTML Content</Label>
+              <Textarea
+                id="htmlContent"
+                value={announcementFormData.htmlContent}
+                onChange={e => setAnnouncementFormData({ ...announcementFormData, htmlContent: e.target.value })}
+                placeholder="Enter HTML content"
+              />
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="priority">Priority</Label>
+              <Select
+                value={String(announcementFormData.priority)}
+                onValueChange={(value) => setAnnouncementFormData({ ...announcementFormData, priority: Number(value) })}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select priority" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="1">High</SelectItem>
+                  <SelectItem value="2">Medium</SelectItem>
+                  <SelectItem value="3">Low</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="theme">Theme</Label>
+              <Select
+                value={announcementFormData.theme}
+                onValueChange={(value) => setAnnouncementFormData({ ...announcementFormData, theme: value })}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select theme" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="info">Info</SelectItem>
+                  <SelectItem value="success">Success</SelectItem>
+                  <SelectItem value="warning">Warning</SelectItem>
+                  <SelectItem value="destructive">Destructive</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="expiresAt">Expires At</Label>
+              <Input
+                type="datetime-local"
+                id="expiresAt"
+                value={announcementFormData.expiresAt ? new Date(announcementFormData.expiresAt).toISOString().slice(0, 16) : ""}
+                onChange={e => setAnnouncementFormData({
+                  ...announcementFormData,
+                  expiresAt: e.target.value ? new Date(e.target.value) : undefined
+                })}
+              />
+            </div>
+            <div className="flex items-center space-x-2">
+              <Checkbox
+                id="is-active"
+                checked={announcementFormData.isActive}
+                onCheckedChange={checked => setAnnouncementFormData({ ...announcementFormData, isActive: checked })}
+              />
+              <Label htmlFor="is-active">Active</Label>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={handleCloseAnnouncementDialog}>
+              Cancel
+            </Button>
+            <Button onClick={handleAnnouncementFormSubmit}>
+              Add Announcement
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

@@ -62,8 +62,8 @@ export function NavigationHeader({
       <div className="flex items-center justify-between py-12 border-b pb-10">
         <div className="flex items-center gap-4">
           <Avatar className="h-10 w-10">
-            <AvatarImage src="" alt="Team logo" />
-            <AvatarFallback>T</AvatarFallback>
+            <AvatarImage src="/logo.png" alt="Snemble logo" />
+            <AvatarFallback className="bg-primary/10 text-primary font-semibold">SN</AvatarFallback>
           </Avatar>
           <div className="flex items-center">
             {showTeamSelector ? (
