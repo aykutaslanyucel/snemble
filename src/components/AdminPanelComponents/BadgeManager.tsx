@@ -8,11 +8,12 @@ import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
-import { Trash2, Upload, Plus } from "lucide-react";
+import { Trash2, Plus } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { Badge as BadgeType } from "@/types/TeamMemberTypes";
 import { BadgeData } from "@/types/BadgeTypes";
+import { DragDropImage } from "@/components/ui/drag-drop-image";
 
 export function BadgeManager() {
   const [badges, setBadges] = useState<BadgeData[]>([]);
@@ -61,6 +62,56 @@ export function BadgeManager() {
         description: "Failed to load badges.",
         variant: "destructive",
       });
+    }
+  };
+
+  const handleImageSelect = async (fileOrUrl: File | string) => {
+    if (typeof fileOrUrl === 'string') {
+      // Handle URL input
+      setNewBadge({ ...newBadge, image_url: fileOrUrl });
+      return;
+    }
+
+    // Handle file upload
+    setLoading(true);
+    try {
+      const file = fileOrUrl;
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${Math.random()}.${fileExt}`;
+      const filePath = `badges/${fileName}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from('badges')
+        .upload(filePath, file);
+
+      if (uploadError) {
+        console.error('Error uploading file:', uploadError);
+        toast({
+          title: "Error",
+          description: "Failed to upload image.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      const { data: { publicUrl } } = supabase.storage
+        .from('badges')
+        .getPublicUrl(filePath);
+
+      setNewBadge({ ...newBadge, image_url: publicUrl });
+      toast({
+        title: "Success",
+        description: "Image uploaded successfully.",
+      });
+    } catch (error) {
+      console.error('Error uploading file:', error);
+      toast({
+        title: "Error",
+        description: "Failed to upload image.",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -228,51 +279,6 @@ export function BadgeManager() {
     }
   };
 
-  const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (!file) return;
-
-    setLoading(true);
-    try {
-      const fileExt = file.name.split('.').pop();
-      const fileName = `${Math.random()}.${fileExt}`;
-      const filePath = `badges/${fileName}`;
-
-      const { error: uploadError } = await supabase.storage
-        .from('badges')
-        .upload(filePath, file);
-
-      if (uploadError) {
-        console.error('Error uploading file:', uploadError);
-        toast({
-          title: "Error",
-          description: "Failed to upload image.",
-          variant: "destructive",
-        });
-        return;
-      }
-
-      const { data: { publicUrl } } = supabase.storage
-        .from('badges')
-        .getPublicUrl(filePath);
-
-      setNewBadge({ ...newBadge, image_url: publicUrl });
-      toast({
-        title: "Success",
-        description: "Image uploaded successfully.",
-      });
-    } catch (error) {
-      console.error('Error uploading file:', error);
-      toast({
-        title: "Error",
-        description: "Failed to upload image.",
-        variant: "destructive",
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
-
   return (
     <div className="space-y-6">
       <Card>
@@ -324,25 +330,12 @@ export function BadgeManager() {
 
           <div>
             <Label htmlFor="badge-image">Badge Image</Label>
-            <div className="flex gap-2">
-              <Input
-                id="badge-image"
-                value={newBadge.image_url}
-                onChange={(e) => setNewBadge({ ...newBadge, image_url: e.target.value })}
-                placeholder="Enter image URL or upload file"
-              />
-              <div className="relative">
-                <input
-                  type="file"
-                  accept="image/*"
-                  onChange={handleFileUpload}
-                  className="absolute inset-0 opacity-0 cursor-pointer"
-                />
-                <Button variant="outline" size="icon">
-                  <Upload className="h-4 w-4" />
-                </Button>
-              </div>
-            </div>
+            <DragDropImage
+              onImageSelect={handleImageSelect}
+              initialUrl={newBadge.image_url}
+              className="mt-2"
+              allowUrl={true}
+            />
           </div>
 
           <Button onClick={handleCreateBadge} disabled={loading}>
