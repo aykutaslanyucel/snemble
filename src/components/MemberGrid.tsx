@@ -14,10 +14,16 @@ export function MemberGrid({ members, onMemberUpdate, onMemberDelete }: MemberGr
   const { user } = useAuth();
   const isAdmin = user?.role === 'admin';
 
+  // Convert the onMemberUpdate function to match TeamMembers expected interface
+  const handleUpdate = async (id: string, field: string, value: any) => {
+    const updateData: Partial<TeamMember> = { [field]: value };
+    await onMemberUpdate(id, updateData);
+  };
+
   return (
     <TeamMembers
       members={members}
-      onUpdate={onMemberUpdate}
+      onUpdate={handleUpdate}
       onDelete={onMemberDelete}
       currentUserId={user?.id}
       isAdmin={isAdmin}

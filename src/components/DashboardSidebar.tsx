@@ -2,7 +2,7 @@
 import React from "react";
 import { TeamMember } from "@/types/TeamMemberTypes";
 import { CapacityTrackerWidget } from "@/components/CapacityTrackerWidget";
-import { WorkloadSummary } from "@/components/WorkloadSummary";
+import WorkloadSummary from "@/components/WorkloadSummary";
 
 interface DashboardSidebarProps {
   members: TeamMember[];

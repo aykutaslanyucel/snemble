@@ -153,7 +153,7 @@ export function CardCustomizer({ onClose, currentCustomization, onSave }: CardCu
                   <CardContent>
                     <ColorSelector
                       selectedColor={customization.color || ""}
-                      onColorChange={handleColorChange}
+                      onSelectColor={handleColorChange}
                     />
                   </CardContent>
                 </Card>
@@ -168,7 +168,7 @@ export function CardCustomizer({ onClose, currentCustomization, onSave }: CardCu
                     <CardContent>
                       <GradientSelector
                         selectedGradient={customization.gradient || ""}
-                        onGradientChange={handleGradientChange}
+                        onSelectGradient={handleGradientChange}
                       />
                     </CardContent>
                   </Card>
@@ -185,8 +185,8 @@ export function CardCustomizer({ onClose, currentCustomization, onSave }: CardCu
                       <AnimationToggle
                         animate={customization.animate || false}
                         animationType={customization.animationType || "gentle"}
-                        onAnimationToggle={handleAnimationToggle}
-                        onAnimationTypeChange={handleAnimationTypeChange}
+                        onToggle={handleAnimationToggle}
+                        onTypeChange={handleAnimationTypeChange}
                       />
                     </CardContent>
                   </Card>
@@ -220,11 +220,16 @@ export function CardCustomizer({ onClose, currentCustomization, onSave }: CardCu
           {/* Right Panel - Preview */}
           <div className="w-1/2 bg-muted/20 p-6 flex items-center justify-center">
             <CardPreview
-              customization={customization}
-              memberName="Preview User"
-              memberPosition="Sample Position"
-              memberStatus="available"
-              memberProjects={["Sample Project"]}
+              member={{
+                id: "preview",
+                name: "Preview User",
+                position: "Sample Position",
+                status: "available",
+                projects: ["Sample Project"],
+                lastUpdated: new Date(),
+                user_id: "preview",
+                customization: customization
+              }}
             />
           </div>
         </div>

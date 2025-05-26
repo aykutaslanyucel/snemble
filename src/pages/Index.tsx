@@ -1,7 +1,6 @@
 
 import React, { useState, useEffect, useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { TeamMember, Announcement } from "@/types/TeamMemberTypes";
 import { useToast } from "@/hooks/use-toast";
 import { AnnouncementBanner } from "@/components/AnnouncementBanner";
 import { NavigationHeader } from "@/components/NavigationHeader";
@@ -9,6 +8,7 @@ import { SearchAndActions } from "@/components/SearchAndActions";
 import { MemberGrid } from "@/components/MemberGrid";
 import { DashboardSidebar } from "@/components/DashboardSidebar";
 import { useAuth } from "@/contexts/AuthContext";
+import { TeamMember, TeamMemberStatus, Announcement, AnnouncementTheme } from "@/types/TeamMemberTypes";
 
 export default function Index() {
   const [members, setMembers] = useState<TeamMember[]>([]);
@@ -44,17 +44,16 @@ export default function Index() {
         }
 
         if (data) {
-          // Transform the data to match TeamMember interface
-          const transformedMembers = data.map(member => ({
+          const transformedMembers: TeamMember[] = data.map(member => ({
             id: member.id,
             name: member.name,
             position: member.position,
-            status: member.status,
+            status: member.status as TeamMemberStatus,
             projects: member.projects || [],
             lastUpdated: new Date(member.last_updated),
             user_id: member.user_id,
             role: member.role,
-            customization: member.customization,
+            customization: member.customization || {},
             vacationStart: member.vacation_start ? new Date(member.vacation_start) : undefined,
             vacationEnd: member.vacation_end ? new Date(member.vacation_end) : undefined,
             isOnVacation: member.is_on_vacation || false,
@@ -90,16 +89,15 @@ export default function Index() {
         }
 
         if (data) {
-          // Transform announcements to match interface
-          const transformedAnnouncements = data.map(announcement => ({
+          const transformedAnnouncements: Announcement[] = data.map(announcement => ({
             id: announcement.id,
-            message: announcement.message,
+            message: announcement.message || '',
             htmlContent: announcement.html_content,
             timestamp: new Date(announcement.timestamp),
             expiresAt: announcement.expires_at ? new Date(announcement.expires_at) : undefined,
-            priority: announcement.priority,
-            theme: announcement.theme,
-            isActive: announcement.is_active,
+            priority: announcement.priority || 0,
+            theme: (typeof announcement.theme === 'string' ? announcement.theme : announcement.theme) as AnnouncementTheme,
+            isActive: announcement.is_active !== false,
           }));
           setAnnouncements(transformedAnnouncements);
         }
@@ -119,54 +117,53 @@ export default function Index() {
     // Subscribe to member changes
     const membersSubscription = supabase
       .channel('public:team_members')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'team_members' }, (payload) => {
-        console.log('Team member change received!', payload)
+      .on('postgres_changes', {
+        event: '*',
+        schema: 'public',
+        table: 'team_members'
+      }, (payload) => {
+        console.log('Team member change received!', payload);
         fetchMembers();
       })
-      .subscribe()
-    
+      .subscribe();
+
     // Subscribe to announcement changes
     const announcementSubscription = supabase
       .channel('public:announcements')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'announcements' }, (payload) => {
-        console.log('Announcement change received!', payload)
+      .on('postgres_changes', {
+        event: '*',
+        schema: 'public',
+        table: 'announcements'
+      }, (payload) => {
+        console.log('Announcement change received!', payload);
         fetchAnnouncements();
       })
-      .subscribe()
+      .subscribe();
 
     return () => {
-      supabase.removeChannel(membersSubscription)
-      supabase.removeChannel(announcementSubscription)
+      supabase.removeChannel(membersSubscription);
+      supabase.removeChannel(announcementSubscription);
     };
   }, [sortBy, toast, user]);
 
   const filteredAndSortedMembers = useMemo(() => {
     let filtered = [...members];
-
+    
     if (searchTerm) {
-      filtered = filtered.filter((member) =>
+      filtered = filtered.filter(member =>
         member.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
         member.position.toLowerCase().includes(searchTerm.toLowerCase())
       );
     }
-
+    
     return filtered;
   }, [members, searchTerm]);
 
   const handleMemberUpdate = async (id: string, data: Partial<TeamMember>) => {
     try {
-      // Transform data back to database format
-      const dbData = {
-        ...data,
-        last_updated: data.lastUpdated?.toISOString(),
-        vacation_start: data.vacationStart?.toISOString(),
-        vacation_end: data.vacationEnd?.toISOString(),
-        is_on_vacation: data.isOnVacation,
-      };
-
       const { error } = await supabase
         .from('team_members')
-        .update(dbData)
+        .update(data)
         .eq('id', id);
 
       if (error) {
@@ -174,7 +171,10 @@ export default function Index() {
         throw error;
       }
 
-      setMembers(members.map(member => member.id === id ? { ...member, ...data } : member));
+      setMembers(members.map(member =>
+        member.id === id ? { ...member, ...data } : member
+      ));
+
       toast({
         title: "Success",
         description: "Team member updated successfully.",
@@ -194,7 +194,7 @@ export default function Index() {
       const { error } = await supabase
         .from('team_members')
         .delete()
-        .eq('id', id)
+        .eq('id', id);
 
       if (error) {
         console.error("Error deleting team member:", error);
@@ -202,6 +202,7 @@ export default function Index() {
       }
 
       setMembers(members.filter(member => member.id !== id));
+
       toast({
         title: "Success",
         description: "Team member deleted successfully.",
@@ -239,6 +240,7 @@ export default function Index() {
       }
 
       setAnnouncements(announcements.filter(announcement => announcement.id !== id));
+
       toast({
         title: "Success",
         description: "Announcement deleted successfully.",
@@ -261,14 +263,14 @@ export default function Index() {
       />
       
       <div className="container max-w-7xl mx-auto px-6 sm:px-12 md:px-20 lg:px-28 xl:px-36 py-8 space-y-12">
-        <NavigationHeader 
+        <NavigationHeader
           isAdmin={isAdmin}
           members={members}
           handleLogout={logout}
           showTeamSelector={true}
           hideCapacityWidget={false}
         />
-        
+
         <SearchAndActions
           searchTerm={searchTerm}
           onSearchChange={setSearchTerm}
@@ -284,7 +286,7 @@ export default function Index() {
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           <div className="lg:col-span-2 space-y-8">
-            <MemberGrid 
+            <MemberGrid
               members={filteredAndSortedMembers}
               onMemberUpdate={handleMemberUpdate}
               onMemberDelete={handleMemberDelete}
@@ -292,7 +294,7 @@ export default function Index() {
           </div>
           
           <div className="lg:col-span-1">
-            <DashboardSidebar 
+            <DashboardSidebar
               members={members}
               filteredMembers={filteredAndSortedMembers}
             />
