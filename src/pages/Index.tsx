@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { TeamMember, Announcement } from "@/types/TeamMemberTypes";
@@ -43,7 +44,22 @@ export default function Index() {
         }
 
         if (data) {
-          setMembers(data);
+          // Transform the data to match TeamMember interface
+          const transformedMembers = data.map(member => ({
+            id: member.id,
+            name: member.name,
+            position: member.position,
+            status: member.status,
+            projects: member.projects || [],
+            lastUpdated: new Date(member.last_updated),
+            user_id: member.user_id,
+            role: member.role,
+            customization: member.customization,
+            vacationStart: member.vacation_start ? new Date(member.vacation_start) : undefined,
+            vacationEnd: member.vacation_end ? new Date(member.vacation_end) : undefined,
+            isOnVacation: member.is_on_vacation || false,
+          }));
+          setMembers(transformedMembers);
         }
       } catch (error) {
         console.error("Error fetching team members:", error);
@@ -74,13 +90,18 @@ export default function Index() {
         }
 
         if (data) {
-          // Convert timestamp strings to Date objects
-          const announcementsWithDates = data.map(announcement => ({
-            ...announcement,
+          // Transform announcements to match interface
+          const transformedAnnouncements = data.map(announcement => ({
+            id: announcement.id,
+            message: announcement.message,
+            htmlContent: announcement.html_content,
             timestamp: new Date(announcement.timestamp),
-            expiresAt: announcement.expires_at ? new Date(announcement.expires_at) : null
+            expiresAt: announcement.expires_at ? new Date(announcement.expires_at) : undefined,
+            priority: announcement.priority,
+            theme: announcement.theme,
+            isActive: announcement.is_active,
           }));
-          setAnnouncements(announcementsWithDates);
+          setAnnouncements(transformedAnnouncements);
         }
       } catch (error) {
         console.error("Error fetching announcements:", error);
@@ -129,15 +150,23 @@ export default function Index() {
       );
     }
 
-    // Already sorted by the useEffect based on sortBy
     return filtered;
   }, [members, searchTerm]);
 
   const handleMemberUpdate = async (id: string, data: Partial<TeamMember>) => {
     try {
+      // Transform data back to database format
+      const dbData = {
+        ...data,
+        last_updated: data.lastUpdated?.toISOString(),
+        vacation_start: data.vacationStart?.toISOString(),
+        vacation_end: data.vacationEnd?.toISOString(),
+        is_on_vacation: data.isOnVacation,
+      };
+
       const { error } = await supabase
         .from('team_members')
-        .update(data)
+        .update(dbData)
         .eq('id', id);
 
       if (error) {
