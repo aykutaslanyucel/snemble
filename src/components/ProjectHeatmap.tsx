@@ -192,7 +192,7 @@ export function ProjectHeatmap({
   };
   return <Card className="p-6 bg-white/5 backdrop-blur-md border border-white/5 shadow-lg rounded-xl w-full mt-8">
       <div className="flex items-center mb-5">
-        <h3 className="text-lg font-medium flex items-center text-slate-50">
+        <h3 className="text-xl font-semibold text-gray-800 dark:text-gray-100 flex items-center">
           
           Project Workload
         </h3>
