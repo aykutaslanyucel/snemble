@@ -1,22 +1,26 @@
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useAuth } from "@/contexts/AuthContext";
 import { Badge } from "@/components/ui/badge";
-import { BadgePosition } from "@/types/TeamMemberTypes";
+import { BadgePosition, BadgeVisibility } from "@/types/TeamMemberTypes";
 import { Input } from "@/components/ui/input";
 import { UploadCloud } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
+
+interface BadgeData {
+  id: string;
+  name: string;
+  image_url: string;
+  visibility: BadgeVisibility;
+  is_active: boolean;
+}
 
 interface BadgeSelectorProps {
-  badges: Array<{
-    id: string;
-    name: string;
-    imageUrl: string;
-  }>;
   selectedBadge?: string;
   onSelectBadge: (badgeUrl: string | null) => void;
   onPositionChange: (position: BadgePosition) => void;
@@ -27,7 +31,6 @@ interface BadgeSelectorProps {
 }
 
 export function BadgeSelector({
-  badges,
   selectedBadge,
   onSelectBadge,
   onPositionChange,
@@ -39,10 +42,46 @@ export function BadgeSelector({
   const { isPremium } = useAuth();
   const [tab, setTab] = useState<string>("select");
   const [customImageUrl, setCustomImageUrl] = useState('');
+  const [badges, setBadges] = useState<BadgeData[]>([]);
+  const [loadingBadges, setLoadingBadges] = useState(true);
   const { toast } = useToast();
   
   // For drag and drop functionality
   const [isDragging, setIsDragging] = useState(false);
+  
+  useEffect(() => {
+    const fetchBadges = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('badges')
+          .select('*')
+          .eq('is_active', true)
+          .order('created_at', { ascending: false });
+
+        if (error) throw error;
+
+        // Filter badges based on user permissions
+        const filteredBadges = data?.filter(badge => {
+          if (badge.visibility === 'public') return true;
+          if (badge.visibility === 'premium' && isPremium) return true;
+          return false;
+        }) || [];
+
+        setBadges(filteredBadges);
+      } catch (error) {
+        console.error("Error fetching badges:", error);
+        toast({
+          title: "Error",
+          description: "Failed to load badges",
+          variant: "destructive"
+        });
+      } finally {
+        setLoadingBadges(false);
+      }
+    };
+
+    fetchBadges();
+  }, [isPremium, toast]);
   
   const handleDragEnter = (e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
@@ -66,6 +105,15 @@ export function BadgeSelector({
     e.stopPropagation();
     setIsDragging(false);
     
+    if (!isPremium) {
+      toast({
+        title: "Premium Feature",
+        description: "Custom badge uploads are only available for premium users",
+        variant: "destructive"
+      });
+      return;
+    }
+    
     const files = e.dataTransfer.files;
     if (files && files.length > 0) {
       const file = files[0];
@@ -86,9 +134,18 @@ export function BadgeSelector({
         description: "Your custom badge image has been set"
       });
     }
-  }, [onSelectBadge, toast]);
+  }, [onSelectBadge, toast, isPremium]);
   
   const handleCustomUrlAdd = () => {
+    if (!isPremium) {
+      toast({
+        title: "Premium Feature",
+        description: "Custom badge URLs are only available for premium users",
+        variant: "destructive"
+      });
+      return;
+    }
+    
     if (!customImageUrl) {
       toast({
         title: "Error",
@@ -118,7 +175,7 @@ export function BadgeSelector({
   
   // When no badges are available or still loading
   const renderPlaceholder = () => {
-    if (isLoading) {
+    if (isLoading || loadingBadges) {
       return (
         <div className="py-10 text-center">
           <div className="animate-spin h-10 w-10 border-4 border-primary border-t-transparent rounded-full mx-auto mb-4"></div>
@@ -129,37 +186,22 @@ export function BadgeSelector({
     
     return (
       <div className="py-10 text-center">
-        <p className="text-muted-foreground">No badges available</p>
-        {isPremium && (
-          <p className="text-xs mt-2">Contact an admin to add badges</p>
-        )}
+        <p className="text-muted-foreground">
+          {badges.length === 0 ? "No badges available" : "No badges match your access level"}
+        </p>
         {!isPremium && (
-          <p className="text-xs mt-2">Upgrade to premium to use badges</p>
+          <p className="text-xs mt-2">Upgrade to premium to access more badges</p>
         )}
       </div>
     );
   };
-  
-  if (!isPremium) {
-    return (
-      <div className="border rounded-lg p-4 text-center">
-        <h3 className="font-medium mb-2">Premium Feature</h3>
-        <p className="text-sm text-muted-foreground">
-          Badges are available for premium users only
-        </p>
-        <Button className="mt-4" variant="outline" size="sm" disabled>
-          Upgrade to Premium
-        </Button>
-      </div>
-    );
-  }
   
   return (
     <div className="space-y-4">
       <Tabs value={tab} onValueChange={setTab} className="w-full">
         <TabsList className="grid grid-cols-3 mb-4">
           <TabsTrigger value="select">Select Badge</TabsTrigger>
-          <TabsTrigger value="custom">Custom Badge</TabsTrigger>
+          <TabsTrigger value="custom" disabled={!isPremium}>Custom Badge</TabsTrigger>
           <TabsTrigger value="settings" disabled={!selectedBadge}>Position & Size</TabsTrigger>
         </TabsList>
         
@@ -173,18 +215,21 @@ export function BadgeSelector({
                     className={`
                       border rounded-md p-2 cursor-pointer transition-all
                       hover:shadow-md aspect-square flex flex-col items-center justify-center
-                      ${selectedBadge === badge.imageUrl ? 'ring-2 ring-primary' : ''}
+                      ${selectedBadge === badge.image_url ? 'ring-2 ring-primary' : ''}
                     `}
-                    onClick={() => onSelectBadge(badge.imageUrl)}
+                    onClick={() => onSelectBadge(badge.image_url)}
                   >
                     <div className="h-16 w-16 mb-2 flex items-center justify-center">
                       <img 
-                        src={badge.imageUrl} 
+                        src={badge.image_url} 
                         alt={badge.name} 
                         className="max-h-full max-w-full object-contain"
                       />
                     </div>
                     <span className="text-xs text-center text-gray-600 line-clamp-1">{badge.name}</span>
+                    {badge.visibility === 'premium' && (
+                      <Badge variant="outline" className="text-xs mt-1">Premium</Badge>
+                    )}
                   </div>
                 ))}
               </div>
@@ -202,61 +247,73 @@ export function BadgeSelector({
         </TabsContent>
         
         <TabsContent value="custom">
-          <div className="space-y-4">
-            <div 
-              className={`
-                border-2 border-dashed rounded-md p-8 text-center
-                ${isDragging ? 'border-primary bg-primary/5' : 'border-gray-300 hover:border-gray-400 dark:border-gray-600 dark:hover:border-gray-500'}
-              `}
-              onDragEnter={handleDragEnter}
-              onDragLeave={handleDragLeave}
-              onDragOver={handleDragOver}
-              onDrop={handleDrop}
-            >
-              <UploadCloud className="mx-auto h-12 w-12 text-gray-400" />
-              <p className="mt-2 text-sm text-gray-600 dark:text-gray-400">
-                Drag and drop your image here
+          {!isPremium ? (
+            <div className="border rounded-lg p-4 text-center">
+              <h3 className="font-medium mb-2">Premium Feature</h3>
+              <p className="text-sm text-muted-foreground">
+                Custom badges are available for premium users only
               </p>
-              <p className="text-xs text-gray-500 dark:text-gray-500">
-                PNG, JPG, GIF up to 5MB
-              </p>
+              <Button className="mt-4" variant="outline" size="sm" disabled>
+                Upgrade to Premium
+              </Button>
             </div>
-            
-            <div className="flex flex-col space-y-2">
-              <Label htmlFor="badge-url">Or enter an image URL</Label>
-              <div className="flex space-x-2">
-                <Input
-                  id="badge-url"
-                  value={customImageUrl}
-                  onChange={(e) => setCustomImageUrl(e.target.value)}
-                  placeholder="https://example.com/image.png"
-                  className="flex-1"
-                />
-                <Button onClick={handleCustomUrlAdd}>Add</Button>
+          ) : (
+            <div className="space-y-4">
+              <div 
+                className={`
+                  border-2 border-dashed rounded-md p-8 text-center
+                  ${isDragging ? 'border-primary bg-primary/5' : 'border-gray-300 hover:border-gray-400 dark:border-gray-600 dark:hover:border-gray-500'}
+                `}
+                onDragEnter={handleDragEnter}
+                onDragLeave={handleDragLeave}
+                onDragOver={handleDragOver}
+                onDrop={handleDrop}
+              >
+                <UploadCloud className="mx-auto h-12 w-12 text-gray-400" />
+                <p className="mt-2 text-sm text-gray-600 dark:text-gray-400">
+                  Drag and drop your image here
+                </p>
+                <p className="text-xs text-gray-500 dark:text-gray-500">
+                  PNG, JPG, GIF up to 5MB
+                </p>
               </div>
-            </div>
-            
-            {selectedBadge && (
-              <div className="mt-4 p-4 border rounded-md">
-                <h4 className="text-sm font-medium mb-2">Current Badge</h4>
-                <div className="flex items-center justify-center">
-                  <img 
-                    src={selectedBadge} 
-                    alt="Selected badge" 
-                    className="h-16 w-16 object-contain"
+              
+              <div className="flex flex-col space-y-2">
+                <Label htmlFor="badge-url">Or enter an image URL</Label>
+                <div className="flex space-x-2">
+                  <Input
+                    id="badge-url"
+                    value={customImageUrl}
+                    onChange={(e) => setCustomImageUrl(e.target.value)}
+                    placeholder="https://example.com/image.png"
+                    className="flex-1"
                   />
+                  <Button onClick={handleCustomUrlAdd}>Add</Button>
                 </div>
-                <Button 
-                  variant="outline" 
-                  size="sm" 
-                  className="w-full mt-2"
-                  onClick={() => onSelectBadge(null)}
-                >
-                  Remove Badge
-                </Button>
               </div>
-            )}
-          </div>
+              
+              {selectedBadge && (
+                <div className="mt-4 p-4 border rounded-md">
+                  <h4 className="text-sm font-medium mb-2">Current Badge</h4>
+                  <div className="flex items-center justify-center">
+                    <img 
+                      src={selectedBadge} 
+                      alt="Selected badge" 
+                      className="h-16 w-16 object-contain"
+                    />
+                  </div>
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    className="w-full mt-2"
+                    onClick={() => onSelectBadge(null)}
+                  >
+                    Remove Badge
+                  </Button>
+                </div>
+              )}
+            </div>
+          )}
         </TabsContent>
         
         <TabsContent value="settings">
