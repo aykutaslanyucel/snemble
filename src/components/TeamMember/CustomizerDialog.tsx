@@ -8,14 +8,14 @@ import { TeamMember, TeamMemberCustomization } from "@/types/TeamMemberTypes";
 
 interface CustomizerDialogProps {
   teamMember: TeamMember;
-  onUpdate: (updates: any) => void;
+  onUpdate: (updates: TeamMemberCustomization) => void;
 }
 
 export function CustomizerDialog({ teamMember, onUpdate }: CustomizerDialogProps) {
   const [showCustomizer, setShowCustomizer] = useState(false);
 
   const handleSave = async (customization: TeamMemberCustomization) => {
-    await onUpdate({ customization });
+    await onUpdate(customization);
     setShowCustomizer(false);
   };
 

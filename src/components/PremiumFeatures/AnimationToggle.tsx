@@ -7,17 +7,15 @@ import { GradientAnimationType } from "@/types/TeamMemberTypes";
 interface AnimationToggleProps {
   animate: boolean;
   animationType?: GradientAnimationType;
-  onToggle: (checked: boolean) => void;
+  onAnimationToggle: (checked: boolean) => void;
   onAnimationTypeChange?: (type: GradientAnimationType) => void;
-  disabled: boolean;
 }
 
 export function AnimationToggle({ 
   animate, 
   animationType = "gentle",
-  onToggle, 
-  onAnimationTypeChange,
-  disabled 
+  onAnimationToggle, 
+  onAnimationTypeChange
 }: AnimationToggleProps) {
   return (
     <div className="space-y-4">
@@ -28,8 +26,7 @@ export function AnimationToggle({
         <Switch 
           id="animate-toggle"
           checked={animate}
-          onCheckedChange={onToggle}
-          disabled={disabled}
+          onCheckedChange={onAnimationToggle}
         />
       </div>
       
@@ -41,7 +38,6 @@ export function AnimationToggle({
           <Select 
             value={animationType} 
             onValueChange={(value) => onAnimationTypeChange(value as GradientAnimationType)}
-            disabled={disabled}
           >
             <SelectTrigger id="animation-type" className="w-full">
               <SelectValue placeholder="Select animation style" />

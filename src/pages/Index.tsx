@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -8,7 +7,7 @@ import { SearchAndActions } from "@/components/SearchAndActions";
 import { MemberGrid } from "@/components/MemberGrid";
 import { DashboardSidebar } from "@/components/DashboardSidebar";
 import { useAuth } from "@/contexts/AuthContext";
-import { TeamMember, TeamMemberStatus, Announcement, AnnouncementTheme } from "@/types/TeamMemberTypes";
+import { TeamMember, TeamMemberStatus, Announcement, AnnouncementTheme, TeamMemberCustomization } from "@/types/TeamMemberTypes";
 
 export default function Index() {
   const [members, setMembers] = useState<TeamMember[]>([]);
@@ -53,7 +52,7 @@ export default function Index() {
             lastUpdated: new Date(member.last_updated),
             user_id: member.user_id,
             role: member.role,
-            customization: member.customization || {},
+            customization: (member.customization as TeamMemberCustomization) || {},
             vacationStart: member.vacation_start ? new Date(member.vacation_start) : undefined,
             vacationEnd: member.vacation_end ? new Date(member.vacation_end) : undefined,
             isOnVacation: member.is_on_vacation || false,
@@ -96,7 +95,7 @@ export default function Index() {
             timestamp: new Date(announcement.timestamp),
             expiresAt: announcement.expires_at ? new Date(announcement.expires_at) : undefined,
             priority: announcement.priority || 0,
-            theme: (typeof announcement.theme === 'string' ? announcement.theme : announcement.theme) as AnnouncementTheme,
+            theme: announcement.theme as AnnouncementTheme,
             isActive: announcement.is_active !== false,
           }));
           setAnnouncements(transformedAnnouncements);

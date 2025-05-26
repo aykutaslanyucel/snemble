@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { TeamMember, TeamMemberStatus } from "@/types/TeamMemberTypes";
 import { motion } from "framer-motion";
@@ -26,7 +25,6 @@ export function MemberCard({ member, onUpdate, onDelete, canEdit }: MemberCardPr
   const [isEditingProjects, setIsEditingProjects] = useState(false);
   const [projects, setProjects] = useState(member.projects.join(", "));
   const [isConfirmingDelete, setIsConfirmingDelete] = useState(false);
-  const [showCustomizer, setShowCustomizer] = useState(false);
   const [showVacationDialog, setShowVacationDialog] = useState(false);
   const { isPremium } = useAuth();
   
@@ -188,7 +186,7 @@ export function MemberCard({ member, onUpdate, onDelete, canEdit }: MemberCardPr
           canEdit={canEdit}
           isPremium={isPremium}
           onEditProjects={() => setIsEditingProjects(true)}
-          onCustomize={() => setShowCustomizer(true)}
+          onCustomize={() => {}}
           onDelete={() => setIsConfirmingDelete(true)}
           onVacation={() => setShowVacationDialog(true)}
           isOnVacation={!!member.isOnVacation}
@@ -227,11 +225,9 @@ export function MemberCard({ member, onUpdate, onDelete, canEdit }: MemberCardPr
       />
 
       <CustomizerDialog 
-        isOpen={showCustomizer}
-        setIsOpen={setShowCustomizer}
-        member={member}
-        onUpdate={(updates) => {
-          onUpdate(member.id!, "customization", updates);
+        teamMember={member}
+        onUpdate={(customization) => {
+          onUpdate(member.id!, "customization", customization);
         }}
       />
       

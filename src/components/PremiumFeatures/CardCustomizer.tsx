@@ -153,7 +153,7 @@ export function CardCustomizer({ onClose, currentCustomization, onSave }: CardCu
                   <CardContent>
                     <ColorSelector
                       selectedColor={customization.color || ""}
-                      onSelectColor={handleColorChange}
+                      onColorChange={handleColorChange}
                     />
                   </CardContent>
                 </Card>
@@ -168,7 +168,7 @@ export function CardCustomizer({ onClose, currentCustomization, onSave }: CardCu
                     <CardContent>
                       <GradientSelector
                         selectedGradient={customization.gradient || ""}
-                        onSelectGradient={handleGradientChange}
+                        onGradientChange={handleGradientChange}
                       />
                     </CardContent>
                   </Card>
@@ -185,8 +185,8 @@ export function CardCustomizer({ onClose, currentCustomization, onSave }: CardCu
                       <AnimationToggle
                         animate={customization.animate || false}
                         animationType={customization.animationType || "gentle"}
-                        onToggle={handleAnimationToggle}
-                        onTypeChange={handleAnimationTypeChange}
+                        onAnimationToggle={handleAnimationToggle}
+                        onAnimationTypeChange={handleAnimationTypeChange}
                       />
                     </CardContent>
                   </Card>

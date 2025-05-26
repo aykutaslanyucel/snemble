@@ -1,14 +1,13 @@
 
 import { Check } from "lucide-react";
 import { COLORS } from "./CardCustomizerPresets";
-import { TeamMemberCustomization } from "@/types/TeamMemberTypes";
 
 interface ColorSelectorProps {
-  customization: TeamMemberCustomization;
-  onSelectColor: (color: string) => void;
+  selectedColor: string;
+  onColorChange: (color: string) => void;
 }
 
-export function ColorSelector({ customization, onSelectColor }: ColorSelectorProps) {
+export function ColorSelector({ selectedColor, onColorChange }: ColorSelectorProps) {
   // Group colors into categories for better organization
   const colorCategories = {
     status: COLORS.slice(0, 6),
@@ -29,11 +28,11 @@ export function ColorSelector({ customization, onSelectColor }: ColorSelectorPro
           {colorCategories.status.map(color => (
             <button
               key={color}
-              onClick={() => onSelectColor(color)}
+              onClick={() => onColorChange(color)}
               className="w-8 h-8 rounded-full border flex items-center justify-center transition-all hover:scale-110"
               style={{ backgroundColor: color }}
             >
-              {customization.color === color && !customization.gradient && (
+              {selectedColor === color && (
                 <Check className="h-4 w-4 text-gray-700" />
               )}
             </button>
@@ -48,11 +47,11 @@ export function ColorSelector({ customization, onSelectColor }: ColorSelectorPro
           {colorCategories.pastel.map(color => (
             <button
               key={color}
-              onClick={() => onSelectColor(color)}
+              onClick={() => onColorChange(color)}
               className="w-8 h-8 rounded-full border flex items-center justify-center transition-all hover:scale-110"
               style={{ backgroundColor: color }}
             >
-              {customization.color === color && !customization.gradient && (
+              {selectedColor === color && (
                 <Check className="h-4 w-4 text-gray-700" />
               )}
             </button>
@@ -67,11 +66,11 @@ export function ColorSelector({ customization, onSelectColor }: ColorSelectorPro
           {colorCategories.professional.map(color => (
             <button
               key={color}
-              onClick={() => onSelectColor(color)}
+              onClick={() => onColorChange(color)}
               className="w-8 h-8 rounded-full border flex items-center justify-center transition-all hover:scale-110"
               style={{ backgroundColor: color }}
             >
-              {customization.color === color && !customization.gradient && (
+              {selectedColor === color && (
                 <Check className="h-4 w-4 text-gray-700" />
               )}
             </button>
@@ -86,11 +85,11 @@ export function ColorSelector({ customization, onSelectColor }: ColorSelectorPro
           {colorCategories.vibrant.map(color => (
             <button
               key={color}
-              onClick={() => onSelectColor(color)}
+              onClick={() => onColorChange(color)}
               className="w-8 h-8 rounded-full border flex items-center justify-center transition-all hover:scale-110"
               style={{ backgroundColor: color }}
             >
-              {customization.color === color && !customization.gradient && (
+              {selectedColor === color && (
                 <Check className="h-4 w-4 text-gray-700" />
               )}
             </button>

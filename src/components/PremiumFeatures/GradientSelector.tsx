@@ -1,14 +1,13 @@
 
 import { Check } from "lucide-react";
 import { GRADIENTS } from "./CardCustomizerPresets";
-import { TeamMemberCustomization } from "@/types/TeamMemberTypes";
 
 interface GradientSelectorProps {
-  customization: TeamMemberCustomization;
-  onSelectGradient: (gradient: string) => void;
+  selectedGradient: string;
+  onGradientChange: (gradient: string) => void;
 }
 
-export function GradientSelector({ customization, onSelectGradient }: GradientSelectorProps) {
+export function GradientSelector({ selectedGradient, onGradientChange }: GradientSelectorProps) {
   // Group gradients into categories for better organization
   const gradientCategories = {
     professional: GRADIENTS.slice(0, 4),
@@ -31,11 +30,11 @@ export function GradientSelector({ customization, onSelectGradient }: GradientSe
           {gradientCategories.professional.map(gradient => (
             <button
               key={gradient}
-              onClick={() => onSelectGradient(gradient)}
+              onClick={() => onGradientChange(gradient)}
               className="w-8 h-8 rounded-full border flex items-center justify-center transition-all hover:scale-110"
               style={{ background: gradient }}
             >
-              {customization.gradient === gradient && (
+              {selectedGradient === gradient && (
                 <Check className="h-4 w-4 text-gray-700" />
               )}
             </button>
@@ -50,11 +49,11 @@ export function GradientSelector({ customization, onSelectGradient }: GradientSe
           {gradientCategories.pastel.map(gradient => (
             <button
               key={gradient}
-              onClick={() => onSelectGradient(gradient)}
+              onClick={() => onGradientChange(gradient)}
               className="w-8 h-8 rounded-full border flex items-center justify-center transition-all hover:scale-110"
               style={{ background: gradient }}
             >
-              {customization.gradient === gradient && (
+              {selectedGradient === gradient && (
                 <Check className="h-4 w-4 text-gray-700" />
               )}
             </button>
@@ -69,11 +68,11 @@ export function GradientSelector({ customization, onSelectGradient }: GradientSe
           {gradientCategories.vibrant.map(gradient => (
             <button
               key={gradient}
-              onClick={() => onSelectGradient(gradient)}
+              onClick={() => onGradientChange(gradient)}
               className="w-8 h-8 rounded-full border flex items-center justify-center transition-all hover:scale-110"
               style={{ background: gradient }}
             >
-              {customization.gradient === gradient && (
+              {selectedGradient === gradient && (
                 <Check className="h-4 w-4 text-gray-700" />
               )}
             </button>
@@ -88,11 +87,11 @@ export function GradientSelector({ customization, onSelectGradient }: GradientSe
           {gradientCategories.subtle.map(gradient => (
             <button
               key={gradient}
-              onClick={() => onSelectGradient(gradient)}
+              onClick={() => onGradientChange(gradient)}
               className="w-8 h-8 rounded-full border flex items-center justify-center transition-all hover:scale-110"
               style={{ background: gradient }}
             >
-              {customization.gradient === gradient && (
+              {selectedGradient === gradient && (
                 <Check className="h-4 w-4 text-gray-700" />
               )}
             </button>
@@ -107,11 +106,11 @@ export function GradientSelector({ customization, onSelectGradient }: GradientSe
           {gradientCategories.deep.map(gradient => (
             <button
               key={gradient}
-              onClick={() => onSelectGradient(gradient)}
+              onClick={() => onGradientChange(gradient)}
               className="w-8 h-8 rounded-full border flex items-center justify-center transition-all hover:scale-110"
               style={{ background: gradient }}
             >
-              {customization.gradient === gradient && (
+              {selectedGradient === gradient && (
                 <Check className="h-4 w-4 text-gray-700" />
               )}
             </button>

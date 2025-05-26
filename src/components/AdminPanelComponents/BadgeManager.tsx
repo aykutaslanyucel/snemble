@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -11,7 +10,6 @@ import { Badge } from "@/components/ui/badge";
 import { Trash2, Upload, Plus } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { Badge as BadgeType } from "@/types/TeamMemberTypes";
 import { BadgeData } from "@/types/BadgeTypes";
 
 export function BadgeManager() {
@@ -47,10 +45,15 @@ export function BadgeManager() {
       }
 
       if (data) {
-        // Transform data to include visibility field with default value
-        const transformedBadges = data.map(badge => ({
-          ...badge,
-          visibility: badge.visibility || 'public' as 'public' | 'premium'
+        // Transform data with proper typing
+        const transformedBadges: BadgeData[] = data.map(badge => ({
+          id: badge.id,
+          name: badge.name,
+          description: badge.description,
+          image_url: badge.image_url,
+          is_active: badge.is_active,
+          visibility: (badge.visibility as 'public' | 'premium') || 'public',
+          created_at: badge.created_at
         }));
         setBadges(transformedBadges);
       }
@@ -99,9 +102,14 @@ export function BadgeManager() {
       }
 
       if (data) {
-        const transformedBadge = {
-          ...data,
-          visibility: data.visibility || 'public' as 'public' | 'premium'
+        const transformedBadge: BadgeData = {
+          id: data.id,
+          name: data.name,
+          description: data.description,
+          image_url: data.image_url,
+          is_active: data.is_active,
+          visibility: (data.visibility as 'public' | 'premium') || 'public',
+          created_at: data.created_at
         };
         setBadges([transformedBadge, ...badges]);
         setNewBadge({ name: "", description: "", image_url: "", visibility: "public" });
@@ -404,7 +412,7 @@ export function BadgeManager() {
                   </Select>
                   
                   <Switch
-                    checked={badge.is_active}
+                    checked={!!badge.is_active}
                     onCheckedChange={(checked) => handleToggleBadge(badge.id, checked)}
                   />
                   
