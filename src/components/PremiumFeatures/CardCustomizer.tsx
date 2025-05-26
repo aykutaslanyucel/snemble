@@ -86,7 +86,7 @@ export function CardCustomizer({ teamMember, onUpdate }: CardCustomizerProps) {
     let background = "";
     
     if (customization.backgroundImage) {
-      background = `url(${customization.backgroundImage}) center/cover no-repeat`;
+      background = `url(${customization.backgroundImage})`;
     } else if (customization.gradient) {
       background = customization.gradient;
     } else if (customization.color) {

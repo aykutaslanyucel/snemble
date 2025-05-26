@@ -4,7 +4,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { AnnouncementBanner } from "@/components/AnnouncementBanner";
 import { TeamMembers } from "@/components/TeamMembers";
 import { ProjectHeatmap } from "@/components/ProjectHeatmap";
-import { TeamMember, Announcement } from "@/types/TeamMemberTypes";
+import { TeamMember, Announcement, TeamMemberCustomization } from "@/types/TeamMemberTypes";
 import { NavigationHeader } from "@/components/NavigationHeader";
 import { SearchAndActions } from "@/components/SearchAndActions";
 import { WorkloadDashboard } from "@/components/WorkloadDashboard";
@@ -59,6 +59,34 @@ export default function Index() {
     theme: 'info',
     expiresAt: undefined,
     isActive: true
+  });
+
+  // Transform database data to TeamMember format
+  const transformDbDataToTeamMember = (dbData: any): TeamMember => ({
+    id: dbData.id,
+    name: dbData.name,
+    position: dbData.position,
+    status: dbData.status,
+    projects: dbData.projects || [],
+    lastUpdated: new Date(dbData.last_updated || dbData.lastUpdated),
+    user_id: dbData.user_id,
+    role: dbData.role,
+    customization: (dbData.customization as TeamMemberCustomization) || {},
+    vacationStart: dbData.vacation_start ? new Date(dbData.vacation_start) : undefined,
+    vacationEnd: dbData.vacation_end ? new Date(dbData.vacation_end) : undefined,
+    isOnVacation: dbData.is_on_vacation || false,
+  });
+
+  // Transform database data to Announcement format
+  const transformDbDataToAnnouncement = (dbData: any): Announcement => ({
+    id: dbData.id,
+    message: dbData.message || '',
+    htmlContent: dbData.html_content,
+    timestamp: new Date(dbData.timestamp),
+    expiresAt: dbData.expires_at ? new Date(dbData.expires_at) : undefined,
+    priority: dbData.priority,
+    theme: dbData.theme,
+    isActive: dbData.is_active
   });
 
   // Add a loading timeout to prevent infinite loading
@@ -158,18 +186,7 @@ export default function Index() {
         if (error) throw error;
         
         if (data && isMounted) {
-          // Transform the data to match our Announcement type
-          const formattedAnnouncements: Announcement[] = data.map(item => ({
-            id: item.id,
-            message: item.message || '',
-            htmlContent: item.html_content,
-            timestamp: new Date(item.timestamp),
-            expiresAt: item.expires_at ? new Date(item.expires_at) : undefined,
-            priority: item.priority,
-            theme: item.theme as any,
-            isActive: item.is_active
-          }));
-          
+          const formattedAnnouncements = data.map(transformDbDataToAnnouncement);
           setAnnouncements(formattedAnnouncements);
         }
       } catch (error) {
@@ -691,15 +708,18 @@ export default function Index() {
   // Loading and error UI
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-b from-background to-secondary/20 flex items-center justify-center">
-        <div className="text-center space-y-4">
-          <div className="animate-spin h-10 w-10 border-4 border-primary border-t-transparent rounded-full mx-auto"></div>
-          <p className="text-lg">Loading team data...</p>
+      <div className="min-h-screen bg-gradient-to-br from-background via-secondary/10 to-primary/5 flex items-center justify-center">
+        <div className="text-center space-y-6 p-8 bg-white/80 backdrop-blur-sm rounded-2xl shadow-xl">
+          <div className="animate-spin h-12 w-12 border-4 border-primary border-t-transparent rounded-full mx-auto"></div>
+          <div className="space-y-2">
+            <p className="text-xl font-semibold text-foreground">Loading your team...</p>
+            <p className="text-sm text-muted-foreground">Preparing the best team management experience</p>
+          </div>
           <button 
             onClick={() => setLoading(false)} 
-            className="text-sm text-muted-foreground hover:text-primary transition-colors"
+            className="text-sm text-primary hover:text-primary/80 transition-colors underline underline-offset-2"
           >
-            Taking too long? Click here
+            Taking too long? Click here to continue
           </button>
         </div>
       </div>
@@ -708,16 +728,20 @@ export default function Index() {
 
   if (error) {
     return (
-      <div className="min-h-screen bg-gradient-to-b from-background to-secondary/20 flex items-center justify-center">
-        <div className="text-center space-y-4 max-w-md mx-auto p-6 bg-white rounded-lg shadow-lg">
-          <div className="text-red-500 text-5xl mb-4">⚠️</div>
-          <h2 className="text-xl font-semibold">Something went wrong</h2>
-          <p className="text-muted-foreground">{error.message || "Failed to load application data"}</p>
+      <div className="min-h-screen bg-gradient-to-br from-background via-secondary/10 to-destructive/5 flex items-center justify-center p-4">
+        <div className="text-center space-y-6 max-w-md mx-auto p-8 bg-white/90 backdrop-blur-sm rounded-2xl shadow-xl border">
+          <div className="w-16 h-16 mx-auto bg-destructive/10 rounded-full flex items-center justify-center">
+            <div className="text-destructive text-2xl">⚠️</div>
+          </div>
+          <div className="space-y-2">
+            <h2 className="text-2xl font-semibold text-foreground">Oops! Something went wrong</h2>
+            <p className="text-muted-foreground">{error.message || "We couldn't load your team data"}</p>
+          </div>
           <button 
             onClick={() => window.location.reload()} 
-            className="px-4 py-2 bg-primary text-white rounded-md hover:bg-primary/90"
+            className="px-6 py-3 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors font-medium shadow-md"
           >
-            Refresh Page
+            Refresh & Try Again
           </button>
         </div>
       </div>
@@ -725,7 +749,7 @@ export default function Index() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-background to-secondary/20">
+    <div className="min-h-screen bg-gradient-to-br from-background via-secondary/5 to-primary/5">
       {announcements.length > 0 && (
         <AnnouncementBanner 
           announcements={announcements} 
@@ -733,7 +757,7 @@ export default function Index() {
         />
       )}
       
-      <div className="container py-8 space-y-8">
+      <div className="container py-8 space-y-8 max-w-7xl mx-auto">
         <NavigationHeader 
           isAdmin={isAdmin} 
           members={members} 
@@ -757,26 +781,36 @@ export default function Index() {
           onExportPowerPoint={handleExportToPowerPoint}
         />
         
-        <TeamMembers
-          members={filteredMembers}
-          onUpdate={handleUpdateMember}
-          onDelete={handleDeleteMember}
-          currentUserId={user?.id}
-          isAdmin={isAdmin}
-        />
-
-        <WorkloadDashboard members={members} />
-
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <ProjectList 
-            activeProjects={activeProjects}
-            projectsWithMembers={projectsWithMembers}
+        <div className="bg-white/80 backdrop-blur-sm rounded-xl shadow-sm border p-6">
+          <TeamMembers
+            members={filteredMembers}
+            onUpdate={handleUpdateMember}
+            onDelete={handleDeleteMember}
+            currentUserId={user?.id}
+            isAdmin={isAdmin}
           />
+        </div>
+
+        <div className="bg-white/80 backdrop-blur-sm rounded-xl shadow-sm border p-6">
+          <WorkloadDashboard members={members} />
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <div className="bg-white/80 backdrop-blur-sm rounded-xl shadow-sm border p-6">
+            <ProjectList 
+              activeProjects={activeProjects}
+              projectsWithMembers={projectsWithMembers}
+            />
+          </div>
           
-          <AvailableMembersList availableMembers={availableMembers} />
+          <div className="bg-white/80 backdrop-blur-sm rounded-xl shadow-sm border p-6">
+            <AvailableMembersList availableMembers={availableMembers} />
+          </div>
         </div>
         
-        <ProjectHeatmap members={members} />
+        <div className="bg-white/80 backdrop-blur-sm rounded-xl shadow-sm border p-6">
+          <ProjectHeatmap members={members} />
+        </div>
       </div>
 
       {/* Announcement Dialog */}

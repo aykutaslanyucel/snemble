@@ -14,7 +14,7 @@ import {
 } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Megaphone, UserPlus, Menu, FileText, FileCheck } from "lucide-react";
+import { Megaphone, UserPlus, Menu, FileText, FileCheck, Sparkles } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Announcement, TeamMember, AnnouncementThemeValue } from "@/types/TeamMemberTypes";
 import { v4 as uuidv4 } from 'uuid';
@@ -107,7 +107,7 @@ export function SearchAndActions({
   };
   
   return (
-    <div className="flex justify-between items-center gap-4 mb-6">
+    <div className="flex justify-between items-center gap-4 mb-6 p-4 bg-white/70 backdrop-blur-sm rounded-xl shadow-sm border">
       <SearchBar 
         searchQuery={searchQuery} 
         onSearchChange={onSearchChange} 
@@ -116,42 +116,53 @@ export function SearchAndActions({
       />
       
       <div className="flex space-x-2">
-        <Button onClick={handleOpenAnnouncementDialog} variant="outline" className="flex items-center">
-          <Megaphone className="h-4 w-4 mr-2" /> 
+        <Button 
+          onClick={handleOpenAnnouncementDialog} 
+          variant="outline" 
+          className="flex items-center gap-2 hover:bg-primary/10 hover:border-primary/30 transition-colors"
+        >
+          <Megaphone className="h-4 w-4" /> 
           Announce
         </Button>
         
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="outline" size="icon">
+            <Button 
+              variant="outline" 
+              size="icon"
+              className="hover:bg-primary/10 hover:border-primary/30 transition-colors"
+            >
               <Menu className="h-4 w-4" />
               <span className="sr-only">Menu</span>
             </Button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            <DropdownMenuItem onClick={onAddMember}>
+          <DropdownMenuContent align="end" className="bg-white/95 backdrop-blur-sm border-0 shadow-xl">
+            <DropdownMenuItem onClick={onAddMember} className="hover:bg-primary/10">
               <UserPlus className="h-4 w-4 mr-2" /> 
-              Add Member
+              Add Team Member
             </DropdownMenuItem>
             <DropdownMenuSeparator />
-            <DropdownMenuItem onClick={onExportPowerPoint}>
+            <DropdownMenuItem onClick={onExportPowerPoint} className="hover:bg-primary/10">
               <FileText className="h-4 w-4 mr-2" /> 
               Export PowerPoint
             </DropdownMenuItem>
-            <DropdownMenuItem onClick={handleExportWord}>
+            <DropdownMenuItem onClick={handleExportWord} className="hover:bg-primary/10">
               <FileCheck className="h-4 w-4 mr-2" /> 
-              Export Word
+              Export Word Document
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
       </div>
     
       <Dialog open={isAnnouncementDialogOpen} onOpenChange={setIsAnnouncementDialogOpen}>
-        <DialogContent className="sm:max-w-[625px]">
+        <DialogContent className="sm:max-w-[625px] bg-white/95 backdrop-blur-sm border-0 shadow-2xl">
           <DialogHeader>
-            <DialogTitle>Create Announcement</DialogTitle>
+            <DialogTitle className="flex items-center gap-2">
+              <Sparkles className="h-5 w-5 text-primary" />
+              Create Announcement
+            </DialogTitle>
             <DialogDescription>
-              Make a new announcement to be displayed at the top of the page.
+              Make a new announcement to be displayed at the top of the page for all team members.
             </DialogDescription>
           </DialogHeader>
           <div className="grid gap-4 py-4">
@@ -168,7 +179,7 @@ export function SearchAndActions({
                   <SelectItem value="info">Info</SelectItem>
                   <SelectItem value="warning">Warning</SelectItem>
                   <SelectItem value="success">Success</SelectItem>
-                  <SelectItem value="destructive">Destructive</SelectItem>
+                  <SelectItem value="destructive">Important</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -210,15 +221,17 @@ export function SearchAndActions({
                 placeholder="Enter announcement message"
                 value={newAnnouncement}
                 onChange={(e) => onAnnouncementChange(e.target.value)}
+                className="min-h-[80px]"
               />
             </div>
             <div className="grid grid-cols-1 items-center gap-4">
-              <Label htmlFor="announcement-html-content" className="text-left">HTML Content</Label>
+              <Label htmlFor="announcement-html-content" className="text-left">HTML Content (Optional)</Label>
               <Textarea
                 id="announcement-html-content"
-                placeholder="Enter HTML content for the announcement"
+                placeholder="Enter HTML content for rich formatting"
                 value={announcementHtmlContent}
                 onChange={(e) => setAnnouncementHtmlContent(e.target.value)}
+                className="min-h-[60px]"
               />
             </div>
           </div>
@@ -226,7 +239,7 @@ export function SearchAndActions({
             <Button variant="outline" onClick={handleCloseAnnouncementDialog}>
               Cancel
             </Button>
-            <Button onClick={handleAddAnnouncementClick}>
+            <Button onClick={handleAddAnnouncementClick} className="bg-primary hover:bg-primary/90">
               Create Announcement
             </Button>
           </DialogFooter>

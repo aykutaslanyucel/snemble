@@ -24,7 +24,7 @@ export function CustomizerDialog({ isOpen, setIsOpen, member, onUpdate }: Custom
       onOpenChange={setIsOpen}
     >
       <DialogContent 
-        className="sm:max-w-lg max-h-[90vh] overflow-y-auto flex flex-col"
+        className="sm:max-w-lg max-h-[90vh] overflow-y-auto flex flex-col bg-white/95 backdrop-blur-sm border-0 shadow-2xl"
         onClick={handleDialogClick}
         // Complete override of the pointer/interact outside behavior
         onPointerDownOutside={(e) => {
@@ -53,9 +53,9 @@ export function CustomizerDialog({ isOpen, setIsOpen, member, onUpdate }: Custom
         style={{ zIndex: 50 }} // Ensure dialog is at a high z-index
       >
         <DialogHeader>
-          <DialogTitle>Customize Card</DialogTitle>
-          <DialogDescription>
-            Personalize the appearance of this team member's card
+          <DialogTitle className="text-xl font-semibold">Customize Card</DialogTitle>
+          <DialogDescription className="text-muted-foreground">
+            Personalize the appearance of {member.name}'s card with colors, gradients, and badges
           </DialogDescription>
         </DialogHeader>
         <div className="py-4 overflow-y-auto pr-1 flex-1">
