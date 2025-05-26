@@ -102,11 +102,8 @@ export function NavigationHeader({
       
       {/* Welcome header section */}
       {showWelcomeHeader && <div className="text-center mb-8">
-          <h1 className="text-4xl font-bold mb-4">Welcome to Snemble</h1>
-          <p className="text-lg text-muted-foreground max-w-3xl mx-auto">
-            Manage your team members, track their availability, and keep everyone in sync with our 
-            intuitive team management platform.
-          </p>
+          <h1 className="text-4xl font-bold mb-4">Welcome to DLA Pipeline</h1>
+          <p className="text-lg text-muted-foreground max-w-3xl mx-auto">Manage your team, track their availability, and keep everyone in sync with our intuitive team management platform.</p>
         </div>}
     </div>;
 }

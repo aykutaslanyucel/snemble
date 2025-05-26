@@ -192,8 +192,8 @@ export function ProjectHeatmap({
   };
   return <Card className="p-6 bg-white/5 backdrop-blur-md border border-white/5 shadow-lg rounded-xl w-full mt-8">
       <div className="flex items-center mb-5">
-        <h3 className="text-lg font-medium text-gray-800 flex items-center">
-          <div className="h-2 w-2 rounded-full bg-[#ACCBEE] mr-2" />
+        <h3 className="text-lg font-medium flex items-center text-slate-50">
+          
           Project Workload
         </h3>
       </div>
@@ -205,7 +205,7 @@ export function ProjectHeatmap({
                   {React.createElement(CATEGORY_ICONS[category as keyof typeof CATEGORY_ICONS], {
               className: `h-3 w-3 ${category === 'severelyOverloaded' ? 'text-[#FF8080]' : category === 'highWorkload' ? 'text-[#FFBB66]' : category === 'balancedWorkload' ? 'text-[#A8DEBC]' : category === 'lowWorkload' ? 'text-[#ACCBEE]' : 'text-[#E0E0E0]'}`
             })}
-                  <h4 className="text-xs font-medium text-gray-700 uppercase tracking-wide">
+                  <h4 className="text-xs font-medium uppercase tracking-wide text-slate-50">
                     {CATEGORY_NAMES[category as keyof typeof CATEGORY_NAMES]} ({projects.length})
                   </h4>
                 </div>
