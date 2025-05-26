@@ -24,9 +24,6 @@ export type GradientType = 'linear' | 'radial';
 // Define badge position types
 export type BadgePosition = 'top-right' | 'bottom-right';
 
-// Define badge visibility types
-export type BadgeVisibility = 'public' | 'premium';
-
 // Define a consistent customization interface that allows for flexible properties
 export interface TeamMemberCustomization {
   color?: string;
@@ -82,13 +79,12 @@ export interface Announcement {
   isActive?: boolean;    // Whether the announcement is currently active
 }
 
-// Define Badge interface with visibility control
+// Define Badge interface
 export interface Badge {
   id: string;
   name: string;
   description?: string;
   image_url: string;
   is_active: boolean;
-  visibility: BadgeVisibility;
   created_at: Date;
 }
