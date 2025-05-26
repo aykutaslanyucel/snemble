@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -59,10 +58,15 @@ export function BadgeSelector({
           return visibility === 'public' || (visibility === 'premium' && isPremium);
         });
 
-        // Transform data to include visibility field with default value
-        const transformedBadges = filteredBadges.map(badge => ({
-          ...badge,
-          visibility: badge.visibility || 'public' as 'public' | 'premium'
+        // Transform data to ensure proper typing
+        const transformedBadges: BadgeData[] = filteredBadges.map(badge => ({
+          id: badge.id,
+          name: badge.name,
+          description: badge.description || undefined,
+          image_url: badge.image_url,
+          is_active: badge.is_active || true,
+          visibility: (badge.visibility || 'public') as 'public' | 'premium',
+          created_at: badge.created_at || new Date().toISOString()
         }));
         setBadges(transformedBadges);
       }

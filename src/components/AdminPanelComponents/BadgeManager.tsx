@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -11,7 +10,6 @@ import { Badge } from "@/components/ui/badge";
 import { Trash2, Plus } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { Badge as BadgeType } from "@/types/TeamMemberTypes";
 import { BadgeData } from "@/types/BadgeTypes";
 import { DragDropImage } from "@/components/ui/drag-drop-image";
 
@@ -48,10 +46,15 @@ export function BadgeManager() {
       }
 
       if (data) {
-        // Transform data to include visibility field with default value
-        const transformedBadges = data.map(badge => ({
-          ...badge,
-          visibility: badge.visibility || 'public' as 'public' | 'premium'
+        // Transform data to ensure proper typing
+        const transformedBadges: BadgeData[] = data.map(badge => ({
+          id: badge.id,
+          name: badge.name,
+          description: badge.description || undefined,
+          image_url: badge.image_url,
+          is_active: badge.is_active || true,
+          visibility: (badge.visibility || 'public') as 'public' | 'premium',
+          created_at: badge.created_at || new Date().toISOString()
         }));
         setBadges(transformedBadges);
       }
@@ -67,12 +70,10 @@ export function BadgeManager() {
 
   const handleImageSelect = async (fileOrUrl: File | string) => {
     if (typeof fileOrUrl === 'string') {
-      // Handle URL input
       setNewBadge({ ...newBadge, image_url: fileOrUrl });
       return;
     }
 
-    // Handle file upload
     setLoading(true);
     try {
       const file = fileOrUrl;
@@ -150,9 +151,14 @@ export function BadgeManager() {
       }
 
       if (data) {
-        const transformedBadge = {
-          ...data,
-          visibility: data.visibility || 'public' as 'public' | 'premium'
+        const transformedBadge: BadgeData = {
+          id: data.id,
+          name: data.name,
+          description: data.description || undefined,
+          image_url: data.image_url,
+          is_active: data.is_active || true,
+          visibility: (data.visibility || 'public') as 'public' | 'premium',
+          created_at: data.created_at || new Date().toISOString()
         };
         setBadges([transformedBadge, ...badges]);
         setNewBadge({ name: "", description: "", image_url: "", visibility: "public" });

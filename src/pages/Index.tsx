@@ -1,7 +1,6 @@
-
 import React, { useState, useEffect, useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { TeamMember, Announcement } from "@/types/TeamMemberTypes";
+import { TeamMember, Announcement, TeamMemberStatus, AnnouncementTheme } from "@/types/TeamMemberTypes";
 import { useToast } from "@/hooks/use-toast";
 import { AnnouncementBanner } from "@/components/AnnouncementBanner";
 import { NavigationHeader } from "@/components/NavigationHeader";
@@ -45,11 +44,11 @@ export default function Index() {
 
         if (data) {
           // Transform the data to match TeamMember interface
-          const transformedMembers = data.map(member => ({
+          const transformedMembers: TeamMember[] = data.map(member => ({
             id: member.id,
             name: member.name,
             position: member.position,
-            status: member.status,
+            status: member.status as TeamMemberStatus,
             projects: member.projects || [],
             lastUpdated: new Date(member.last_updated),
             user_id: member.user_id,
@@ -91,14 +90,14 @@ export default function Index() {
 
         if (data) {
           // Transform announcements to match interface
-          const transformedAnnouncements = data.map(announcement => ({
+          const transformedAnnouncements: Announcement[] = data.map(announcement => ({
             id: announcement.id,
             message: announcement.message,
             htmlContent: announcement.html_content,
             timestamp: new Date(announcement.timestamp),
             expiresAt: announcement.expires_at ? new Date(announcement.expires_at) : undefined,
             priority: announcement.priority,
-            theme: announcement.theme,
+            theme: announcement.theme as AnnouncementTheme,
             isActive: announcement.is_active,
           }));
           setAnnouncements(transformedAnnouncements);
