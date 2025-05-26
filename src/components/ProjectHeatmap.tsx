@@ -205,7 +205,7 @@ export function ProjectHeatmap({
                   {React.createElement(CATEGORY_ICONS[category as keyof typeof CATEGORY_ICONS], {
               className: `h-3 w-3 ${category === 'severelyOverloaded' ? 'text-[#FF8080]' : category === 'highWorkload' ? 'text-[#FFBB66]' : category === 'balancedWorkload' ? 'text-[#A8DEBC]' : category === 'lowWorkload' ? 'text-[#ACCBEE]' : 'text-[#E0E0E0]'}`
             })}
-                  <h4 className="text-xs font-medium uppercase tracking-wide text-slate-50">
+                  <h4 className="text-xs font-medium uppercase tracking-wide text-gray-800 dark:text-gray-100 flex">
                     {CATEGORY_NAMES[category as keyof typeof CATEGORY_NAMES]} ({projects.length})
                   </h4>
                 </div>
