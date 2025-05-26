@@ -11,7 +11,7 @@ export function ProjectList({
   projectsWithMembers
 }: ProjectListProps) {
   return <Card className="p-8 bg-white/10 backdrop-blur-md border border-white/10 shadow-xl rounded-xl">
-      <h2 className="text-xl font-semibold mb-6 flex items-center gap-2">
+      <h2 className="text-xl font-semibold text-gray-800 dark:text-gray-100 flex items-center">
         
         <span className="text-slate-50">Active Projects</span>
         <span className="text-sm font-normal text-muted-foreground ml-1">
