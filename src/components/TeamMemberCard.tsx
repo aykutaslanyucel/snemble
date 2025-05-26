@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { TeamMember, TeamMemberStatus } from "@/types/TeamMemberTypes";
 import { motion } from "framer-motion";
@@ -29,6 +28,7 @@ export function TeamMemberCard({ member, onUpdate, onDelete, canEdit }: TeamMemb
   const [isEditingProjects, setIsEditingProjects] = useState(false);
   const [projects, setProjects] = useState(member.projects.join(", "));
   const [isConfirmingDelete, setIsConfirmingDelete] = useState(false);
+  const [showCustomizer, setShowCustomizer] = useState(false);
   const { isPremium } = useAuth();
   
   // Get the background based on status or customization
@@ -259,12 +259,15 @@ export function TeamMemberCard({ member, onUpdate, onDelete, canEdit }: TeamMemb
                       Edit Projects
                     </Button>
                     {isPremium && (
-                      <CustomizerDialog 
-                        teamMember={member}
-                        onUpdate={(customization) => {
-                          onUpdate(member.id!, "customization", customization);
-                        }}
-                      />
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="justify-start"
+                        onClick={() => setShowCustomizer(true)}
+                      >
+                        <Palette className="mr-2 h-4 w-4" />
+                        Customize Card
+                      </Button>
                     )}
                     <Button
                       variant="ghost"
@@ -368,6 +371,15 @@ export function TeamMemberCard({ member, onUpdate, onDelete, canEdit }: TeamMemb
         setIsOpen={setIsConfirmingDelete}
         memberName={member.name}
         onConfirm={handleDeleteMember}
+      />
+
+      <CustomizerDialog 
+        isOpen={showCustomizer}
+        setIsOpen={setShowCustomizer}
+        member={member}
+        onUpdate={(updates) => {
+          onUpdate(member.id!, "customization", updates);
+        }}
       />
     </motion.div>
   );

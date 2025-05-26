@@ -59,15 +59,10 @@ export function BadgeSelector({
           return visibility === 'public' || (visibility === 'premium' && isPremium);
         });
 
-        // Transform data with proper typing
-        const transformedBadges: BadgeData[] = filteredBadges.map(badge => ({
-          id: badge.id,
-          name: badge.name,
-          description: badge.description,
-          image_url: badge.image_url,
-          is_active: badge.is_active,
-          visibility: (badge.visibility as 'public' | 'premium') || 'public',
-          created_at: badge.created_at
+        // Transform data to include visibility field with default value
+        const transformedBadges = filteredBadges.map(badge => ({
+          ...badge,
+          visibility: badge.visibility || 'public' as 'public' | 'premium'
         }));
         setBadges(transformedBadges);
       }

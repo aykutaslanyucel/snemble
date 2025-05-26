@@ -220,16 +220,11 @@ export function CardCustomizer({ onClose, currentCustomization, onSave }: CardCu
           {/* Right Panel - Preview */}
           <div className="w-1/2 bg-muted/20 p-6 flex items-center justify-center">
             <CardPreview
-              member={{
-                id: "preview",
-                name: "Preview User",
-                position: "Sample Position",
-                status: "available",
-                projects: ["Sample Project"],
-                lastUpdated: new Date(),
-                user_id: "preview",
-                customization: customization
-              }}
+              customization={customization}
+              memberName="Preview User"
+              memberPosition="Sample Position"
+              memberStatus="available"
+              memberProjects={["Sample Project"]}
             />
           </div>
         </div>
